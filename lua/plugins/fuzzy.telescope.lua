@@ -1,0 +1,100 @@
+return {
+  {
+    "prochri/telescope-all-recent.nvim",
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "kkharji/sqlite.lua",
+      "stevearc/dressing.nvim",
+    },
+    opts = {},
+  },
+  {
+    "nvim-telescope/telescope.nvim",
+    cmd = "Telescope",
+    enabled = function()
+      return vim.g.picker == "telescope"
+    end,
+    version = false,
+    keys = {
+      { "<leader>,",       "<cmd>Telescope buffers sort_mru=true sort_lastused=true<cr>",                            desc = "Switch Buffer" },
+      { "<leader>/",       "<cmd>Telescope live_grep<cr>",                                                           desc = "Grep (Root Dir)" },
+      { "<leader>:",       "<cmd>Telescope command_history<cr>",                                                     desc = "Command History" },
+      { "<leader><space>", "<cmd>Telescope find_files<cr>",                                                          desc = "Find Files (Root Dir)" },
+      { "<leader>fb",      "<cmd>Telescope buffers sort_mru=true sort_lastused=true ignore_current_buffer=true<cr>", desc = "Buffers" },
+      { "<leader>fc",      "<cmd>Telescope find_files cwd=~/.config/nvim<cr>",                                       desc = "Find [C]onfig File" },
+      { "<leader>ff",      "<cmd>Telescope find_files<cr>",                                                          desc = "Find [F]iles (Root Dir)" },
+      { "<leader>fF",      "<cmd>Telescope find_files cwd=%:p:h<cr>",                                                desc = "Find [F]iles (cwd)" },
+      { "<leader>fg",      "<cmd>Telescope git_files<cr>",                                                           desc = "Find [G]it" },
+      { "<leader>fr",      "<cmd>Telescope oldfiles<cr>",                                                            desc = "[R]ecent" },
+      { "<leader>fR",      "<cmd>Telescope oldfiles cwd=%:p:h<cr>",                                                  desc = "[R]ecent (cwd)" },
+      { "<leader>gc",      "<cmd>Telescope git_commits<CR>",                                                         desc = "[C]ommits" },
+      { "<leader>gs",      "<cmd>Telescope git_status<CR>",                                                          desc = "[S]tatus" },
+      { "<leader>sf",      "<cmd>Telescope current_buffer_fuzzy_find<cr>",                                           desc = "[F]uzzy Find" },
+      { "<leader>sd",      "<cmd>Telescope diagnostics bufnr=0<cr>",                                                 desc = "[D]iagnostics" },
+      { "<leader>sD",      "<cmd>Telescope diagnostics<cr>",                                                         desc = "Workspace [D]iagnostics" },
+      { "<leader>sg",      "<cmd>Telescope live_grep<cr>",                                                           desc = "[G]rep (Root Dir)" },
+      { "<leader>sG",      "<cmd>Telescope live_grep cwd=%:p:h<cr>",                                                 desc = "[G]rep (cwd)" },
+      { "<leader>sH",      "<cmd>Telescope highlights<cr>",                                                          desc = "Search [H]ighlight Groups" },
+      { "<leader>sj",      "<cmd>Telescope jumplist<cr>",                                                            desc = "[J]umplist" },
+      { "<leader>so",      "<cmd>Telescope vim_options<cr>",                                                         desc = "[O]ptions" },
+      { "<leader>ss",      "<cmd>Telescope grep_string word_match=-w<cr>",                                           desc = "[S]tring (Root Dir)" },
+      { "<leader>sS",      "<cmd>Telescope grep_string cwd=%:p:h word_match=-w<cr>",                                 desc = "[S]tring (cwd)" },
+      { "<leader>ss",      "<cmd>Telescope grep_string<cr>",                                                         mode = "v",                         desc = "[S]election (Root Dir)" },
+      { "<leader>sS",      "<cmd>Telescope grep_string cwd=%:p:h<cr>",                                               mode = "v",                         desc = "[S]election (cwd)" },
+      { "<leader>uC",      "<cmd>Telescope colorscheme enable_preview=true<cr>",                                     desc = "[C]olorscheme with Preview" },
+    },
+    opts = function()
+      local actions = require("telescope.actions")
+
+      local function find_command()
+        if 1 == vim.fn.executable("rg") then
+          return { "rg", "--files", "--color", "never", "-g", "!.git" }
+        elseif 1 == vim.fn.executable("fd") then
+          return { "fd", "--type", "f", "--color", "never", "-E", ".git" }
+        elseif 1 == vim.fn.executable("fdfind") then
+          return { "fdfind", "--type", "f", "--color", "never", "-E", ".git" }
+        elseif 1 == vim.fn.executable("find") and vim.fn.has("win32") == 0 then
+          return { "find", ".", "-type", "f" }
+        elseif 1 == vim.fn.executable("where") then
+          return { "where", "/r", ".", "*" }
+        end
+      end
+
+      return {
+        defaults = {
+          prompt_prefix = " ",
+          selection_caret = " ",
+          get_selection_window = function()
+            local wins = vim.api.nvim_list_wins()
+            table.insert(wins, 1, vim.api.nvim_get_current_win())
+            for _, win in ipairs(wins) do
+              local buf = vim.api.nvim_win_get_buf(win)
+              if vim.bo[buf].buftype == "" then
+                return win
+              end
+            end
+            return 0
+          end,
+          mappings = {
+            i = {
+              ["<C-Down>"] = actions.cycle_history_next,
+              ["<C-Up>"] = actions.cycle_history_prev,
+              ["<C-f>"] = actions.preview_scrolling_down,
+              ["<C-b>"] = actions.preview_scrolling_up,
+              ["<C-x>"] = actions.delete_buffer + actions.move_to_top,
+            },
+            n = {
+              ["q"] = actions.close,
+            },
+          },
+        },
+        pickers = {
+          find_files = {
+            find_command = find_command,
+            hidden = true,
+          },
+        },
+      }
+    end,
+  },
+}
