@@ -6,6 +6,7 @@ return {
       lua = { "stylua" },
       plaintex = { "latexindent" },
       tex = { "latexindent" },
+      yml = { "yq" },
     },
     format_on_save = {
       timeout_ms = 500,

@@ -1,6 +1,7 @@
 return {
   {
     "prochri/telescope-all-recent.nvim",
+    event = "UIEnter",
     dependencies = {
       "nvim-telescope/telescope.nvim",
       "kkharji/sqlite.lua",
