@@ -8,7 +8,7 @@ return {
         store_selection_keys = "`",
         delete_check_events = "TextChanged",
       })
-      require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/LuaSnip" })
+      require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/lua/luasnip" })
       local auto_expand = require("luasnip").expand_auto
       require("luasnip").expand_auto = function(...)
         vim.o.undolevels = vim.o.undolevels
