@@ -20,7 +20,9 @@ vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
+
 vim.opt.updatetime = 100
+vim.opt.clipboard = "unnamedplus"
 
 -- Setup lazy.nvim
 require("lazy").setup({
