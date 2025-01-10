@@ -174,7 +174,6 @@ return {
       fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
         default = { "lsp", "path", "buffer", "copilot" },
-        -- default = { "lsp", "path", "buffer", "copilot" },
         cmdline = {},
         providers = {
           lsp = {
@@ -208,47 +207,8 @@ return {
               for _, item in ipairs(items) do
                 item.kind = kind_idx
               end
-
-              -- filter non-acceptable (non-ascii) items
-              -- for _, item in ipairs(items) do
-              --   item.kind = kind_idx
-              --   if item.label then
-              --     item.label = truncate_non_utf8(item.label)
-              --   end
-              --   if item.insertText then
-              --     item.insertText = truncate_non_utf8(item.insertText)
-              --   end
-              --   if item.textEdit and item.textEdit.newText then
-              --     item.textEdit.newText = truncate_non_utf8(item.textEdit.newText)
-              --   end
-              -- end
               return items
             end,
-          },
-          ripgrep = {
-            module = "blink-ripgrep",
-            name = "RG",
-            max_items = 5,
-            ---@module 'blink-ripgrep'
-            ---@type blink-ripgrep.Options
-            opts = {
-              prefix_min_len = 4,
-              context_size = 5,
-              max_filesize = "1M",
-              project_root_marker = vim.g.root_markers,
-              search_casing = "--smart-case",
-              -- (advanced) Any additional options you want to give to ripgrep.
-              -- See `rg -h` for a list of all available options. Might be
-              -- helpful in adjusting performance in specific situations.
-              -- If you have an idea for a default, please open an issue!
-              --
-              -- Not everything will work (obviously).
-              additional_rg_options = {},
-              -- When a result is found for a file whose filetype does not have a
-              -- treesitter parser installed, fall back to regex based highlighting
-              -- that is bundled in Neovim.
-              fallback_to_regex_highlighting = true,
-            },
           },
         },
       },
