@@ -1,9 +1,10 @@
-local function get_git_or_file_dir()
-  local git_dir = vim.fn.system("git rev-parse --show-toplevel")
+local function cwd()
+  local file_dir = vim.fn.expand("%:p:h")
+  local git_dir = vim.fn.system("git -C " .. file_dir .. " rev-parse --show-toplevel")
   if vim.v.shell_error == 0 then
     return vim.fn.trim(git_dir)
   else
-    return vim.fn.expand("%:p:h")
+    return file_dir
   end
 end
 
@@ -23,7 +24,7 @@ return {
       "<leader>fe",
       function()
         local reveal_file = vim.fn.expand("%:p")
-        local dir = get_git_or_file_dir()
+        local dir = cwd()
         require("neo-tree.command").execute({ toggle = true, dir = dir, reveal_file = reveal_file })
       end,
       desc = "[E]xplorer NeoTree (cwd)",
@@ -31,8 +32,7 @@ return {
     {
       "<leader>fE",
       function()
-        local reveal_file = vim.fn.expand("%:p")
-        require("neo-tree.command").execute({ toggle = true, reveal_file = reveal_file, dir = vim.uv.cwd() })
+        require("neo-tree.command").execute({ toggle = true, dir = vim.fn.getcwd() })
       end,
       desc = "[E]xplorer NeoTree (Root Dir)",
     },
