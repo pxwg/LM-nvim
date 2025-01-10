@@ -61,11 +61,11 @@ A language server for librime
     vim.keymap.set("n", "<leader>rs", function()
       vim.lsp.buf.execute_command({ command = "rime-ls.sync-user-data" })
     end, { desc = "[R]ime [S]ync" })
-    vim.keymap.set("i", "jn", function()
-      require("lsp.rime_ls").toggle_rime()
-      _G.rime_toggled = not _G.rime_toggled
-      _G.rime_ls_active = not _G.rime_ls_active
-    end, { noremap = true, silent = true, desc = "toggle rime-ls" })
+    -- vim.keymap.set("i", "jn", function()
+    --   require("lsp.rime_ls").toggle_rime()
+    --   _G.rime_toggled = not _G.rime_toggled
+    --   _G.rime_ls_active = not _G.rime_ls_active
+    -- end, { noremap = true, silent = true, desc = "toggle rime-ls" })
   end
 
   local capabilities = vim.lsp.protocol.make_client_capabilities()

@@ -102,6 +102,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
       create_empty_buffer()
       local centered_lines = get_centered_lines(lines)
       set_buffer_lines(centered_lines)
+      vim.cmd("setfiletype hello")
       set_keymaps()
     end
   end,

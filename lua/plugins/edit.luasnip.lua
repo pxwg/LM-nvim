@@ -8,7 +8,7 @@ return {
         store_selection_keys = "`",
         delete_check_events = "TextChanged",
       })
-      require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/lua/luasnip" })
+      require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/lua/luasnip/tex" })
       local auto_expand = require("luasnip").expand_auto
       require("luasnip").expand_auto = function(...)
         vim.o.undolevels = vim.o.undolevels
@@ -17,30 +17,30 @@ return {
     end,
     keys = function()
       return {
-        {
-          "jk",
-          function()
-            return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
-                or "<c-\\><c-n>:call searchpair('[([{<|]', '', '[)\\]}>|]', 'W')<cr>a"
-          end,
-          expr = true,
-          silent = true,
-          mode = "i",
-        },
-        {
-          "jk",
-          function()
-            return require("luasnip").jump(1)
-          end,
-          mode = "s",
-        },
-        {
-          "kj",
-          function()
-            require("luasnip").jump(-1)
-          end,
-          mode = { "i", "s" },
-        },
+        -- {
+        --   "jk",
+        --   function()
+        --     return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
+        --         or "<c-\\><c-n>:call searchpair('[([{<|]', '', '[)\\]}>|]', 'W')<cr>a"
+        --   end,
+        --   expr = true,
+        --   silent = true,
+        --   mode = "i",
+        -- },
+        -- {
+        --   "jk",
+        --   function()
+        --     return require("luasnip").jump(1)
+        --   end,
+        --   mode = "s",
+        -- },
+        -- {
+        --   "kj",
+        --   function()
+        --     require("luasnip").jump(-1)
+        --   end,
+        --   mode = { "i", "s" },
+        -- },
         {
           "<c-h>",
           "<Plug>luasnip-next-choice",
