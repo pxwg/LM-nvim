@@ -1,6 +1,8 @@
 local map = vim.keymap.set
 local cn = require("utils.autocorrect")
+require("utils.fast_keymap")
 
+-- windows with hammerspoon function
 local function save_and_delete_last_line()
   local ft = vim.bo.filetype
   local cursor_pos = vim.fn.getpos(".") -- 记录光标位置
@@ -17,7 +19,6 @@ local function save_and_delete_last_line()
   end
   vim.fn.setpos(".", cursor_pos) -- 恢复光标位置
 end
--- windows with hammerspoon function
 map("n", "<C-j>", "<C-w>j", { silent = true })
 map("n", "<C-k>", "<C-w>k", { silent = true })
 local function is_rightmost_window()
@@ -80,7 +81,9 @@ map({ "n", "v", "i" }, "<C-s>", function()
 end, { noremap = true, silent = true })
 
 --jj to escape
-map("i", "jj", "<ESC>", { silent = true })
+
+-- map("i", "jj", "<ESC>", { silent = true }, 500) -- 设置触发间隔时间为500毫秒
+-- map_with_timeout("i", "jj", "<ESC>", { silent = true }, 500) -- 设置触发间隔时间为500毫秒
 
 --undo and redo
 map({ "n", "i" }, "<C-z>", "<C-o>:undo<CR>", { silent = true })
@@ -91,15 +94,10 @@ map({ 'n', 'i' }, '<C-a>', '<cmd>lua vim.lsp.buf.signature_help()<CR>',
 
 -- Lsp-telescope
 if vim.g.picker == 'telescope' then
-  map("n", "gd", "<cmd>lua require('telescope.builtin').lsp_definitions({ reuse_win = true , theme = 'cursor'})<cr>",
-    { desc = "Goto [D]efinition" })
+  map("n", "gd", "<cmd>Telescope lsp_definitions theme=cursor<cr>", { desc = "Goto [D]efinition" })
   map("n", "gr", "<cmd>Telescope lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
-  map("n", "gI",
-    "<cmd>lua require('telescope.builtin').lsp_implementations({ reuse_win = true })<cr>",
-    { desc = "Goto [I]mplementation" })
-  map("n", "gy",
-    "<cmd>lua require('telescope.builtin').lsp_type_definitions({ reuse_win = true })<cr>",
-    { desc = "Goto T[y]pe Definition" })
+  map("n", "gi", "<cmd>Telescope lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
+  map("n", "gy", "<cmd>Telescope lsp_type_definitions theme=cursor<cr>", { desc = "Goto T[y]pe Definition" })
 end
 
 -- dim
@@ -107,3 +105,20 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 
 --which key
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
+
+local function open_github_url()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.fn.col('.')
+  local start_pos = line:sub(1, col):find("'[^']*$")
+  local end_pos = line:sub(col):find("'")
+
+  if start_pos and end_pos then
+    local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
+    local url = "https://www.github.com/" .. repo_name
+    vim.fn.system({ "open", url })
+  else
+    print("No valid repository name found")
+  end
+end
+
+map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
