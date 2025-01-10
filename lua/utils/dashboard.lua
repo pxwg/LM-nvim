@@ -26,6 +26,7 @@ local function set_keymaps_fzf()
   vim.api.nvim_buf_set_keymap(0, 'n', 'l', ':Lazy<cr>', opts)
   vim.api.nvim_buf_set_keymap(0, 'n', 'r', ':lua require("fzf-lua").oldfiles()<cr>', opts)
   vim.api.nvim_buf_set_keymap(0, 'n', 'q', ':q<cr>', opts)
+  vim.api.nvim_buf_set_keymap(0, 'n', 'p', ':cd ~/Desktop/physics/notes/<cr>', opts)
 end
 
 local function set_keymaps_telescope()
@@ -39,6 +40,7 @@ local function set_keymaps_telescope()
   vim.api.nvim_buf_set_keymap(0, 'n', 'l', ':Lazy<cr>', opts)
   vim.api.nvim_buf_set_keymap(0, 'n', 'r', ':lua require("telescope.builtin").oldfiles()<cr>', opts)
   vim.api.nvim_buf_set_keymap(0, 'n', 'q', ':q<cr>', opts)
+  vim.api.nvim_buf_set_keymap(0, 'n', 'p', ':cd ~/Desktop/physics/notes/<cr>', opts)
 end
 
 local function set_keymaps()
@@ -85,6 +87,7 @@ local lines = {
   "",
   "[F]ind Files       ",
   "[R]ecent Files     ",
+  "[P]hysics Notes    ",
   "[G]rep Words       ",
   "[C]onfig Files     ",
   "[S]ync Session     ",

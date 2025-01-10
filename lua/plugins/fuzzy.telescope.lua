@@ -18,10 +18,10 @@ return {
     version = false,
     keys = {
       { "<leader>,",       "<cmd>Telescope buffers sort_mru=true sort_lastused=true<cr>",                            desc = "Switch Buffer" },
-      { "<leader>/",       "<cmd>Telescope live_grep<cr>",                                                           desc = "Grep (Root Dir)" },
+      { "<leader>/",       "<cmd>Telescope live_grep<cr>",                                                           desc = "[G]rep (Root Dir)" },
       { "<leader>:",       "<cmd>Telescope command_history<cr>",                                                     desc = "Command History" },
       { "<leader><space>", "<cmd>Telescope find_files<cr>",                                                          desc = "Find Files (Root Dir)" },
-      { "<leader>fb",      "<cmd>Telescope buffers sort_mru=true sort_lastused=true ignore_current_buffer=true<cr>", desc = "Buffers" },
+      { "<leader>fb",      "<cmd>Telescope buffers sort_mru=true sort_lastused=true ignore_current_buffer=true<cr>", desc = "[B]uffers" },
       { "<leader>fc",      "<cmd>Telescope find_files cwd=~/.config/nvim<cr>",                                       desc = "Find [C]onfig File" },
       { "<leader>ff",      "<cmd>Telescope find_files<cr>",                                                          desc = "Find [F]iles (Root Dir)" },
       { "<leader>fF",      "<cmd>Telescope find_files cwd=%:p:h<cr>",                                                desc = "Find [F]iles (cwd)" },
@@ -63,8 +63,15 @@ return {
 
       return {
         defaults = {
-          prompt_prefix = " ",
-          selection_caret = " ",
+          sorting_strategy = "ascending",
+
+          layout_strategy = 'vertical',
+          layout_config = { height = 0.45 },
+
+          -- prompt_prefix = " ",
+          prompt_prefix = "  ",
+          selection_caret = "",
+          -- selection_caret = " ",
           get_selection_window = function()
             local wins = vim.api.nvim_list_wins()
             table.insert(wins, 1, vim.api.nvim_get_current_win())
@@ -93,6 +100,7 @@ return {
           find_files = {
             find_command = find_command,
             hidden = true,
+            theme = "ivy",
           },
         },
       }
