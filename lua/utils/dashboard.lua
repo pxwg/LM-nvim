@@ -90,6 +90,7 @@ local lines = {
   "[S]ync Session     ",
   "[L]azy             ",
   "[Q]uit             ",
+  "",
 }
 
 vim.api.nvim_create_autocmd("VimEnter", {
