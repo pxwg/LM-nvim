@@ -21,7 +21,7 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
 
-vim.o.laststatus = 1
+vim.o.laststatus = 0
 vim.opt.updatetime = 100
 vim.opt.clipboard = "unnamedplus"
 

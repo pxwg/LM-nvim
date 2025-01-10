@@ -13,8 +13,6 @@ return {
       "zbirenbaum/copilot-cmp",
       "zbirenbaum/copilot.lua",
       "dmitmel/cmp-digraphs",
-      "L3MON4D3/LuaSnip",
-      "mikavilpas/blink-ripgrep.nvim",
       "giuxtaposition/blink-cmp-copilot",
       {
         "saghen/blink.compat",

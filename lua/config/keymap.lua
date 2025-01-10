@@ -91,9 +91,9 @@ map({ 'n', 'i' }, '<C-a>', '<cmd>lua vim.lsp.buf.signature_help()<CR>',
 
 -- Lsp-telescope
 if vim.g.picker == 'telescope' then
-  map("n", "gd", "<cmd>lua require('telescope.builtin').lsp_definitions({ reuse_win = true })<cr>",
+  map("n", "gd", "<cmd>lua require('telescope.builtin').lsp_definitions({ reuse_win = true , theme = 'cursor'})<cr>",
     { desc = "Goto [D]efinition" })
-  map("n", "gr", "<cmd>Telescope lsp_references<cr>", { desc = "[R]eferences", nowait = true })
+  map("n", "gr", "<cmd>Telescope lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
   map("n", "gI",
     "<cmd>lua require('telescope.builtin').lsp_implementations({ reuse_win = true })<cr>",
     { desc = "Goto [I]mplementation" })
@@ -104,3 +104,6 @@ end
 
 -- dim
 map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
+
+--which key
+map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
