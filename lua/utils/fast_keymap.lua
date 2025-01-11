@@ -97,8 +97,6 @@ local function listen_for_key(timeout)
     timed_out = true
     timer:stop()
     timer:close()
-    -- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), 'n', true)
-    -- vim.api.nvim_input('a') -- 进入插入模式
   end))
 
   local char_i = vim.fn.getchar()
@@ -123,6 +121,11 @@ local function listen_for_key(timeout)
       timer:stop()
       timer:close()
       return 1
+    elseif char == '8' then
+      vim.api.feedkeys(vim.api.nvim_replace_termcodes("<BS><BS>", true, false, true), 'n', true)
+      timed_out = true
+      timer:stop()
+      timer:close()
     end
   end
 
