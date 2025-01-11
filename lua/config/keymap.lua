@@ -114,11 +114,16 @@ local function open_github_url()
 
   if start_pos and end_pos then
     local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
+    -- 修正解析仓库名称的逻辑
+    repo_name = repo_name:match("([^']+)")
     local url = "https://www.github.com/" .. repo_name
-    vim.fn.system({ "open", url })
+    os.execute("open " .. url)
   else
     print("No valid repository name found")
   end
 end
 
 map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
+
+--better j
+map('i', 'j', 'j<ESC>:lua require("utils.fast_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
