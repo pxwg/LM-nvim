@@ -1,6 +1,6 @@
 local map = vim.keymap.set
-local cn = require("utils.autocorrect")
-require("utils.fast_keymap")
+local cn = require("util.autocorrect")
+require("util.fast_keymap")
 
 -- windows with hammerspoon function
 local function save_and_delete_last_line()
@@ -125,5 +125,12 @@ end
 
 map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
 
---better j
-map('i', 'j', 'j<ESC>:lua require("utils.fast_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
+--better j but can't be used with esc
+map('i', 'j', 'j<ESC>:lua require("util.fast_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
+
+-- Exit insert mode and clear search highlight
+map("n", "<ESC>", function()
+  vim.cmd("nohlsearch")
+end, { noremap = true, silent = true, desc = "Exit insert mode and clear search highlight" })
+
+-- map('i', 'k', 'k<ESC>:lua require("util.better_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
