@@ -1,5 +1,5 @@
 -- Bootstrap lazy.nvim
-lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = "https://github.com/folke/lazy.nvim.git"
   local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
@@ -21,6 +21,8 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
 
+vim.opt.undofile = true
+vim.opt.relativenumber = true
 vim.o.laststatus = 0
 vim.opt.updatetime = 100
 vim.opt.clipboard = "unnamedplus"
@@ -41,7 +43,22 @@ require("lazy").setup({
     enabled = false,
     notify = false, -- get a notification when changes are found
   },
+  performance = {
+    rtp = {
+      -- disable some rtp plugins
+      disabled_plugins = {
+        "gzip",
+        -- "matchit",
+        -- "matchparen",
+        -- "netrwPlugin",
+        "tarPlugin",
+        "tohtml",
+        "tutor",
+        "zipPlugin",
+      },
+    },
+  },
 })
 
-require("config.autocmd")
 require("config.keymap")
+require("config.autocmd")
