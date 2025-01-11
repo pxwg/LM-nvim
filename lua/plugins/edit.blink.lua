@@ -18,7 +18,6 @@ return {
         "saghen/blink.compat",
         opts = { impersonate_nvim_cmp = true, enable_events = true },
       },
-      -- "zbirenbaum/copilot-cmp",
     },
   },
   -- build = 'cargo build --release',
@@ -68,7 +67,6 @@ return {
       keymap = {
         preset = "none",
         ["<cr>"] = { "accept", "fallback" },
-        -- ["<tab>"] = { "snippet_forward", "fallback" },
         ["<C-y>"] = { "select_and_accept" },
         ["<s-tab>"] = { "snippet_backward", "fallback" },
         ["<c-j>"] = { "scroll_documentation_up", "fallback" },
@@ -141,7 +139,7 @@ return {
             min_width = 10,
             max_width = 80,
             max_height = 20,
-            border = { "󱕦", "─", "󰄛", "│", "", "─", "󰩃", "│" },
+            -- border = { "󱕦", " ", " ", " ", " ", " ", "󰄛", " " },
             winblend = 0,
             -- winhighlight = "Normal:BlinkCmpDoc,FloatBorder:BlinkCmpDocBorder,EndOfBuffer:BlinkCmpDoc",
             -- Note that the gutter will be disabled when border ~= 'none'
@@ -159,11 +157,10 @@ return {
           auto_show = function(ctx)
             return ctx.mode ~= "cmdline"
           end,
-          -- auto_show = true,
           draw = {
             columns = { { "kind_icon", "label", "label_description", gap = 1 }, { "kind" } },
           },
-          border = { "󱕦", "─", "󰄛", "│", "", "─", "󰩃", "│" },
+          -- border = { "󱕦", " ", " ", " ", " ", " ", "󰩃", " " },
           winhighlight = "FloatBorder:CmpBorder",
           -- winhighlight = "Normal:CmpPmenu,CursorLine:CmpSel,Search:PmenuSel,FloatBorder:CmpBorder",
         },
