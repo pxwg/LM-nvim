@@ -1,7 +1,7 @@
 return {
   "max397574/better-escape.nvim",
   event = "InsertEnter",
-  -- enabled = false,
+  enabled = false,
   opts = {
     timeout = 600,
     default_mappings = false,
