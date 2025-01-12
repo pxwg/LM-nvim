@@ -33,7 +33,6 @@ local function custom_keymap_1(key)
   -- start of line
   if col == 1 or next_char == key then
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS><BS>", true, false, true), 'n', true)
     print(next_char)
     print("1")
@@ -45,7 +44,6 @@ local function custom_keymap_1(key)
     print("2")
     -- CN words
   elseif byte_count > 2 then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS><BS>", true, false, true), 'n', true)
   end
