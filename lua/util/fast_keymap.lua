@@ -37,7 +37,6 @@ local function custom_keymap_1(key)
     print(next_char)
     print("1")
   elseif byte_count <= 2 then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS>", true, false, true), 'n', true)
