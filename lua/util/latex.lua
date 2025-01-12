@@ -64,7 +64,6 @@ end
 M.in_tikz = function()
   return M.in_env("tikzpicture")
 end
-
 M.in_center = function()
   return M.in_env("center")
 end

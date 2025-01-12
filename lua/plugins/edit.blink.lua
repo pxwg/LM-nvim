@@ -1,4 +1,4 @@
-require("utils.rime_blinks")
+require("util.rime_blinks")
 return {
   "saghen/blink.cmp",
   event = "InsertEnter",

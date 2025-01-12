@@ -2,6 +2,7 @@ return {
   {
     "catppuccin",
     lazy = false,
+    -- lazy = true,
     priority = 1000000,
     name = "catppuccin",
     opts = {
@@ -19,7 +20,7 @@ return {
         },
       },
     },
-    config = function ()
+    config = function()
       vim.cmd("colorscheme catppuccin")
     end
   },
