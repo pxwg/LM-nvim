@@ -71,7 +71,7 @@ A language server for librime
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   -- capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
   capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
-  capabilities.general.positionEncodings = { "utf-8", "utf-16" }
+  capabilities.general.positionEncodings = { "utf-8" }
 
   lspconfig.rime_ls.setup({
     init_options = {
