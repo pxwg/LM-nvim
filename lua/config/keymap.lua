@@ -126,7 +126,7 @@ end
 map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
 
 --better j but can't be used with esc
-map('i', 'j', 'j<ESC>:lua require("util.fast_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
+map('i', 'j', 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 -- Exit insert mode and clear search highlight
 map("n", "<ESC>", function()

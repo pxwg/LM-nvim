@@ -60,5 +60,35 @@ require("lazy").setup({
   },
 })
 
-require("config.keymap")
-require("config.autocmd")
+require("util.dashboard")
+
+local autocmd = vim.api.nvim_create_autocmd
+-- set relativenumber when entering hello file type and unset when leaving
+autocmd("FileType", {
+  pattern = "hello",
+  callback = function()
+    vim.cmd("set norelativenumber")
+  end,
+})
+
+autocmd("BufEnter", {
+  callback = function()
+    if vim.bo.filetype == "hello" then
+      vim.cmd("set norelativenumber")
+    end
+  end,
+})
+autocmd("BufLeave", {
+  callback = function()
+    if vim.bo.filetype == "hello" then
+      vim.cmd("set relativenumber")
+    end
+  end,
+})
+vim.api.nvim_create_autocmd("UIEnter",
+  {
+    callback = function()
+      require("config.keymap")
+      require("config.autocmd")
+    end
+  })
