@@ -89,11 +89,15 @@ end, { noremap = true, silent = true })
 map({ "n", "i" }, "<C-z>", "<C-o>:undo<CR>", { silent = true })
 map({ "n", "i" }, "<C-r>", "<C-o>:redo<CR>", { silent = true })
 
-map({ 'n', 'i' }, '<C-a>', '<cmd>lua vim.lsp.buf.signature_help()<CR>',
-  { noremap = true, silent = true, desc = "Show Signature Help" })
+map(
+  { "n", "i" },
+  "<C-a>",
+  "<cmd>lua vim.lsp.buf.signature_help()<CR>",
+  { noremap = true, silent = true, desc = "Show Signature Help" }
+)
 
 -- Lsp-telescope
-if vim.g.picker == 'telescope' then
+if vim.g.picker == "telescope" then
   map("n", "gd", "<cmd>Telescope lsp_definitions theme=cursor<cr>", { desc = "Goto [D]efinition" })
   map("n", "gr", "<cmd>Telescope lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
   map("n", "gi", "<cmd>Telescope lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
@@ -108,7 +112,7 @@ map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key
 
 local function open_github_url()
   local line = vim.api.nvim_get_current_line()
-  local col = vim.fn.col('.')
+  local col = vim.fn.col(".")
   local start_pos = line:sub(1, col):find("'[^']*$")
   local end_pos = line:sub(col):find("'")
 
@@ -125,8 +129,8 @@ end
 
 map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
 
---better j but can't be used with esc
-map('i', 'j', 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
+-- --better j but can't be used with esc
+map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 -- Exit insert mode and clear search highlight
 map("n", "<ESC>", function()

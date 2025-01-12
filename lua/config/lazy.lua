@@ -6,7 +6,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
       { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-      { out,                            "WarningMsg" },
+      { out, "WarningMsg" },
       { "\nPress any key to exit..." },
     }, true, {})
     vim.fn.getchar()
@@ -20,12 +20,29 @@ vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
+vim.opt.showmode = false
 
+-- Enable break indent
+vim.o.breakindent = true
 vim.opt.undofile = true
 vim.opt.relativenumber = true
 vim.o.laststatus = 0
 vim.opt.updatetime = 100
 vim.opt.clipboard = "unnamedplus"
+vim.diagnostic.config({
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = "",
+      [vim.diagnostic.severity.WARN] = "",
+    },
+    linehl = {
+      [vim.diagnostic.severity.ERROR] = "ErrorMsg",
+    },
+    numhl = {
+      [vim.diagnostic.severity.WARN] = "WarningMsg",
+    },
+  },
+})
 
 -- Setup lazy.nvim
 require("lazy").setup({
@@ -85,10 +102,9 @@ autocmd("BufLeave", {
     end
   end,
 })
-vim.api.nvim_create_autocmd("UIEnter",
-  {
-    callback = function()
-      require("config.keymap")
-      require("config.autocmd")
-    end
-  })
+vim.api.nvim_create_autocmd("UIEnter", {
+  callback = function()
+    require("config.keymap")
+    require("config.autocmd")
+  end,
+})
