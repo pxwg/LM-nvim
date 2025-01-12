@@ -35,6 +35,8 @@ return {
 
     lspconfig.texlab.setup({
       filetypes = { "tex", "bib" },
+      offset_encoding = "utf-8", -- wtf? if not set, it shows warning
+      capabilities = capabilities,
     })
 
     -- lspconfig.lua_ls.setup({
