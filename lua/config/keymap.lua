@@ -2,6 +2,25 @@ local map = vim.keymap.set
 local cn = require("util.autocorrect")
 require("util.fast_keymap")
 
+-- open_github_url for plugin reading
+local function open_github_url()
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.fn.col(".")
+  local start_pos = line:sub(1, col):find("'[^']*$")
+  local end_pos = line:sub(col):find("'")
+
+  if start_pos and end_pos then
+    local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
+    -- 修正解析仓库名称的逻辑
+    repo_name = repo_name:match("([^']+)")
+    local url = "https://www.github.com/" .. repo_name
+    os.execute("open " .. url)
+  else
+    print("No valid repository name found")
+  end
+end
+
+-------------windows----------------
 -- windows with hammerspoon function
 local function save_and_delete_last_line()
   local ft = vim.bo.filetype
@@ -19,8 +38,7 @@ local function save_and_delete_last_line()
   end
   vim.fn.setpos(".", cursor_pos) -- 恢复光标位置
 end
-map("n", "<C-j>", "<C-w>j", { silent = true })
-map("n", "<C-k>", "<C-w>k", { silent = true })
+
 local function is_rightmost_window()
   local current_win = vim.api.nvim_get_current_win()
   local current_pos = vim.api.nvim_win_get_position(current_win)[2]
@@ -68,6 +86,21 @@ map("n", "<C-h>", function()
     vim.cmd("wincmd h")
   end
 end, { noremap = true, silent = true, desc = "Move to left window" })
+
+-- move between windows
+map("n", "<C-j>", "<C-w>j", { silent = true })
+map("n", "<C-k>", "<C-w>k", { silent = true })
+
+--split
+map("n", "<C-w>v", "", {
+  noremap = true,
+  silent = true,
+  callback = function()
+    vim.cmd("vsplit")
+    vim.cmd("wincmd l")
+  end,
+})
+
 -- move lines
 map({ "n", "v" }, "L", "$", { silent = true })
 map({ "n", "v" }, "H", "0", { silent = true })
@@ -80,20 +113,19 @@ map({ "n", "v", "i" }, "<C-s>", function()
   vim.cmd("stopinsert")
 end, { noremap = true, silent = true })
 
---jj to escape
-
--- map("i", "jj", "<ESC>", { silent = true }, 500) -- 设置触发间隔时间为500毫秒
--- map_with_timeout("i", "jj", "<ESC>", { silent = true }, 500) -- 设置触发间隔时间为500毫秒
+--better j but can't be used with esc
+map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 --undo and redo
 map({ "n", "i" }, "<C-z>", "<C-o>:undo<CR>", { silent = true })
 map({ "n", "i" }, "<C-r>", "<C-o>:redo<CR>", { silent = true })
 
+-- signature_help
 map(
-  { "n", "i" },
-  "<C-a>",
+  { "n" },
+  "<leader>gh",
   "<cmd>lua vim.lsp.buf.signature_help()<CR>",
-  { noremap = true, silent = true, desc = "Show Signature Help" }
+  { noremap = true, silent = true, desc = "Show Signature [H]elp" }
 )
 
 -- Lsp-telescope
@@ -110,31 +142,41 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 --which key
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
 
-local function open_github_url()
-  local line = vim.api.nvim_get_current_line()
-  local col = vim.fn.col(".")
-  local start_pos = line:sub(1, col):find("'[^']*$")
-  local end_pos = line:sub(col):find("'")
-
-  if start_pos and end_pos then
-    local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
-    -- 修正解析仓库名称的逻辑
-    repo_name = repo_name:match("([^']+)")
-    local url = "https://www.github.com/" .. repo_name
-    os.execute("open " .. url)
-  else
-    print("No valid repository name found")
-  end
-end
-
 map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
-
--- --better j but can't be used with esc
-map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 -- Exit insert mode and clear search highlight
 map("n", "<ESC>", function()
   vim.cmd("nohlsearch")
 end, { noremap = true, silent = true, desc = "Exit insert mode and clear search highlight" })
 
--- map('i', 'k', 'k<ESC>:lua require("util.better_keymap").listen_for_key(300)<CR>', { noremap = true, silent = true })
+-- Float terminal
+map("n", "<C-/>j", "<cmd>lua require('util.terminal').open_terminal('j')<CR>", { desc = "Open [J] Terminal Float" })
+map("n", "<C-/>l", "<cmd>lua require('util.terminal').open_terminal('l')<CR>", { desc = "Open [L] Terminal Float" })
+map("n", "<C-/>k", "<cmd>lua require('util.terminal').open_terminal('k')<CR>", { desc = "Open [K] Terminal Float" })
+map("n", "<C-/>h", "<cmd>lua require('util.terminal').open_terminal('h')<CR>", { desc = "Open [H] Terminal Float" })
+
+-- split terminal
+map(
+  "n",
+  "<C-/>J",
+  "<cmd>lua require('util.terminal').open_terminal_split('j')<CR>",
+  { desc = "Open [J] Terminal Split" }
+)
+map(
+  "n",
+  "<C-/>L",
+  "<cmd>lua require('util.terminal').open_terminal_split('l')<CR>",
+  { desc = "Open [L] Terminal Split" }
+)
+map(
+  "n",
+  "<C-/>K",
+  "<cmd>lua require('util.terminal').open_terminal_split('k')<CR>",
+  { desc = "Open [K] Terminal Split" }
+)
+map(
+  "n",
+  "<C-/>H",
+  "<cmd>lua require('util.terminal').open_terminal_split('h')<CR>",
+  { desc = "Open [H] Terminal Split" }
+)
