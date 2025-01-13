@@ -12,7 +12,7 @@ local function open_github_url()
   if start_pos and end_pos then
     local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
     -- 修正解析仓库名称的逻辑
-    repo_name = repo_name:match("([^']+)")
+    repo_name = repo_name:match("([%w%.%-_/]+)")
     local url = "https://www.github.com/" .. repo_name
     os.execute("open " .. url)
   else
@@ -149,34 +149,20 @@ map("n", "<ESC>", function()
   vim.cmd("nohlsearch")
 end, { noremap = true, silent = true, desc = "Exit insert mode and clear search highlight" })
 
--- Float terminal
-map("n", "<C-/>j", "<cmd>lua require('util.terminal').open_terminal('j')<CR>", { desc = "Open [J] Terminal Float" })
-map("n", "<C-/>l", "<cmd>lua require('util.terminal').open_terminal('l')<CR>", { desc = "Open [L] Terminal Float" })
-map("n", "<C-/>k", "<cmd>lua require('util.terminal').open_terminal('k')<CR>", { desc = "Open [K] Terminal Float" })
-map("n", "<C-/>h", "<cmd>lua require('util.terminal').open_terminal('h')<CR>", { desc = "Open [H] Terminal Float" })
+-- Terminal keymaps
+local terminal_keymaps = {
+  { "<C-/>", "", "+Open [T]erminal" },
+  { "<C-/>t", "<cmd>lua require('util.terminal').open_terminal('t')<CR>", "Open [T] Terminal Float" },
+  { "<C-/>j", "<cmd>lua require('util.terminal').open_terminal('j')<CR>", "Open [J] Terminal Float" },
+  { "<C-/>l", "<cmd>lua require('util.terminal').open_terminal('l')<CR>", "Open [L] Terminal Float" },
+  { "<C-/>k", "<cmd>lua require('util.terminal').open_terminal('k')<CR>", "Open [K] Terminal Float" },
+  { "<C-/>h", "<cmd>lua require('util.terminal').open_terminal('h')<CR>", "Open [H] Terminal Float" },
+  { "<C-/>J", "<cmd>lua require('util.terminal').open_terminal_split('j')<CR>", "Open [J] Terminal Split" },
+  { "<C-/>L", "<cmd>lua require('util.terminal').open_terminal_split('l')<CR>", "Open [L] Terminal Split" },
+  { "<C-/>K", "<cmd>lua require('util.terminal').open_terminal_split('k')<CR>", "Open [K] Terminal Split" },
+  { "<C-/>H", "<cmd>lua require('util.terminal').open_terminal_split('h')<CR>", "Open [H] Terminal Split" },
+}
 
--- split terminal
-map(
-  "n",
-  "<C-/>J",
-  "<cmd>lua require('util.terminal').open_terminal_split('j')<CR>",
-  { desc = "Open [J] Terminal Split" }
-)
-map(
-  "n",
-  "<C-/>L",
-  "<cmd>lua require('util.terminal').open_terminal_split('l')<CR>",
-  { desc = "Open [L] Terminal Split" }
-)
-map(
-  "n",
-  "<C-/>K",
-  "<cmd>lua require('util.terminal').open_terminal_split('k')<CR>",
-  { desc = "Open [K] Terminal Split" }
-)
-map(
-  "n",
-  "<C-/>H",
-  "<cmd>lua require('util.terminal').open_terminal_split('h')<CR>",
-  { desc = "Open [H] Terminal Split" }
-)
+for _, keymap in ipairs(terminal_keymaps) do
+  map("n", keymap[1], keymap[2], { desc = keymap[3], noremap = true, silent = true })
+end

@@ -1,6 +1,9 @@
 return {
   {
     "prochri/telescope-all-recent.nvim",
+    enabled = function()
+      return vim.g.picker == "telescope"
+    end,
     event = "UIEnter",
     dependencies = {
       "nvim-telescope/telescope.nvim",
@@ -17,32 +20,138 @@ return {
     end,
     version = false,
     keys = {
-      { "<leader>,",       "<cmd>Telescope buffers sort_mru=true sort_lastused=true<cr>",                            desc = "Switch Buffer" },
-      { "<leader>/",       "<cmd>Telescope live_grep<cr>",                                                           desc = "[G]rep (Root Dir)" },
-      { "<leader>:",       "<cmd>Telescope command_history<cr>",                                                     desc = "Command History" },
-      { "<leader><space>", "<cmd>Telescope find_files<cr>",                                                          desc = "Find Files (Root Dir)" },
-      { "<leader>fb",      "<cmd>Telescope buffers sort_mru=true sort_lastused=true ignore_current_buffer=true<cr>", desc = "[B]uffers" },
-      { "<leader>fc",      "<cmd>Telescope find_files cwd=~/.config/nvim<cr>",                                       desc = "Find [C]onfig File" },
-      { "<leader>ff",      "<cmd>Telescope find_files<cr>",                                                          desc = "Find [F]iles (Root Dir)" },
-      { "<leader>fF",      "<cmd>Telescope find_files cwd=%:p:h<cr>",                                                desc = "Find [F]iles (cwd)" },
-      { "<leader>fg",      "<cmd>Telescope git_files<cr>",                                                           desc = "Find [G]it" },
-      { "<leader>fr",      "<cmd>Telescope oldfiles<cr>",                                                            desc = "[R]ecent" },
-      { "<leader>fR",      "<cmd>Telescope oldfiles cwd=%:p:h<cr>",                                                  desc = "[R]ecent (cwd)" },
-      { "<leader>gc",      "<cmd>Telescope git_commits<CR>",                                                         desc = "[C]ommits" },
-      { "<leader>gs",      "<cmd>Telescope git_status<CR>",                                                          desc = "[S]tatus" },
-      { "<leader>sf",      "<cmd>Telescope current_buffer_fuzzy_find<cr>",                                           desc = "[F]uzzy Find" },
-      { "<leader>sd",      "<cmd>Telescope diagnostics bufnr=0<cr>",                                                 desc = "[D]iagnostics" },
-      { "<leader>sD",      "<cmd>Telescope diagnostics<cr>",                                                         desc = "Workspace [D]iagnostics" },
-      { "<leader>sg",      "<cmd>Telescope live_grep<cr>",                                                           desc = "[G]rep (Root Dir)" },
-      { "<leader>sG",      "<cmd>Telescope live_grep cwd=%:p:h<cr>",                                                 desc = "[G]rep (cwd)" },
-      { "<leader>sH",      "<cmd>Telescope highlights<cr>",                                                          desc = "Search [H]ighlight Groups" },
-      { "<leader>sj",      "<cmd>Telescope jumplist<cr>",                                                            desc = "[J]umplist" },
-      { "<leader>so",      "<cmd>Telescope vim_options<cr>",                                                         desc = "[O]ptions" },
-      { "<leader>ss",      "<cmd>Telescope grep_string word_match=-w<cr>",                                           desc = "[S]tring (Root Dir)" },
-      { "<leader>sS",      "<cmd>Telescope grep_string cwd=%:p:h word_match=-w<cr>",                                 desc = "[S]tring (cwd)" },
-      { "<leader>ss",      "<cmd>Telescope grep_string<cr>",                                                         mode = "v",                         desc = "[S]election (Root Dir)" },
-      { "<leader>sS",      "<cmd>Telescope grep_string cwd=%:p:h<cr>",                                               mode = "v",                         desc = "[S]election (cwd)" },
-      { "<leader>uC",      "<cmd>Telescope colorscheme enable_preview=true<cr>",                                     desc = "[C]olorscheme with Preview" },
+      {
+        "<leader>,",
+        "<cmd>Telescope buffers sort_mru=true sort_lastused=true<cr>",
+        desc = "Switch Buffer",
+      },
+      {
+        "<leader>/",
+        "<cmd>Telescope live_grep<cr>",
+        desc = "[G]rep (Root Dir)",
+      },
+      {
+        "<leader>:",
+        "<cmd>Telescope command_history<cr>",
+        desc = "Command History",
+      },
+      {
+        "<leader><space>",
+        "<cmd>Telescope find_files<cr>",
+        desc = "Find Files (Root Dir)",
+      },
+      {
+        "<leader>fb",
+        "<cmd>Telescope buffers sort_mru=true sort_lastused=true ignore_current_buffer=true<cr>",
+        desc = "[B]uffers",
+      },
+      {
+        "<leader>fc",
+        "<cmd>Telescope find_files cwd=~/.config/nvim<cr>",
+        desc = "Find [C]onfig File",
+      },
+      {
+        "<leader>ff",
+        "<cmd>Telescope find_files<cr>",
+        desc = "Find [F]iles (Root Dir)",
+      },
+      {
+        "<leader>fF",
+        "<cmd>Telescope find_files cwd=%:p:h<cr>",
+        desc = "Find [F]iles (cwd)",
+      },
+      {
+        "<leader>fg",
+        "<cmd>Telescope git_files<cr>",
+        desc = "Find [G]it",
+      },
+      {
+        "<leader>fr",
+        "<cmd>Telescope oldfiles<cr>",
+        desc = "[R]ecent",
+      },
+      {
+        "<leader>fR",
+        "<cmd>Telescope oldfiles cwd=%:p:h<cr>",
+        desc = "[R]ecent (cwd)",
+      },
+      {
+        "<leader>gc",
+        "<cmd>Telescope git_commits<CR>",
+        desc = "[C]ommits",
+      },
+      {
+        "<leader>gs",
+        "<cmd>Telescope git_status<CR>",
+        desc = "[S]tatus",
+      },
+      {
+        "<leader>sf",
+        "<cmd>Telescope current_buffer_fuzzy_find<cr>",
+        desc = "[F]uzzy Find",
+      },
+      {
+        "<leader>sd",
+        "<cmd>Telescope diagnostics bufnr=0<cr>",
+        desc = "[D]iagnostics",
+      },
+      {
+        "<leader>sD",
+        "<cmd>Telescope diagnostics<cr>",
+        desc = "Workspace [D]iagnostics",
+      },
+      {
+        "<leader>sg",
+        "<cmd>Telescope live_grep<cr>",
+        desc = "[G]rep (Root Dir)",
+      },
+      {
+        "<leader>sG",
+        "<cmd>Telescope live_grep cwd=%:p:h<cr>",
+        desc = "[G]rep (cwd)",
+      },
+      {
+        "<leader>sH",
+        "<cmd>Telescope highlights<cr>",
+        desc = "Search [H]ighlight Groups",
+      },
+      {
+        "<leader>sj",
+        "<cmd>Telescope jumplist<cr>",
+        desc = "[J]umplist",
+      },
+      {
+        "<leader>so",
+        "<cmd>Telescope vim_options<cr>",
+        desc = "[O]ptions",
+      },
+      {
+        "<leader>ss",
+        "<cmd>Telescope grep_string word_match=-w<cr>",
+        desc = "[S]tring (Root Dir)",
+      },
+      {
+        "<leader>sS",
+        "<cmd>Telescope grep_string cwd=%:p:h word_match=-w<cr>",
+        desc = "[S]tring (cwd)",
+      },
+      {
+        "<leader>ss",
+        "<cmd>Telescope grep_string<cr>",
+        mode = "v",
+        desc = "[S]election (Root Dir)",
+      },
+      {
+        "<leader>sS",
+        "<cmd>Telescope grep_string cwd=%:p:h<cr>",
+        mode = "v",
+        desc = "[S]election (cwd)",
+      },
+      {
+        "<leader>uC",
+        "<cmd>Telescope colorscheme enable_preview=true<cr>",
+        desc = "[C]olorscheme with Preview",
+      },
     },
     opts = function()
       local actions = require("telescope.actions")
@@ -65,8 +174,8 @@ return {
         defaults = {
           sorting_strategy = "ascending",
 
-          layout_strategy = 'vertical',
-          layout_config = { height = 0.45 },
+          layout_strategy = "vertical",
+          layout_config = { height = 0.7 },
 
           -- prompt_prefix = " ",
           prompt_prefix = "  ",
@@ -85,6 +194,10 @@ return {
           end,
           mappings = {
             i = {
+              ["<C-j>"] = actions.move_selection_next,
+              ["<C-k>"] = actions.move_selection_previous,
+              ["<C-p>"] = actions.preview_scrolling_up,
+              ["<C-n>"] = actions.preview_scrolling_down,
               ["<C-Down>"] = actions.cycle_history_next,
               ["<C-Up>"] = actions.cycle_history_prev,
               ["<C-f>"] = actions.preview_scrolling_down,
