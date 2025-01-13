@@ -15,19 +15,19 @@ vim.api.nvim_create_autocmd("BufRead", {
   end,
 })
 
--- fzf with frequency
-local function log_file_access()
-  local file_path = vim.fn.expand("%:p")
-  if file_path ~= "" then
-    os.execute("fre --add " .. file_path)
-  end
-end
+-- -- fzf with frequency
+-- local function log_file_access()
+--   local file_path = vim.fn.expand("%:p")
+--   if file_path ~= "" then
+--     os.execute("fre --add " .. file_path)
+--   end
+-- end
 
--- Register the function to log file access on BufEnter event
-vim.api.nvim_create_autocmd("BufEnter", {
-  pattern = "*",
-  callback = log_file_access,
-})
+-- -- Register the function to log file access on BufEnter event
+-- vim.api.nvim_create_autocmd("BufEnter", {
+--   pattern = "*",
+--   callback = log_file_access,
+-- })
 
 -- auto save cursor position
 vim.api.nvim_create_autocmd("BufWinLeave", {
