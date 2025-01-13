@@ -3,9 +3,9 @@ return {
   branch = "main",
   dependencies = {
     { "zbirenbaum/copilot.lua" }, -- or github/copilot.vim
-    { "nvim-lua/plenary.nvim" },  -- for curl, log wrapper
+    { "nvim-lua/plenary.nvim" }, -- for curl, log wrapper
   },
-  build = "make tiktoken",        -- Only on MacOS or Linux
+  build = "make tiktoken", -- Only on MacOS or Linux
 
   keys = {
     {
@@ -14,7 +14,7 @@ return {
         vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
       end,
-      desc = "CopilotChat"
+      desc = "CopilotChat",
     },
     {
       "<C-c>",
@@ -22,13 +22,14 @@ return {
         vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
       end,
-      desc = "CopilotChat"
-    } },
+      desc = "CopilotChat",
+    },
+  },
 
   opts = function()
     return {
       auto_insert_mode = false, -- Automatically enter insert mode when opening window and on new prompt
-      debug = false,            -- Enable debugging
+      debug = false, -- Enable debugging
       reset = {
         normal = "<C-b>",
         insert = "<C-b>",
@@ -40,17 +41,17 @@ return {
       question_header = "󰩃  Doggie  ",
       answer_header = "  Copilot ",
       window = {
-        position = "right",     -- Set the position to right
-        layout = "float",       -- 'vertical', 'horizontal', 'float', 'replace'
-        width = 0.4,            -- fractional width of parent, or absolute width in columns when > 1
+        position = "right", -- Set the position to right
+        layout = "float", -- 'vertical', 'horizontal', 'float', 'replace'
+        width = 0.4, -- fractional width of parent, or absolute width in columns when > 1
         -- Options below only apply to floating windows
-        relative = 'cursor',    -- 'editor', 'win', 'cursor', 'mouse'
-        border = 'solid',       -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
-        row = nil,              -- row position of the window, default is centered
-        col = nil,              -- column position of the window, default is centered
-        title = 'Copilot Chat', -- title of chat window
-        footer = nil,           -- footer of chat window
-        zindex = 1,             -- determines if window is on top or below other floating windows
+        relative = "cursor", -- 'editor', 'win', 'cursor', 'mouse'
+        border = "solid", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
+        row = nil, -- row position of the window, default is centered
+        col = nil, -- column position of the window, default is centered
+        title = "Copilot Chat", -- title of chat window
+        footer = nil, -- footer of chat window
+        zindex = 1, -- determines if window is on top or below other floating windows
       },
     }
   end,
