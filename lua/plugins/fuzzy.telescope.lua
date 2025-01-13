@@ -179,7 +179,7 @@ return {
 
           -- prompt_prefix = " ",
           prompt_prefix = "  ",
-          selection_caret = "",
+          selection_caret = " ",
           -- selection_caret = " ",
           get_selection_window = function()
             local wins = vim.api.nvim_list_wins()

@@ -28,3 +28,18 @@ vim.api.nvim_create_autocmd("BufEnter", {
   pattern = "*",
   callback = log_file_access,
 })
+
+-- auto save cursor position
+vim.api.nvim_create_autocmd("BufWinLeave", {
+  pattern = "*",
+  callback = function()
+    vim.cmd("silent! mkview")
+  end,
+})
+
+vim.api.nvim_create_autocmd("BufReadPost", {
+  pattern = "*",
+  callback = function()
+    vim.cmd("silent! loadview")
+  end,
+})
