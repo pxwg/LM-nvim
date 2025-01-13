@@ -20,11 +20,13 @@ vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
+vim.o.splitkeep = "screen"
 vim.opt.showmode = false
 
 -- Enable break indent
 vim.o.breakindent = true
 vim.opt.undofile = true
+vim.opt.number = true
 vim.opt.relativenumber = true
 vim.o.laststatus = 0
 vim.opt.updatetime = 40
@@ -69,7 +71,7 @@ require("lazy").setup({
         "gzip",
         -- "matchit",
         -- "matchparen",
-        -- "netrwPlugin",
+        "netrwPlugin",
         "tarPlugin",
         "tohtml",
         "tutor",
@@ -79,31 +81,35 @@ require("lazy").setup({
   },
 })
 
-require("util.dashboard")
-
 local autocmd = vim.api.nvim_create_autocmd
 -- set relativenumber when entering hello file type and unset when leaving
 autocmd("FileType", {
   pattern = "hello",
   callback = function()
-    vim.cmd("set norelativenumber")
+    vim.cmd("setlocal norelativenumber")
+    vim.cmd("setlocal nonumber")
   end,
 })
 
+require("util.dashboard")
 autocmd("BufEnter", {
   callback = function()
     if vim.bo.filetype == "hello" then
-      vim.cmd("set norelativenumber")
+      vim.cmd("setlocal norelativenumber")
+      vim.cmd("setlocal nonumber")
     end
   end,
 })
-autocmd("BufLeave", {
-  callback = function()
-    if vim.bo.filetype == "hello" then
-      vim.cmd("set relativenumber")
-    end
-  end,
-})
+
+-- autocmd("BufLeave", {
+--   callback = function()
+--     if vim.bo.filetype == "hello" then
+--       vim.cmd("setlocal relativenumber")
+--       vim.cmd("setlocal number")
+--     end
+--   end,
+-- })
+
 vim.api.nvim_create_autocmd("UIEnter", {
   callback = function()
     require("config.keymap")

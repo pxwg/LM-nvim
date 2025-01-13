@@ -19,19 +19,20 @@ end
 local function set_keymaps(picker)
   local opts = { noremap = true, silent = true }
   local mappings = {
-    c = picker == "fzf" and ':lua require("fzf-lua").files({ cwd = "~/.config/nvim" })<cr>' or
-    ':lua require("telescope.builtin").find_files({ cwd = "~/.config/nvim" })<cr>',
-    f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>' or ':lua require("telescope.builtin").find_files()<cr>',
+    c = picker == "fzf" and ':lua require("fzf-lua").files({ cwd = "~/.config/nvim" })<cr>'
+      or ':lua require("telescope.builtin").find_files({ cwd = "~/.config/nvim" })<cr>',
+    f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>'
+      or ':lua require("telescope.builtin").find_files()<cr>',
     g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ':lua require("telescope.builtin").live_grep()<cr>',
     s = ':lua require("persistence").load({ last = true })<cr>',
-    l = ':Lazy<cr>',
-    r = picker == "fzf" and ':lua require("fzf-lua").oldfiles()<cr>' or
-    ':lua require("telescope.builtin").oldfiles()<cr>',
-    q = ':q<cr>',
-    p = ':cd ~/Desktop/physics/notes/<cr>',
+    l = ":Lazy<cr>",
+    r = picker == "fzf" and ':lua require("fzf-lua").oldfiles()<cr>'
+      or ':lua require("telescope.builtin").oldfiles()<cr>',
+    q = ":q<cr>",
+    p = ":cd ~/Desktop/physics/notes/<cr>",
   }
   for key, cmd in pairs(mappings) do
-    vim.api.nvim_buf_set_keymap(0, 'n', key, cmd, opts)
+    vim.api.nvim_buf_set_keymap(0, "n", key, cmd, opts)
   end
 end
 
@@ -63,15 +64,20 @@ local function set_buffer_lines(lines)
 
   if start_line and end_line then
     local function set_keymap(key, condition, cmd)
-      vim.api.nvim_buf_set_keymap(0, 'n', key,
-        ':lua if ' .. condition .. ' then vim.cmd("normal! ' .. cmd .. '") end<CR>', { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(
+        0,
+        "n",
+        key,
+        ":lua if " .. condition .. ' then vim.cmd("normal! ' .. cmd .. '") end<CR>',
+        { noremap = true, silent = true }
+      )
     end
-    set_keymap('j', 'vim.fn.line(".") < ' .. end_line, 'j')
-    set_keymap('k', 'vim.fn.line(".") > ' .. start_line, 'k')
-    set_keymap('h', 'vim.fn.col(".") > ' .. start_cols[vim.fn.line(".")], 'h')
-    set_keymap('l', 'vim.fn.col(".") < ' .. end_cols[vim.fn.line(".")], 'l')
-    set_keymap('0', 'vim.fn.col(".") > ' .. start_cols[vim.fn.line(".")], '^')
-    set_keymap('$', 'vim.fn.col(".") < ' .. end_cols[vim.fn.line(".")], '$')
+    set_keymap("j", 'vim.fn.line(".") < ' .. end_line, "j")
+    set_keymap("k", 'vim.fn.line(".") > ' .. start_line, "k")
+    set_keymap("h", 'vim.fn.col(".") > ' .. start_cols[vim.fn.line(".")], "h")
+    set_keymap("l", 'vim.fn.col(".") < ' .. end_cols[vim.fn.line(".")], "l")
+    set_keymap("0", 'vim.fn.col(".") > ' .. start_cols[vim.fn.line(".")], "^")
+    set_keymap("$", 'vim.fn.col(".") < ' .. end_cols[vim.fn.line(".")], "$")
     set_keymaps(vim.g.picker)
   end
 end
@@ -117,10 +123,12 @@ local lines = {
 vim.api.nvim_create_autocmd("UIEnter", {
   callback = function()
     if vim.fn.argc() == 0 then
+      vim.cmd("only")
       create_empty_buffer()
       local centered_lines = get_centered_lines(lines)
       set_buffer_lines(centered_lines)
       vim.cmd("setfiletype hello")
     end
+    vim.cmd("only")
   end,
 })
