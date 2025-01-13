@@ -37,8 +37,12 @@ return {
       },
       {
         "<leader><space>",
-        "<cmd>Telescope find_files<cr>",
-        desc = "Find Files (Root Dir)",
+        function()
+          require("telescope.builtin").find_files({
+            cwd = require("util.cwd_attach").cwd(),
+          })
+        end,
+        desc = "Find Files (cwd)",
       },
       {
         "<leader>fb",
@@ -52,13 +56,17 @@ return {
       },
       {
         "<leader>ff",
-        "<cmd>Telescope find_files<cr>",
-        desc = "Find [F]iles (Root Dir)",
+        function()
+          require("telescope.builtin").find_files({
+            cwd = require("util.cwd_attach").cwd(),
+          })
+        end,
+        desc = "Find [F]iles (cwd)",
       },
       {
         "<leader>fF",
-        "<cmd>Telescope find_files cwd=%:p:h<cr>",
-        desc = "Find [F]iles (cwd)",
+        "<cmd>Telescope find_files<cr>",
+        desc = "Find [F]iles (Root Dir)",
       },
       {
         "<leader>fg",
@@ -102,13 +110,13 @@ return {
       },
       {
         "<leader>sg",
-        "<cmd>Telescope live_grep<cr>",
-        desc = "[G]rep (Root Dir)",
+        "<cmd>Telescope live_grep cwd=%:p:h<cr>",
+        desc = "[G]rep (cwd)",
       },
       {
         "<leader>sG",
-        "<cmd>Telescope live_grep cwd=%:p:h<cr>",
-        desc = "[G]rep (cwd)",
+        "<cmd>Telescope live_grep<cr>",
+        desc = "[G]rep (Root Dir)",
       },
       {
         "<leader>sH",
