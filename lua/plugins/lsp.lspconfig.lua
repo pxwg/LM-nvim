@@ -12,7 +12,7 @@ return {
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     -- capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
     capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
-    capabilities.general.positionEncodings = { "utf-8" }
+    capabilities.general.positionEncodings = { "utf-8", "utf-16" }
 
     -- Load mason_lspconfig
     require("mason-lspconfig").setup_handlers({
@@ -35,7 +35,7 @@ return {
 
     lspconfig.texlab.setup({
       filetypes = { "tex", "bib" },
-      offset_encoding = "utf-8", -- wtf? if not set, it shows warning
+      -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
       capabilities = capabilities,
     })
 

@@ -162,8 +162,8 @@ return {
             columns = { { "kind_icon", "label", "label_description", gap = 1 }, { "kind" } },
           },
           -- border = { "󱕦", " ", " ", " ", " ", " ", "󰩃", " " },
-          winhighlight = "FloatBorder:CmpBorder",
-          -- winhighlight = "Normal:CmpPmenu,CursorLine:CmpSel,Search:PmenuSel,FloatBorder:CmpBorder",
+          -- winhighlight = "FloatBorder:CmpBorder,Search:BlinkCmpMenuSelection",
+          winhighlight = "CursorLine:BlinkCmpMenuSelection",
         },
       },
       snippets = { preset = "luasnip" },
@@ -178,10 +178,11 @@ return {
             --- @param items blink.cmp.CompletionItem[]
             transform_items = function(_, items)
               -- demote snippets
-              for _, item in ipairs(items) do
+              for index, item in ipairs(items) do
                 -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
                 --   item.score_offset = item.score_offset - 3
                 -- end
+                local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
                 if item.kind == require("blink.cmp.types").CompletionItemKind.Text then
                   item.score_offset = item.score_offset + 2
                 end
@@ -209,40 +210,69 @@ return {
         },
       },
       appearance = {
-        -- Blink does not expose its default kind icons so you must copy them all (or set your custom ones) and add Copilot
+        -- minial icon
         kind_icons = {
-          Copilot = "",
-          Text = "󰉿",
-          Method = "󰊕",
-          Function = "󰊕",
-          Constructor = "󰒓",
-
-          Field = "󰜢",
-          Variable = "󰆦",
-          Property = "󰖷",
-
-          Class = "󱡠",
-          Interface = "󱡠",
-          Struct = "󱡠",
-          Module = "󰅩",
-
-          Unit = "󰪚",
-          Value = "󰦨",
-          Enum = "󰦨",
-          EnumMember = "󰦨",
-
-          Keyword = "󰻾",
-          Constant = "󰏿",
-
-          Snippet = "󱄽",
-          Color = "󰏘",
-          File = "󰈔",
-          Reference = "󰬲",
-          Folder = "󰉋",
-          Event = "󱐋",
-          Operator = "󰪚",
-          TypeParameter = "󰬛",
+          Copilot = "",
+          Text = "",
+          Method = "",
+          Function = "",
+          Constructor = "",
+          Field = "",
+          Variable = "",
+          Property = "",
+          Class = "",
+          Interface = "",
+          Struct = "",
+          Module = "",
+          Unit = "",
+          Value = "",
+          Enum = "",
+          EnumMember = "",
+          Keyword = "",
+          Constant = "",
+          Snippet = "",
+          Color = "",
+          File = "",
+          Reference = "",
+          Folder = "",
+          Event = "",
+          Operator = "",
+          TypeParameter = "",
         },
+        -- Blink does not expose its default kind icons so you must copy them all (or set your custom ones) and add Copilot
+        -- kind_icons = {
+        --   Copilot = "",
+        --   Text = "",
+        --   Method = "󰊕",
+        --   Function = "󰊕",
+        --   Constructor = "󰒓",
+        --
+        --   Field = "󰜢",
+        --   Variable = "󰆦",
+        --   Property = "󰖷",
+        --
+        --   Class = "󱡠",
+        --   Interface = "󱡠",
+        --   Struct = "󱡠",
+        --   Module = "󰅩",
+        --
+        --   Unit = "󰪚",
+        --   Value = "󰦨",
+        --   Enum = "󰦨",
+        --   EnumMember = "󰦨",
+        --
+        --   Keyword = "󰻾",
+        --   Constant = "󰏿",
+        --
+        --   Snippet = "󱄽",
+        --   Color = "󰏘",
+        --   File = "󰈔",
+        --   Reference = "󰬲",
+        --   Folder = "󰉋",
+        --   Event = "󱐋",
+        --   Operator = "󰪚",
+        --   TypeParameter = "󰬛",
+        -- },
       },
     })
   end,

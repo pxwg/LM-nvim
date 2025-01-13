@@ -1,7 +1,7 @@
 return {
   "lervag/vimtex",
   -- lazy = true,
-  -- priority = 100,
+  priority = 100,
   -- event = "VimEnter",
   config = function()
     vim.cmd([[
@@ -10,7 +10,8 @@ let g:vimtex_view_method = 'skim'
 " let g:vimtex_view_enabled = 0
 let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=0
-let g:tex_conceal='abdmg'
+set conceallevel=2
+let g:tex_conceal="abdgm"
 let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \ {'name': 'ket',
           \  'mathmode': 1,
