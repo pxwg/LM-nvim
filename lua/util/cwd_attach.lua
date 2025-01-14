@@ -20,7 +20,7 @@ local function cwd()
     return last_git_dir
   else
     last_file_dir = file_dir
-    print(last_file_dir)
+    return last_file_dir
   end
 end
 

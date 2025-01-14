@@ -20,35 +20,46 @@ M.get_battery_time = function()
 end
 
 M.get_battery_status = function()
-  local handle = io.popen("pmset -g batt | grep -Eo '[0-9]+%'")
+  local handle = io.popen("pmset -g batt")
   if handle then
     local result = handle:read("*a")
     handle:close()
     if result then
-      return result:match("%d+")
+      local percentage = result:match("(%d+)%%")
+      if result:match("discharging") then
+        return { percentage, "discharging" }
+      elseif result:match("charging") then
+        return { percentage, "charging" }
+      elseif result:match("charged") then
+        return { percentage, "charged" }
+      elseif result:match("finished charging") then
+        return { percentage, "charged" }
+      end
     end
   end
+  print("Battery status: N/A") -- Debug print
   return "N/A"
 end
 
 M.get_battery_icon = function()
-  local battery_level = tonumber(M.get_battery_status())
+  local battery_level = tonumber(M.get_battery_status()[1])
+  local battery_status = M.get_battery_status()[2]
   if not battery_level then
-    return "󰁺"
+    return "󰁺󱐋"
   elseif battery_level == 100 then
-    return "󰁹"
+    return "󰁹" .. (battery_status ~= "discharging" and "󱐋" or "")
   elseif battery_level >= 80 then
-    return "󰂁"
+    return "󰂁" .. (battery_status ~= "discharging" and "󱐋" or "")
   elseif battery_level >= 60 then
-    return "󰁿"
+    return "󰁿" .. (battery_status ~= "discharging" and "󱐋" or "")
   elseif battery_level >= 40 then
-    return "󰁽"
+    return "󰁽" .. (battery_status ~= "discharging" and "󱐋" or "")
   elseif battery_level >= 20 then
-    return "󰁻"
-  elseif battery_level >= 10 then
-    return "󰁺"
+    return "󰁻" .. (battery_status ~= "discharging" and "󱐋" or "")
+  elseif battery_level <= 10 then
+    return "󰁺󱐋"
   else
-    return "󰁺"
+    return "󰁺󱐋"
   end
 end
 
