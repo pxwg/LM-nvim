@@ -17,12 +17,10 @@ local function cwd()
 
   if vim.v.shell_error == 0 then
     last_git_dir = vim.fn.trim(git_dir)
-    print(last_git_dir)
     return last_git_dir
   else
     last_file_dir = file_dir
     print(last_file_dir)
-    return last_file_dir
   end
 end
 

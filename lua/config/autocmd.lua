@@ -9,7 +9,7 @@ autocmd("FileType", {
 })
 
 -- color preview
-vim.api.nvim_create_autocmd("BufRead", {
+autocmd("BufRead", {
   callback = function()
     vim.cmd("ColorizerAttachToBuffer")
   end,
@@ -24,23 +24,48 @@ vim.api.nvim_create_autocmd("BufRead", {
 -- end
 
 -- -- Register the function to log file access on BufEnter event
--- vim.api.nvim_create_autocmd("BufEnter", {
+-- autocmd("BufEnter", {
 --   pattern = "*",
 --   callback = log_file_access,
 -- })
 
 -- auto save cursor position
-vim.api.nvim_create_autocmd("BufWinLeave", {
+autocmd("BufWinLeave", {
   pattern = "*",
   callback = function()
     vim.cmd("silent! mkview")
   end,
 })
 
-vim.api.nvim_create_autocmd("BufReadPost", {
+autocmd("BufReadPost", {
   pattern = "*",
   callback = function()
     vim.cmd("silent! loadview")
+  end,
+})
+
+autocmd("VimLeavePre", {
+  callback = function()
+    local bufs = vim.api.nvim_list_bufs()
+    for _, buf in ipairs(bufs) do
+      if vim.bo[buf].filetype == "neo-tree" or vim.bo[buf].filetype == "copilot-chat" then
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+    end
+  end,
+})
+
+autocmd("InsertCharPre", {
+  callback = function()
+    local statusline_parts = {
+      "%f", -- 文件名
+      "%m", -- 修改标志
+      "%=",
+      "", -- 占位符
+      require("util.battery").get_battery_icon() .. " ",
+    }
+    statusline_parts[4] = "[" .. require("util.rime_ls").rime_toggle_word() .. "] "
+    vim.o.statusline = table.concat(statusline_parts)
   end,
 })
 
