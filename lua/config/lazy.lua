@@ -116,13 +116,6 @@ vim.api.nvim_create_autocmd("UIEnter", {
   callback = function()
     require("config.keymap")
     require("config.autocmd")
-    vim.o.statusline = table.concat({
-      "%f", -- 文件名
-      "%m", -- 修改标志
-      "%=",
-      "[" .. require("util.rime_ls").rime_toggle_word() .. "] ",
-      require("util.battery").get_battery_icon() .. " ",
-      -- "󰂁 " .. require("util.battery").get_battery_status(),
-    })
+    require("util.statusline")
   end,
 })

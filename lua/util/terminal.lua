@@ -80,16 +80,14 @@ local function open_terminal_split(key)
   -- Resize the new split to 40% of the screen width
   vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.35))
 
-  local current_file_path = vim.fn.expand("%:p:h")
+  local current_file_path = vim.fn.expand(require("util.cwd_attach").cwd())
   local terminal_path = vim.fn.getcwd()
 
   if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) and terminal_path == current_file_path then
     -- If terminal buffer exists, is valid, and paths match, use it
     vim.cmd("buffer " .. terminal_buf)
   else
-    -- Open terminal in the new split
     vim.cmd("term")
-    -- Get the buffer number of the terminal
     terminal_buf = vim.api.nvim_get_current_buf()
   end
 
