@@ -93,16 +93,6 @@ local function listen_for_key(timeout, key)
       timer:stop()
       timer:close()
       return 1
-    elseif char_out == "k" then
-      -- custom_keymap('k')
-      timer:stop()
-      timer:close()
-      -- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Right>", true, false, true), 'n', true)
-      if require("luasnip").expand_or_locally_jumpable() then
-        return "<Plug>luasnip-jump-next"
-      else
-        return "<c-\\><c-n>:call searchpair('[([{<|]', '', '[)\\]}>|]', 'W')<cr>a"
-      end
     elseif char_out == "<BS>" then
       vim.api.nvim_fedkeys(vim.api.nvim_replace_termcodes("<BS><BS>", true, false, true), "n", true)
       timed_out = true

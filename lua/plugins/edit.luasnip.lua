@@ -17,30 +17,30 @@ return {
     end,
     keys = function()
       return {
-        -- {
-        --   "<Tab>",
-        --   function()
-        --     return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
-        --         or "<c-\\><c-n>:call searchpair('[([{<|]', '', '[)\\]}>|]', 'W')<cr>a"
-        --   end,
-        --   expr = true,
-        --   silent = true,
-        --   mode = "i",
-        -- },
-        -- {
-        --   "<Tab>",
-        --   function()
-        --     return require("luasnip").jump(1)
-        --   end,
-        --   mode = "s",
-        -- },
-        -- {
-        --   "<S-Tab>",
-        --   function()
-        --     require("luasnip").jump(-1)
-        --   end,
-        --   mode = { "i", "s" },
-        -- },
+        {
+          "<C-k>",
+          function()
+            return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
+              or "<c-\\><c-n>:call searchpair('[([{<|]', '', '[)\\]}>|]', 'W')<cr>a"
+          end,
+          expr = true,
+          silent = true,
+          mode = "i",
+        },
+        {
+          "<C-k>",
+          function()
+            return require("luasnip").jump(1)
+          end,
+          mode = "s",
+        },
+        {
+          "<C-j>",
+          function()
+            require("luasnip").jump(-1)
+          end,
+          mode = { "i", "s" },
+        },
         {
           "<c-h>",
           "<Plug>luasnip-next-choice",

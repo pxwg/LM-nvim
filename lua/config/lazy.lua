@@ -28,7 +28,18 @@ vim.o.breakindent = true
 vim.opt.undofile = true
 vim.opt.number = true
 vim.opt.relativenumber = true
-vim.o.laststatus = 0
+vim.o.laststatus = 1 -- 确保状态栏始终显示
+vim.o.statusline = table.concat({
+  "%f", -- 文件名
+  -- "%h", -- 帮助文件标志
+  "%m", -- 修改标志
+  -- "%r", -- 只读标志
+  "%=", -- 左右对齐分隔符
+  -- "%-14.(%l,%c%V%)", -- 行号, 列号, 虚拟列号
+  -- "%P", -- 百分比位置
+  "%{strftime('%H:%M:%S')}", -- 当前时间
+})
+vim.o.cmdheight = 1
 vim.opt.updatetime = 40
 vim.opt.clipboard = "unnamedplus"
 vim.diagnostic.config({
@@ -82,7 +93,15 @@ require("lazy").setup({
 })
 
 local autocmd = vim.api.nvim_create_autocmd
+
 -- set relativenumber when entering hello file type and unset when leaving
+
+autocmd("UIEnter", {
+  callback = function()
+    vim.cmd("setlocal relativenumber")
+    vim.cmd("setlocal number")
+  end,
+})
 autocmd("FileType", {
   pattern = "hello",
   callback = function()
@@ -92,15 +111,6 @@ autocmd("FileType", {
 })
 
 require("util.dashboard")
-autocmd("BufEnter", {
-  callback = function()
-    if vim.bo.filetype == "hello" then
-      vim.cmd("setlocal norelativenumber")
-      vim.cmd("setlocal nonumber")
-    end
-  end,
-})
-
 -- autocmd("BufLeave", {
 --   callback = function()
 --     if vim.bo.filetype == "hello" then
