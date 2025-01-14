@@ -210,7 +210,7 @@ return {
         },
       },
       appearance = {
-        -- minial icon
+        -- minial icon which is zero
         kind_icons = {
           Copilot = "",
           Text = "",
