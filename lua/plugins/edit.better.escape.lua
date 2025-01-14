@@ -16,6 +16,8 @@ return {
           -- end,
           n = function()
             require("lsp.rime_ls").toggle_rime()
+            _G.rime_toggled = not _G.rime_toggled
+            _G.rime_ls_active = not _G.rime_ls_active
           end,
         },
         -- k = {

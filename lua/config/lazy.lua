@@ -22,26 +22,18 @@ vim.g.maplocalleader = "\\"
 vim.g.picker = "telescope"
 vim.o.splitkeep = "screen"
 vim.opt.showmode = false
+_G.mode = "error"
 
 -- Enable break indent
 vim.o.breakindent = true
 vim.opt.undofile = true
 vim.opt.number = true
 vim.opt.relativenumber = true
-vim.o.laststatus = 1 -- 确保状态栏始终显示
-vim.o.statusline = table.concat({
-  "%f", -- 文件名
-  -- "%h", -- 帮助文件标志
-  "%m", -- 修改标志
-  -- "%r", -- 只读标志
-  "%=", -- 左右对齐分隔符
-  -- "%-14.(%l,%c%V%)", -- 行号, 列号, 虚拟列号
-  -- "%P", -- 百分比位置
-  "%{strftime('%H:%M:%S')}", -- 当前时间
-})
+-- 设置 statusline
 vim.o.cmdheight = 1
 vim.opt.updatetime = 40
 vim.opt.clipboard = "unnamedplus"
+
 vim.diagnostic.config({
   signs = {
     text = {
@@ -124,5 +116,13 @@ vim.api.nvim_create_autocmd("UIEnter", {
   callback = function()
     require("config.keymap")
     require("config.autocmd")
+    vim.o.statusline = table.concat({
+      "%f", -- 文件名
+      "%m", -- 修改标志
+      "%=",
+      "[" .. require("util.rime_ls").rime_toggle_word() .. "] ",
+      require("util.battery").get_battery_icon() .. " ",
+      -- "󰂁 " .. require("util.battery").get_battery_status(),
+    })
   end,
 })
