@@ -2,25 +2,45 @@ local map = vim.keymap.set
 local cn = require("util.autocorrect")
 require("util.fast_keymap")
 
--- open_github_url for plugin reading
-local function open_github_url()
-  local line = vim.api.nvim_get_current_line()
-  local col = vim.fn.col(".")
-  local start_pos = line:sub(1, col):find("'[^']*$")
-  local end_pos = line:sub(col):find("'")
+local function get_plugin_name()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local code = table.concat(content, "\n")
 
-  if start_pos and end_pos then
-    local repo_name = line:sub(start_pos + 1, col + end_pos - 2)
-    -- 修正解析仓库名称的逻辑
-    repo_name = repo_name:match("([%w%.%-_/]+)")
-    local url = "https://www.github.com/" .. repo_name
-    os.execute("open " .. url)
+  local plugin_names = {}
+  local seen = {}
+  for name in code:gmatch('{%s*"([^"]+/[^"]+)",') do
+    if not seen[name] then
+      table.insert(plugin_names, name)
+      seen[name] = true
+    end
+  end
+
+  if #plugin_names > 1 then
+    local choices = {}
+    for i, name in ipairs(plugin_names) do
+      table.insert(choices, string.format("%d: %s", i, name))
+    end
+    local choice = vim.fn.inputlist(choices)
+    if choice > 0 and choice <= #plugin_names then
+      return plugin_names[choice]
+    else
+      print("Invalid choice")
+    end
+  elseif #plugin_names == 1 then
+    return plugin_names[1]
   else
-    print("No valid repository name found")
+    print("No valid plugin names")
   end
 end
 
--------------windows----------------
+local function open_github_url()
+  local url = "https://www.github.com/" .. get_plugin_name()
+  vim.loop.spawn("open", { args = { url } })
+end
+
+_G.open_github_url = open_github_url
+
 -- windows with hammerspoon function
 local function save_and_delete_last_line()
   local ft = vim.bo.filetype
@@ -142,7 +162,25 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 --which key
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
 
-map("n", "<leader>gb", open_github_url, { noremap = true, silent = true, desc = "[B]rows Open" })
+-- enter github repo for plugins
+local function set_keymap_if_in_plugins_dir()
+  local current_dir = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+  local plugins_dir = vim.fn.expand("~/.config/nvim/lua/plugins")
+  if current_dir == plugins_dir then
+    vim.api.nvim_buf_set_keymap(
+      0,
+      "n",
+      "gB",
+      ":lua open_github_url()<CR>",
+      { noremap = true, silent = true, desc = "[G]o to Plugin Url" }
+    )
+  end
+end
+
+vim.api.nvim_create_autocmd("BufEnter", {
+  pattern = "*",
+  callback = set_keymap_if_in_plugins_dir,
+})
 
 -- Exit insert mode and clear search highlight
 map("n", "<ESC>", function()

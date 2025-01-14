@@ -1,6 +1,6 @@
 return {
-  'stevearc/conform.nvim',
-  event = 'BufReadPre',
+  "stevearc/conform.nvim",
+  event = "BufReadPre",
   opts = {
     formatters_by_ft = {
       lua = { "stylua" },
@@ -12,5 +12,5 @@ return {
       timeout_ms = 500,
       lsp_format = "fallback",
     },
-  }
+  },
 }
