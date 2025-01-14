@@ -43,3 +43,6 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     vim.cmd("silent! loadview")
   end,
 })
+
+-- auto change insert mode
+require("util.math_autochange")

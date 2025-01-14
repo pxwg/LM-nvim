@@ -114,7 +114,7 @@ map({ "n", "v", "i" }, "<C-s>", function()
 end, { noremap = true, silent = true })
 
 --better j but can't be used with esc
-map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
+-- map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 --undo and redo
 map({ "n", "i" }, "<C-z>", "<C-o>:undo<CR>", { silent = true })
