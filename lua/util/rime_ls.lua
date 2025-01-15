@@ -1,5 +1,15 @@
 local M = {}
 
+local function is_rime_ls_attached()
+  local clients = vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })
+  for _, client in ipairs(clients) do
+    if client.name == "rime_ls" then
+      return true
+    end
+  end
+  return false
+end
+
 function M.check_rime_status()
   local clients = vim.lsp.get_clients()
   for _, client in ipairs(clients) do
@@ -25,14 +35,18 @@ local function rime_toggle_color()
 end
 
 local function rime_toggle_word()
-  if M.check_rime_status() and _G.rime_toggled then
-    return "cn"
-  elseif _G.rime_ls_active and tex.in_latex() then
-    return "math"
-  elseif _G.rime_ls_active then
-    return tex.in_text() and "error" or "math"
-  elseif not _G.rime_toggled and not _G.rime_ls_active then
-    return tex.in_text() and "en" or "math"
+  if is_rime_ls_attached() then
+    if M.check_rime_status() and _G.rime_toggled then
+      return "cn"
+    elseif _G.rime_ls_active and tex.in_latex() then
+      return "math"
+    elseif _G.rime_ls_active then
+      return tex.in_text() and "error" or "math"
+    elseif not _G.rime_toggled and not _G.rime_ls_active then
+      return tex.in_text() and "en" or "math"
+    end
+  else
+    return "en"
   end
 end
 
