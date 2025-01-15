@@ -270,3 +270,5 @@ cmap("?", "？", "?")
 cmap("!", "！", "!")
 cmap(":", "：", ":")
 cmap("\\", "、", "\\")
+
+map("i", "<C-\\>", "\\", { noremap = true, silent = true })
