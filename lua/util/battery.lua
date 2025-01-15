@@ -25,19 +25,19 @@ M.get_battery_status = function()
     local result = handle:read("*a")
     handle:close()
     if result then
-      local percentage = result:match("(%d+)%%")
+      local percentage = result:match("(%d?%d?%d)%%")
       if result:match("discharging") then
         return { percentage, "discharging" }
       elseif result:match("charging") then
         return { percentage, "charging" }
       elseif result:match("charged") then
         return { percentage, "charged" }
-      elseif result:match("finished charging") then
+      elseif result:match("finishing charge") then
         return { percentage, "charged" }
       end
     end
   end
-  print("Battery status: N/A") -- Debug print
+  -- print("Battery status: N/A") -- Debug print
   return "N/A"
 end
 
