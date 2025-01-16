@@ -55,7 +55,7 @@ autocmd("VimLeavePre", {
   end,
 })
 
-autocmd("InsertCharPre", {
+autocmd("InsertEnter", {
   callback = function()
     local statusline_parts = {
       "%f", -- 文件名
