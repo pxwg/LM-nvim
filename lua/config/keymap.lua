@@ -2,45 +2,6 @@ local map = vim.keymap.set
 local cn = require("util.autocorrect")
 require("util.fast_keymap")
 
-local function get_plugin_name()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-  local code = table.concat(content, "\n")
-
-  local plugin_names = {}
-  local seen = {}
-  for name in code:gmatch('{%s*"([^"]+/[^"]+)",') do
-    if not seen[name] then
-      table.insert(plugin_names, name)
-      seen[name] = true
-    end
-  end
-
-  if #plugin_names > 1 then
-    local choices = {}
-    for i, name in ipairs(plugin_names) do
-      table.insert(choices, string.format("%d: %s", i, name))
-    end
-    local choice = vim.fn.inputlist(choices)
-    if choice > 0 and choice <= #plugin_names then
-      return plugin_names[choice]
-    else
-      print("Invalid choice")
-    end
-  elseif #plugin_names == 1 then
-    return plugin_names[1]
-  else
-    print("No valid plugin names")
-  end
-end
-
-local function open_github_url()
-  local url = "https://www.github.com/" .. get_plugin_name()
-  vim.loop.spawn("open", { args = { url } })
-end
-
-_G.open_github_url = open_github_url
-
 -- windows with hammerspoon function
 local function save_and_delete_last_line()
   local ft = vim.bo.filetype
@@ -163,6 +124,7 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
 
 -- enter github repo for plugins
+require("util.plug_url")
 local function set_keymap_if_in_plugins_dir()
   local current_dir = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
   local plugins_dir = vim.fn.expand("~/.config/nvim/lua/plugins")
