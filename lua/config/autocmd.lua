@@ -55,7 +55,7 @@ autocmd("VimLeavePre", {
   end,
 })
 
-autocmd("InsertEnter", {
+autocmd("CursorMovedI", {
   callback = function()
     local statusline_parts = {
       "%f", -- 文件名
