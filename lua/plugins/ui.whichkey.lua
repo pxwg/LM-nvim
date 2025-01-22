@@ -17,6 +17,7 @@ return {
       { "<leader>s", group = "[S]earch" }, -- group
       { "<leader>e", group = "[E]xplorer Neotree (cwd)", icon = { icon = "󱏒", color = "red" } }, -- group
       { "<leader>E", group = "[E]xplorer Neotree (root)", icon = { icon = "󱏒", color = "orange" } }, -- group
+      { "<leader>n", group = "[N]ote", icon = { icon = "󰎞", color = "green" } },
       {
         "<leader>b",
         group = "buffers",

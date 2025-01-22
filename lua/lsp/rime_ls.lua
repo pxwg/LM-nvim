@@ -70,7 +70,7 @@ A language server for librime
 
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   -- capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-  capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
+  -- capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
   capabilities.general.positionEncodings = { "utf-8" }
 
   lspconfig.rime_ls.setup({
@@ -89,6 +89,7 @@ A language server for librime
       max_candidates = 9,
       max_tokens = 0,
       long_filter_text = true,
+      -- long_filter_text = false,
     },
     -- on_attach = attach_in_insert_mode,
     on_attach = rime_on_attach,
