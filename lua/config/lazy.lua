@@ -38,7 +38,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 -- 设置 statusline
 vim.o.cmdheight = 1
-vim.opt.updatetime = 40
+vim.opt.updatetime = 5
 vim.opt.clipboard = "unnamedplus"
 
 vim.diagnostic.config({

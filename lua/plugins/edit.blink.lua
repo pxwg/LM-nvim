@@ -3,9 +3,9 @@ return {
   "saghen/blink.cmp",
   -- event = "InsertEnter",
   event = "UIEnter",
-  enabled = true,
+  -- enabled = false,
   -- use a release tag to download pre-built binaries
-  -- version = "*",
+  version = "*",
   -- enabled = true,
   build = "cargo build --release",
   dependencies = {

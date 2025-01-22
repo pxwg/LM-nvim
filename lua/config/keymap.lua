@@ -124,7 +124,7 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
 
 -- enter github repo for plugins
-require("util.plug_url")
+-- require("util.plug_url")
 local function set_keymap_if_in_plugins_dir()
   local current_dir = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
   local plugins_dir = vim.fn.expand("~/.config/nvim/lua/plugins")
