@@ -24,42 +24,18 @@ vim.opt.rtp:prepend(lazypath)
 -- This is also a good place to setup other settings (vim.opt)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
-vim.g.picker = "telescope"
-vim.o.splitkeep = "screen"
-vim.opt.showmode = false
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.expandtab = true
-_G.mode = "error"
--- Enable break indent
-vim.o.breakindent = true
-vim.opt.undofile = true
-vim.opt.number = true
-vim.opt.relativenumber = true
--- 设置 statusline
-vim.o.cmdheight = 1
-vim.opt.updatetime = 5
-vim.opt.clipboard = "unnamedplus"
-
-vim.diagnostic.config({
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = "",
-      [vim.diagnostic.severity.WARN] = "",
-      [vim.diagnostic.severity.INFO] = "",
-      [vim.diagnostic.severity.HINT] = "",
-    },
-    linehl = {
-      [vim.diagnostic.severity.ERROR] = "ErrorMsg",
-    },
-    numhl = {
-      [vim.diagnostic.severity.WARN] = "WarningMsg",
-    },
-  },
-})
-
+require("config.options")
 -- Setup lazy.nvim
 require("lazy").setup({
+  dev = {
+    -- Directory where you store your local plugin projects. If a function is used,
+    -- the plugin directory (e.g. `~/projects/plugin-name`) must be returned.
+    ---@type string | fun(plugin: LazyPlugin): string
+    path = "~",
+    ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub
+    patterns = {}, -- For example {"folke"}
+    fallback = false, -- Fallback to git when local plugin doesn't exist
+  },
   spec = {
     -- import your plugins
     { import = "plugins" },

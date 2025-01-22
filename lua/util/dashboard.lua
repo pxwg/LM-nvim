@@ -11,6 +11,8 @@ end
 
 local function create_empty_buffer()
   vim.cmd("enew")
+  vim.cmd("wincmd J") -- 将窗口移动到最底部
+  vim.cmd("resize") -- 调整窗口大小以覆盖所有其他窗口
   vim.bo.buftype = "nofile"
   vim.bo.bufhidden = "wipe"
   vim.bo.swapfile = false
@@ -123,12 +125,11 @@ local lines = {
 vim.api.nvim_create_autocmd("UIEnter", {
   callback = function()
     if vim.fn.argc() == 0 then
-      vim.cmd("only")
       create_empty_buffer()
+      vim.cmd("only")
       local centered_lines = get_centered_lines(lines)
       set_buffer_lines(centered_lines)
       vim.cmd("setfiletype hello")
     end
-    vim.cmd("only")
   end,
 })

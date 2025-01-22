@@ -5,7 +5,7 @@ return {
   event = "UIEnter",
   -- enabled = false,
   -- use a release tag to download pre-built binaries
-  version = "*",
+  -- version = "*",
   -- enabled = true,
   build = "cargo build --release",
   dependencies = {
@@ -48,21 +48,21 @@ return {
       set_hl("BlinkCmpKind" .. kind, { link = "CmpItemKind" .. kind or "BlinkCmpKind" })
     end
 
-    -- vim.api.nvim_create_autocmd("User", {
-    --   pattern = "BlinkCmpMenuOpen",
-    --   callback = function()
-    --     require("copilot.suggestion").dismiss()
-    --     vim.b.copilot_suggestion_hidden = true
-    --   end,
-    -- })
-    --
-    -- vim.api.nvim_create_autocmd("User", {
-    --   pattern = "BlinkCmpMenuClose",
-    --   callback = function()
-    --     vim.b.copilot_suggestion_hidden = false
-    --   end,
-    -- })
-    --
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "BlinkCmpMenuOpen",
+      callback = function()
+        require("copilot.suggestion").dismiss()
+        vim.b.copilot_suggestion_hidden = true
+      end,
+    })
+
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "BlinkCmpMenuClose",
+      callback = function()
+        vim.b.copilot_suggestion_hidden = false
+      end,
+    })
+
     require("copilot_cmp").setup()
     require("blink.cmp").setup({
       keymap = {
@@ -210,69 +210,69 @@ return {
         },
       },
       appearance = {
-        -- minial icon which is zero
-        kind_icons = {
-          Copilot = "",
-          Text = "",
-          Method = "",
-          Function = "",
-          Constructor = "",
-          Field = "",
-          Variable = "",
-          Property = "",
-          Class = "",
-          Interface = "",
-          Struct = "",
-          Module = "",
-          Unit = "",
-          Value = "",
-          Enum = "",
-          EnumMember = "",
-          Keyword = "",
-          Constant = "",
-          Snippet = "",
-          Color = "",
-          File = "",
-          Reference = "",
-          Folder = "",
-          Event = "",
-          Operator = "",
-          TypeParameter = "",
-        },
+        --   -- minial icon which is zero
+        --   kind_icons = {
+        --     Copilot = "",
+        --     Text = "",
+        --     Method = "",
+        --     Function = "",
+        --     Constructor = "",
+        --     Field = "",
+        --     Variable = "",
+        --     Property = "",
+        --     Class = "",
+        --     Interface = "",
+        --     Struct = "",
+        --     Module = "",
+        --     Unit = "",
+        --     Value = "",
+        --     Enum = "",
+        --     EnumMember = "",
+        --     Keyword = "",
+        --     Constant = "",
+        --     Snippet = "",
+        --     Color = "",
+        --     File = "",
+        --     Reference = "",
+        --     Folder = "",
+        --     Event = "",
+        --     Operator = "",
+        --     TypeParameter = "",
+        --   },
         -- Blink does not expose its default kind icons so you must copy them all (or set your custom ones) and add Copilot
-        -- kind_icons = {
-        --   Copilot = "",
-        --   Text = "",
-        --   Method = "󰊕",
-        --   Function = "󰊕",
-        --   Constructor = "󰒓",
-        --
-        --   Field = "󰜢",
-        --   Variable = "󰆦",
-        --   Property = "󰖷",
-        --
-        --   Class = "󱡠",
-        --   Interface = "󱡠",
-        --   Struct = "󱡠",
-        --   Module = "󰅩",
-        --
-        --   Unit = "󰪚",
-        --   Value = "󰦨",
-        --   Enum = "󰦨",
-        --   EnumMember = "󰦨",
-        --
-        --   Keyword = "󰻾",
-        --   Constant = "󰏿",
-        --
-        --   Snippet = "󱄽",
-        --   Color = "󰏘",
-        --   File = "󰈔",
-        --   Reference = "󰬲",
-        --   Folder = "󰉋",
-        --   Event = "󱐋",
-        --   Operator = "󰪚",
-        --   TypeParameter = "󰬛",
-        -- },
+        kind_icons = {
+          Copilot = "",
+          Text = "",
+          Method = "󰊕",
+          Function = "󰊕",
+          Constructor = "󰒓",
+
+          Field = "󰜢",
+          Variable = "󰆦",
+          Property = "󰖷",
+
+          Class = "󱡠",
+          Interface = "󱡠",
+          Struct = "󱡠",
+          Module = "󰅩",
+
+          Unit = "󰪚",
+          Value = "󰦨",
+          Enum = "󰦨",
+          EnumMember = "󰦨",
+
+          Keyword = "󰻾",
+          Constant = "󰏿",
+
+          Snippet = "󱄽",
+          Color = "󰏘",
+          File = "󰈔",
+          Reference = "󰬲",
+          Folder = "󰉋",
+          Event = "󱐋",
+          Operator = "󰪚",
+          TypeParameter = "󰬛",
+        },
       },
     })
   end,
