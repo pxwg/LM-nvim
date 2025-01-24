@@ -21,7 +21,6 @@ return {
       },
     },
   },
-  -- build = 'cargo build --release',
   config = function()
     -- if last char is number, and the only completion item is provided by rime-ls, accept it
     require("blink.cmp.completion.list").show_emitter:on(function(event)
@@ -167,7 +166,7 @@ return {
         },
       },
       snippets = { preset = "luasnip" },
-      fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
+      -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
         default = { "lsp", "path", "buffer", "copilot" },
         cmdline = {},

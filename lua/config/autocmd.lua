@@ -71,3 +71,21 @@ autocmd("CursorMovedI", {
 
 -- auto change insert mode
 require("util.math_autochange")
+
+-- open rime_ls
+local job_id = vim.fn.jobstart("rime_ls --listen", {
+  on_stdout = function() end,
+  on_stderr = function() end,
+  on_exit = function(_, code)
+    if code ~= 0 then
+      vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
+    end
+  end,
+})
+
+-- Create an autocommand to stop the job when Neovim exits
+vim.api.nvim_create_autocmd("VimLeavePre", {
+  callback = function()
+    vim.fn.jobstop(job_id)
+  end,
+})
