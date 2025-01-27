@@ -44,6 +44,13 @@ autocmd("BufReadPost", {
   end,
 })
 
+autocmd("BufEnter", {
+  pattern = "*.md",
+  callback = function()
+    require("otter").activate()
+  end,
+})
+
 autocmd("VimLeavePre", {
   callback = function()
     local bufs = vim.api.nvim_list_bufs()
