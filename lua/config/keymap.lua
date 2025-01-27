@@ -104,9 +104,9 @@ map({ "n", "i" }, "<C-r>", "<C-o>:redo<CR>", { silent = true })
 -- signature_help
 map(
   { "n" },
-  "<leader>gh",
+  "<leader>sh",
   "<cmd>lua vim.lsp.buf.signature_help()<CR>",
-  { noremap = true, silent = true, desc = "Show Signature [H]elp" }
+  { noremap = true, silent = true, desc = "[S]ignature [H]elp" }
 )
 map(
   { "i" },
