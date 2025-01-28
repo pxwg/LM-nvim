@@ -1,5 +1,5 @@
 local M = {}
-local rime_ls_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat" }
+local rime_ls_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante" }
 
 function M.setup_rime()
   -- global status
