@@ -1,6 +1,7 @@
 return {
   "folke/todo-comments.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
+  event = { "VeryLazy", "BufReadPre" },
   opts = {
     keywords = {
       FIX = {
@@ -10,6 +11,8 @@ return {
         -- signs = false, -- configure signs for some keywords individually
       },
       TODO = { icon = " ", color = "info" },
+      --- History related
+      PAST = { icon = " ", color = "hint", alt = { "PASSED" } },
       HACK = { icon = " ", color = "warning" },
       WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
       PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
@@ -27,3 +30,4 @@ return {
 -- PERF:
 -- OPTIMIZE:
 -- INFO:
+-- PAST: manba out
