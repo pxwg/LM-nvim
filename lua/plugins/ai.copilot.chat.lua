@@ -9,10 +9,11 @@ return {
 
   keys = {
     {
-      "<leader>aa",
+      "<leader>aA",
       function()
         vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
+        -- vim.cmd(":vert wincmd L")
       end,
       desc = "CopilotChat",
     },
@@ -21,6 +22,7 @@ return {
       function()
         vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
+        -- vim.cmd(":vert wincmd L")
       end,
       desc = "CopilotChat",
     },
@@ -41,12 +43,11 @@ return {
       question_header = "󰩃  Doggie  ",
       answer_header = "  Copilot ",
       window = {
-        position = "right", -- Set the position to right
         layout = "float", -- 'vertical', 'horizontal', 'float', 'replace'
         width = 0.4, -- fractional width of parent, or absolute width in columns when > 1
         -- Options below only apply to floating windows
         relative = "cursor", -- 'editor', 'win', 'cursor', 'mouse'
-        border = "solid", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
+        border = "none", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
         row = nil, -- row position of the window, default is centered
         col = nil, -- column position of the window, default is centered
         title = "Copilot Chat", -- title of chat window
