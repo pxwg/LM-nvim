@@ -13,8 +13,17 @@ return {
       HACK = { icon = " ", color = "warning" },
       WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
       PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-      NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
+      NOTA = { icon = " ", color = "hint", alt = { "INFO" } },
       TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
     },
   },
 }
+-- TODO:
+-- HACK:
+-- FIX:
+-- WARN:
+-- NOTA:
+-- TEST:
+-- PERF:
+-- OPTIMIZE:
+-- INFO:
