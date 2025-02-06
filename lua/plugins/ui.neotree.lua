@@ -10,6 +10,13 @@ return {
   },
   keys = {
     {
+      "[",
+      function()
+        vim.cmd("cd ..//")
+      end,
+      desc = "Go to Parent Directory",
+    },
+    {
       "<leader>fe",
       function()
         local reveal_file = vim.fn.expand("%:p")
