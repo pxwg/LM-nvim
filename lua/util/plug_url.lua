@@ -18,6 +18,15 @@ local function get_plugin_names()
   return plugin_names
 end
 
+local function open_github_url(plugin_name)
+  if plugin_name then
+    local url = "https://www.github.com/" .. plugin_name
+    vim.loop.spawn("open", { args = { url } })
+  else
+    print("No valid plugin name found")
+  end
+end
+
 local function show_plugin_menu(plugin_names)
   local lines = {}
   for _, name in ipairs(plugin_names) do
@@ -33,12 +42,12 @@ local function show_plugin_menu(plugin_names)
     border = {
       style = { " ", " ", " ", " ", " ", " ", " ", " " },
       text = {
-        top = "[Choose a Plugin]",
+        top = "Choose a Plugin",
         top_align = "center",
       },
     },
     win_options = {
-      winhighlight = "Normal:TelescopeNormal,FloatBorder:TelescopeNormal",
+      winhighlight = "Normal:TelescopeNormal,FloatBorder:TelescopeBorder,FloatTitle:TelescopePromptTitle",
     },
   }, {
     lines = lines,
@@ -49,6 +58,9 @@ local function show_plugin_menu(plugin_names)
       close = { "q", "<C-c>" },
       submit = { "<CR>", "<Space>" },
     },
+    on_submit = function(item)
+      open_github_url(item.text)
+    end,
   })
 
   -- mount the component
@@ -59,20 +71,10 @@ local function get_plugin_name()
   local plugin_names = get_plugin_names()
 
   if #plugin_names > 1 then
-    return show_plugin_menu(plugin_names)
+    show_plugin_menu(plugin_names)
   elseif #plugin_names == 1 then
-    return plugin_names[1]
+    open_github_url(plugin_names[1])
   end
 end
 
-local function open_github_url()
-  local plugin_name = get_plugin_name()
-  if plugin_name then
-    local url = "https://www.github.com/" .. plugin_name
-    vim.loop.spawn("open", { args = { url } })
-  else
-    print("No valid plugin name found")
-  end
-end
-
-_G.open_github_url = open_github_url
+_G.get_plugin_name = get_plugin_name
