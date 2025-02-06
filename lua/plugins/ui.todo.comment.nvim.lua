@@ -13,6 +13,7 @@ return {
       TODO = { icon = " ", color = "info" },
       --- History related
       PAST = { icon = " ", color = "hint", alt = { "PASSED" } },
+      MARK = { icon = "󰍐 ", color = "hint", alt = { "PASSED" } },
       HACK = { icon = " ", color = "warning" },
       WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
       PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },

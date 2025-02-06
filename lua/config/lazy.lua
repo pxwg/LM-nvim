@@ -100,5 +100,6 @@ vim.api.nvim_create_autocmd("UIEnter", {
     require("config.keymap")
     require("config.autocmd")
     require("util.statusline")
+    require("util.history_search")
   end,
 })

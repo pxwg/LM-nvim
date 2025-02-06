@@ -50,6 +50,16 @@ local function rime_toggle_word()
   end
 end
 
+local function change_cursor_color()
+  if M.rime_toggle_word() == "cn" then
+    vim.cmd("highlight Cursor guifg=#313244 guibg=#74c7ec")
+  else
+    vim.cmd("highlight Cursor guifg=NONE guibg=NONE")
+  end
+end
+
+M.change_cursor_color = change_cursor_color
+
 M.rime_toggle_color = rime_toggle_color
 
 M.rime_toggle_word = rime_toggle_word
