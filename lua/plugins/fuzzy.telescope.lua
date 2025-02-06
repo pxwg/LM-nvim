@@ -184,10 +184,13 @@ return {
           file_browser = { hijack_netrw = true },
         },
         defaults = {
+          preview = {
+            hide_on_startup = false,
+          },
           sorting_strategy = "ascending",
           file_previewer = image_preview.file_previewer,
           buffer_previewer_maker = image_preview.buffer_previewer_maker,
-          layout_strategy = "vertical",
+          layout_strategy = "flex",
           layout_config = { height = 0.7 },
 
           -- prompt_prefix = " ",

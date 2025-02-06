@@ -72,6 +72,7 @@ autocmd("CursorMovedI", {
       require("util.battery").get_battery_icon() .. " ",
     }
     statusline_parts[4] = "[" .. require("util.rime_ls").rime_toggle_word() .. "] "
+    require("util.rime_ls").change_cursor_color()
     vim.o.statusline = table.concat(statusline_parts)
   end,
 })
