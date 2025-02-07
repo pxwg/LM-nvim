@@ -45,18 +45,23 @@ local function set_buffer_lines(lines)
 
   local start_line, end_line, target_line, target_col
   local start_cols, end_cols = {}, {}
+  local ns_id = vim.api.nvim_create_namespace("dashboard_highlight")
+
   for i, line in ipairs(lines) do
     if line:match("%[.-%]") then
       start_line = start_line or i
       end_line = i
       local start_col = line:find("%[")
-      local end_col = line:find("%]") + 1
+      local end_col = line:find("%]")
       start_cols[i] = start_col
       end_cols[i] = end_col
       if not target_line then
         target_line = i
         target_col = start_col
       end
+      -- 添加高亮
+      vim.cmd("highlight DashboardHL guifg=#cba6f7")
+      vim.highlight.range(0, ns_id, "DashboardHL", { i - 1, start_col - 1 }, { i - 1, end_col })
     end
   end
 
