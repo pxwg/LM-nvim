@@ -92,10 +92,10 @@ local function show_plugin_menu(plugin_names)
     lines = lines,
     max_width = 20,
     keymap = {
-      focus_next = { "j", "<Down>", "<Tab>" },
-      focus_prev = { "k", "<Up>", "<S-Tab>" },
+      focus_next = { "j", "<Down>", "<Tab>", "<C-n>" },
+      focus_prev = { "k", "<Up>", "<S-Tab>", "<C-p>" },
       close = { "q", "<C-c>" },
-      submit = { "<CR>", "<Space>" },
+      submit = { "<CR>", "<Space>", "<C-y>" },
     },
     on_submit = function(item)
       local open = item.text:gsub(" :", "")
