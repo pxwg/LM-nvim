@@ -1,19 +1,58 @@
 local Menu = require("nui.menu")
 local event = require("nui.utils.autocmd").event
 
+local function get_first_string(tbl)
+  for _, v in ipairs(tbl) do
+    if type(v) == "string" then
+      return v
+    elseif type(v) == "table" then
+      local result = get_first_string(v)
+      if result then
+        return result
+      end
+    end
+  end
+end
+
 local function get_plugin_names()
   local bufnr = vim.api.nvim_get_current_buf()
   local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local code = table.concat(content, "\n")
 
+  local code_tab = load(code)()
+
   local plugin_names = {}
-  local seen = {}
-  for name in code:gmatch('{%s*"([^"]+/[^"]+)",') do
-    if not seen[name] then
-      table.insert(plugin_names, name)
-      seen[name] = true
+
+  local function process_table(tbl)
+    for _, item in ipairs(tbl) do
+      if type(item) == "table" then
+        table.insert(plugin_names, get_first_string(item))
+        if item.dependencies then
+          for _, dep in ipairs(item.dependencies) do
+            if type(dep) == "string" then
+              table.insert(plugin_names, dep)
+            elseif type(dep) == "table" then
+              table.insert(plugin_names, get_first_string(dep))
+            end
+          end
+        end
+      else
+        table.insert(plugin_names, get_first_string(tbl))
+        if tbl.dependencies then
+          for _, dep in ipairs(tbl.dependencies) do
+            if type(dep) == "string" then
+              table.insert(plugin_names, dep)
+            elseif type(dep) == "table" then
+              table.insert(plugin_names, get_first_string(dep))
+            end
+          end
+        end
+        break
+      end
     end
   end
+
+  process_table(code_tab)
 
   return plugin_names
 end
