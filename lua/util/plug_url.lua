@@ -98,7 +98,8 @@ local function show_plugin_menu(plugin_names)
       submit = { "<CR>", "<Space>" },
     },
     on_submit = function(item)
-      open_github_url(item.text)
+      local open = item.text:gsub(" :", "")
+      open_github_url(open)
     end,
   })
 
@@ -106,11 +107,40 @@ local function show_plugin_menu(plugin_names)
   menu:mount()
 end
 
+-- Define a highlight group for the symbol
+local ns_id = vim.api.nvim_create_namespace("PluginSymbol")
+vim.api.nvim_set_hl(0, "PluginSymbol", { fg = "#74c7ec" })
+vim.api.nvim_set_hl(0, "AuthSymbol", { fg = "#f38ba8" })
+vim.api.nvim_set_hl(0, "NameSymbol", { fg = "#b4befe" })
+
 local function get_plugin_name()
   local plugin_names = get_plugin_names()
 
   if #plugin_names > 1 then
+    for i, name in ipairs(plugin_names) do
+      plugin_names[i] = " :" .. name
+    end
     show_plugin_menu(plugin_names)
+
+    -- Apply the highlight to the symbol
+    for i, name in ipairs(plugin_names) do
+      local line = i - 1 -- Adjust for 0-based indexing
+      local symbol, rest = string.match(name, "^( :)(.+)$")
+      if symbol and rest then
+        local before_slash, after_slash = string.match(rest, "([^/]+)/(.+)")
+        if before_slash and after_slash then
+          vim.highlight.range(0, ns_id, "PluginSymbol", { line, 0 }, { line, #symbol })
+          vim.highlight.range(0, ns_id, "AuthSymbol", { line, #symbol }, { line, #symbol + #before_slash })
+          vim.highlight.range(
+            0,
+            ns_id,
+            "NameSymbol",
+            { line, #symbol + #before_slash + 1 },
+            { line, #symbol + #before_slash + 1 + #after_slash }
+          )
+        end
+      end
+    end
   elseif #plugin_names == 1 then
     open_github_url(plugin_names[1])
   end
