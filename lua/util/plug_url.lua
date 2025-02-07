@@ -110,8 +110,8 @@ end
 -- Define a highlight group for the symbol
 local ns_id = vim.api.nvim_create_namespace("PluginSymbol")
 vim.api.nvim_set_hl(0, "PluginSymbol", { fg = "#74c7ec" })
-vim.api.nvim_set_hl(0, "AuthSymbol", { fg = "#f38ba8" })
-vim.api.nvim_set_hl(0, "NameSymbol", { fg = "#b4befe" })
+vim.api.nvim_set_hl(0, "AuthSymbol", { fg = "#b4befe" })
+vim.api.nvim_set_hl(0, "NameSymbol", { fg = "#f38ba8" })
 
 local function get_plugin_name()
   local plugin_names = get_plugin_names()
