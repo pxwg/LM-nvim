@@ -10,15 +10,13 @@ return {
   build = "cargo build --release",
   dependencies = {
     -- add source
+    "zbirenbaum/copilot-cmp",
+    "zbirenbaum/copilot.lua",
+    "dmitmel/cmp-digraphs",
+    "giuxtaposition/blink-cmp-copilot",
     {
-      "zbirenbaum/copilot-cmp",
-      "zbirenbaum/copilot.lua",
-      "dmitmel/cmp-digraphs",
-      "giuxtaposition/blink-cmp-copilot",
-      {
-        "saghen/blink.compat",
-        opts = { impersonate_nvim_cmp = true, enable_events = true },
-      },
+      "saghen/blink.compat",
+      opts = { impersonate_nvim_cmp = true, enable_events = true },
     },
   },
   config = function()
