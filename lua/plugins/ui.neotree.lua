@@ -10,11 +10,11 @@ return {
   },
   keys = {
     {
-      "[",
+      "g[",
       function()
         vim.cmd("cd ..//")
       end,
-      desc = "Go to Parent Directory",
+      desc = "[G]o to Parent Directory",
     },
     {
       "<leader>fe",
