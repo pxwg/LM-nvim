@@ -12,7 +12,6 @@ return {
   config = function()
     local lspconfig = require("lspconfig")
     local capabilities = vim.lsp.protocol.make_client_capabilities()
-    -- capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
     capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
     capabilities.general.positionEncodings = { "utf-8", "utf-16" }
 
@@ -22,7 +21,6 @@ return {
         require("lspconfig")[server_name].setup({
           offset_encoding = "utf-8", -- wtf? if not set, it shows warning
           capabilities = capabilities,
-          -- on_attach = on_attach,
           settings = {
             Lua = {
               workspace = {
@@ -40,17 +38,5 @@ return {
       -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
       capabilities = capabilities,
     })
-
-    -- lspconfig.lua_ls.setup({
-    --   filetypes = { "lua" },
-    -- settings = {
-    --   Lua = {
-    --     workspace = {
-    --       library = vim.api.nvim_get_runtime_file("", true),
-    --     },
-    --   },
-    -- },
-    -- })
-    -- Add key mappings
   end,
 }
