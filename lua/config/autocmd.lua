@@ -97,3 +97,11 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
     vim.fn.jobstop(job_id)
   end,
 })
+
+-- Enable Treesitter highlighting for Markdown files
+autocmd("FileType", {
+  pattern = "markdown",
+  callback = function()
+    vim.cmd("TSBufEnable highlight")
+  end,
+})

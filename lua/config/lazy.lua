@@ -103,3 +103,8 @@ vim.api.nvim_create_autocmd("UIEnter", {
     require("util.history_search")
   end,
 })
+
+vim.cmd([[  function OpenMarkdownPreview (url)
+    execute "silent ! open -a Firefox -n --args --new-window " . a:url
+  endfunction
+  let g:mkdp_browserfunc = 'OpenMarkdownPreview']])
