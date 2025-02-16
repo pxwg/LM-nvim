@@ -1,8 +1,6 @@
 return {
   "lervag/vimtex",
-  -- lazy = true,
   priority = 100,
-  -- event = "VimEnter",
   config = function()
     vim.cmd([[
 let g:tex_flavor='latex'
