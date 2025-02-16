@@ -10,6 +10,13 @@ let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=0
 set conceallevel=2
 let g:tex_conceal="abdgm"
+" 启用 conceal 功能
+set concealcursor=nc
+
+" 为 Markdown 文件启用 vimtex 的 conceal 设置
+autocmd FileType markdown setlocal conceallevel=2
+autocmd FileType markdown setlocal concealcursor=nc
+
 let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \ {'name': 'ket',
           \  'mathmode': 1,

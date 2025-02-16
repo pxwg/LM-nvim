@@ -43,7 +43,7 @@ local function toggle_rime_if_in_brackets()
 
   if before_cursor:match("\\%a+%{[^}]*$") then
     if vim.g.rime_enabled and not _G.changed_by_this then
-      require("lsp.rime_2").toggle_rime()
+      require("lsp.rime_ls").toggle_rime()
       _G.rime_toggled = false
       _G.rime_ls_active = false
       _G.changed_by_this = true
@@ -51,7 +51,7 @@ local function toggle_rime_if_in_brackets()
   end
   if node:type() == "generic_environment" then
     if not vim.g.rime_enabled and _G.changed_by_this then
-      require("lsp.rime_2").toggle_rime()
+      require("lsp.rime_ls").toggle_rime()
       _G.rime_toggled = true
       _G.rime_ls_active = true
       _G.changed_by_this = not _G.changed_by_this
@@ -74,7 +74,7 @@ local function switch_rime_math_md()
     -- in the mathzone or table or tikz and rime is active, disable rime
     if tex.in_latex() and rime_ls_active == true then
       if _G.rime_toggled == true then
-        require("lsp.rime_2").toggle_rime()
+        require("lsp.rime_ls").toggle_rime()
         _G.rime_toggled = false
       end
       -- in the text but rime is not active(by hand), do nothing
@@ -82,7 +82,7 @@ local function switch_rime_math_md()
       -- in the text but rime is active(by hand ), thus the configuration is for mathzone or table or tikz
     else
       if _G.rime_toggled == false then
-        require("lsp.rime_2").toggle_rime()
+        require("lsp.rime_ls").toggle_rime()
         _G.rime_toggled = true
       end
       if _G.rime_ls_active and _G.rime_toggled then
