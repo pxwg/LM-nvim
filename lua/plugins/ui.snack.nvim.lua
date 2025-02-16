@@ -2,7 +2,7 @@ local battery = require("util.battery")
 return {
   {
     "folke/snacks.nvim",
-    -- enabled = false,
+    enabled = false,
     priority = 10000,
     lazy = false,
     keys = {

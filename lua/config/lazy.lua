@@ -77,6 +77,7 @@ autocmd("UIEnter", {
     vim.cmd("setlocal number")
   end,
 })
+
 autocmd("FileType", {
   pattern = "hello",
   callback = function()
@@ -85,7 +86,7 @@ autocmd("FileType", {
   end,
 })
 
--- require("util.dashboard")
+require("util.dashboard")
 -- autocmd("BufLeave", {
 --   callback = function()
 --     if vim.bo.filetype == "hello" then
