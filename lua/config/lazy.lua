@@ -85,7 +85,7 @@ autocmd("FileType", {
   end,
 })
 
-require("util.dashboard")
+-- require("util.dashboard")
 -- autocmd("BufLeave", {
 --   callback = function()
 --     if vim.bo.filetype == "hello" then
