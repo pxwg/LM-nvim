@@ -132,8 +132,8 @@ map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key
 require("util.plug_url")
 local function set_keymap_if_in_plugins_dir()
   local current_dir = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
-  local plugins_dir = vim.fn.expand("~/.config/nvim/lua/plugins")
-  if current_dir == plugins_dir then
+  -- local plugins_dir = vim.fn.expand("~/.config/nvim/lua/plugins")
+  if current_dir:match("plugins") then
     vim.api.nvim_buf_set_keymap(
       0,
       "n",
@@ -190,7 +190,3 @@ for _, keymap in ipairs(terminal_keymaps_space) do
 end
 
 require("util.cn_char")
-
-vim.keymap.set("n", "ce", ":lua require'jieba_nvim'.change_w()<CR>", { noremap = false, silent = true })
-vim.keymap.set("n", "de", ":lua require'jieba_nvim'.delete_w()<CR>", { noremap = false, silent = true })
-vim.keymap.set("n", "<leader>w", ":lua require'jieba_nvim'.select_w()<CR>", { noremap = false, silent = true })
