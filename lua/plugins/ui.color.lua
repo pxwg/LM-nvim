@@ -22,7 +22,7 @@ return {
             TelescopeBorder = { fg = "#1e1e2e", bg = "#181825" },
             WhichKeyBorder = { fg = "#181825", bg = "#181825" },
             WhichKeyTitle = { fg = "#b4befe", bg = "#181825" },
-            BlinkCmpMenuSelection = { bg = "#313244", fg = "#b4befe", italic = true },
+            BlinkCmpMenuSelection = { fg = "#1e1e2e", bg = "#7dc4e4", italic = true, bold = true },
             CmpItemAbbrDeprecated = { fg = "#b4befe", strikethrough = true },
             CmpItemAbbrMatch = { fg = "#b4befe" },
             CmpItemAbbrMatchFuzzy = { fg = "#b4befe" },
