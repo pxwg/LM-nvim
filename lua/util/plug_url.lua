@@ -26,24 +26,36 @@ local function get_plugin_names()
   local function process_table(tbl)
     for _, item in ipairs(tbl) do
       if type(item) == "table" then
-        table.insert(plugin_names, get_first_string(item))
+        local plugin_name = get_first_string(item)
+        if plugin_name then
+          table.insert(plugin_names, plugin_name)
+        end
         if item.dependencies then
           for _, dep in ipairs(item.dependencies) do
             if type(dep) == "string" then
               table.insert(plugin_names, dep)
             elseif type(dep) == "table" then
-              table.insert(plugin_names, get_first_string(dep))
+              local dep_name = get_first_string(dep)
+              if dep_name then
+                table.insert(plugin_names, dep_name)
+              end
             end
           end
         end
       else
-        table.insert(plugin_names, get_first_string(tbl))
+        local plugin_name = get_first_string(tbl)
+        if plugin_name then
+          table.insert(plugin_names, plugin_name)
+        end
         if tbl.dependencies then
           for _, dep in ipairs(tbl.dependencies) do
             if type(dep) == "string" then
               table.insert(plugin_names, dep)
             elseif type(dep) == "table" then
-              table.insert(plugin_names, get_first_string(dep))
+              local dep_name = get_first_string(dep)
+              if dep_name then
+                table.insert(plugin_names, dep_name)
+              end
             end
           end
         end
