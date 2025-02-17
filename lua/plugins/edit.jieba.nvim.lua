@@ -1,6 +1,6 @@
 return {
   "noearc/jieba.nvim",
-  event = "UIEnter",
+  event = "VeryLazy",
   dependencies = { "noearc/jieba-lua" },
   opts = {},
   keys = {
