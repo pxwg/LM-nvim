@@ -1,8 +1,8 @@
 require("util.rime_blinks")
 return {
   "saghen/blink.cmp",
-  -- event = "InsertEnter",
-  event = "UIEnter",
+  event = "InsertEnter",
+  -- event = "UIEnter",
   -- enabled = false,
   -- use a release tag to download pre-built binaries
   -- version = "*",

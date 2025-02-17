@@ -1,6 +1,6 @@
 return {
   "mrjones2014/smart-splits.nvim",
-  event = "UIEnter",
+  event = "VeryLazy",
   opts = {
     extensions = {
       smart_splits = {

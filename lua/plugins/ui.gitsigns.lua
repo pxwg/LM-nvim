@@ -1,6 +1,6 @@
 return {
   "lewis6991/gitsigns.nvim",
-  event = "UIEnter",
+  event = "VeryLazy",
   enabled = false,
   opts = {
     signs = {

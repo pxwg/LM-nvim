@@ -7,7 +7,7 @@ return {
   },
   {
     "xiyaowong/nvim-transparent",
-    event = "UIEnter",
+    event = "VeryLazy",
     config = true,
   },
 }
