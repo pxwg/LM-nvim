@@ -105,3 +105,20 @@ autocmd("FileType", {
     vim.cmd("TSBufEnable highlight")
   end,
 })
+
+-- Firenvim settings
+
+if vim.g.started_by_firenvim then
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    callback = require("util.firenvim").adjust_minimum_lines,
+  })
+
+  vim.api.nvim_create_autocmd("BufEnter", {
+    callback = require("util.firenvim").adjust_minimum_lines,
+  })
+
+  vim.api.nvim_create_autocmd({ "BufEnter" }, {
+    pattern = "*.txt",
+    command = "set filetype=markdown",
+  })
+end
