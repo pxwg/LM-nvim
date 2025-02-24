@@ -193,3 +193,6 @@ for _, keymap in ipairs(terminal_keymaps_space) do
 end
 
 require("util.cn_char")
+
+-- debug
+map("n", "/", "<cmd>nunmap n<cr>/", { noremap = true, silent = true })
