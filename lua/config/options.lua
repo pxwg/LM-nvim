@@ -13,7 +13,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 -- 设置 statusline
 vim.o.cmdheight = 1
-vim.opt.updatetime = 100
+vim.opt.updatetime = 1
 vim.opt.clipboard = "unnamedplus"
 vim.o.ttyfast = true
 vim.o.lazyredraw = true
