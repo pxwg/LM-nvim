@@ -4,7 +4,8 @@ return {
   config = function()
     vim.cmd([[
 let g:tex_flavor='latex'
-let g:vimtex_view_method = 'skim'
+let g:vimtex_view_method = 'zathura'
+"let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
 let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=0
@@ -16,6 +17,9 @@ set concealcursor=nc
 " 为 Markdown 文件启用 vimtex 的 conceal 设置
 autocmd FileType markdown setlocal conceallevel=2
 autocmd FileType markdown setlocal concealcursor=nc
+
+let g:vimtex_view_method = 'zathura'
+"let g:vimtex_view_general_options = '--synctex-forward @line:@col:@pdf @tex'
 
 let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \ {'name': 'ket',
