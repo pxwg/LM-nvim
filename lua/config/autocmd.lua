@@ -122,3 +122,32 @@ if vim.g.started_by_firenvim then
     command = "set filetype=markdown",
   })
 end
+
+-- avate.nvim
+autocmd("FileType", {
+  pattern = "AvanteInput",
+  callback = function()
+    vim.cmd("LspStart rime_ls")
+    vim.cmd("RenderMarkdown")
+  end,
+})
+
+autocmd("FileType", {
+  pattern = { "Avante", "copilot-chat", "markdown" },
+  callback = function()
+    vim.cmd("RenderMarkdown")
+    vim.cmd("TSBufEnable highlight")
+  end,
+})
+
+-- auto close avante buffer
+autocmd("VimLeavePre", {
+  callback = function()
+    local bufs = vim.api.nvim_list_bufs()
+    for _, buf in ipairs(bufs) do
+      if string.match(vim.bo[buf].filetype, "Avante") then
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+    end
+  end,
+})

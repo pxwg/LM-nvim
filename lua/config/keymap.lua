@@ -92,6 +92,9 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 map({ "n", "v", "i" }, "<C-s>", function()
   save_and_delete_last_line()
   vim.cmd("stopinsert")
+  if vim.bo.filetype ~= "tex" then
+    require("conform").format()
+  end
 end, { noremap = true, silent = true })
 
 --better j but can't be used with esc
