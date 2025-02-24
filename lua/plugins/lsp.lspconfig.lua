@@ -28,6 +28,10 @@ return {
               },
             },
           },
+          -- 设置 root_dir 以确保正确的工作目录
+          root_dir = function(fname)
+            return lspconfig.util.root_pattern(".git")(fname) or vim.loop.os_homedir()
+          end,
         })
       end,
     })
