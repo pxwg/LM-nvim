@@ -1,4 +1,4 @@
---- @type "telescope" | "fzf"
+-- @type "telescope" | "fzf"
 vim.g.picker = "telescope"
 vim.o.splitkeep = "screen"
 vim.opt.showmode = false
