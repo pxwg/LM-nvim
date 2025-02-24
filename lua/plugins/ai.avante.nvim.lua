@@ -1,33 +1,14 @@
 return {
   "yetone/avante.nvim",
   event = "VeryLazy",
+  -- lazy = false,
   version = false, -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
-  provider = "openai",
-  auto_suggestions_provider = "openai", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
   opts = {
-    openai = {
-      endpoint = "https://api.deepseek.com/v1",
-      model = "deepseek-chat",
-      timeout = 30000, -- Timeout in milliseconds
-      temperature = 0,
-      max_tokens = 4096,
-      ["local"] = false,
-    },
-  },
-
-  keys = {
-    {
-      "<leader>aa",
-      function()
-        vim.cmd("AvanteChat")
-        vim.cmd("LspStart rime_ls")
-        -- vim.cmd(":vert wincmd L")
-      end,
-      desc = "CopilotChat",
-    },
+    provider = "copilot",
+    auto_suggestions_provider = "copilot", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
   },
   dependencies = {
     "stevearc/dressing.nvim",
@@ -50,6 +31,24 @@ return {
           },
           -- required for Windows users
           use_absolute_path = true,
+        },
+      },
+    },
+    {
+      -- Make sure to set this up properly if you have lazy=true
+      "MeanderingProgrammer/render-markdown.nvim",
+      priority = 10,
+      -- event = "UIEnter",
+      opts = {
+        file_types = { "markdown", "Avante", "copilot-chat" },
+        heading = {
+          sign = false,
+          icons = { "󰼏 ", "󰎨 " },
+          position = "inline",
+          width = "block",
+          left_margin = 0.5,
+          left_pad = 0.2,
+          right_pad = 0.2,
         },
       },
     },
