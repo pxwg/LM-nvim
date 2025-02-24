@@ -17,7 +17,7 @@ vim.opt.updatetime = 1
 vim.opt.clipboard = "unnamedplus"
 vim.o.ttyfast = true
 vim.o.lazyredraw = true
-
+vim.opt.laststatus = 3
 vim.diagnostic.config({
   signs = {
     text = {
