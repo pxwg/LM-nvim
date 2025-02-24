@@ -1,6 +1,15 @@
 return {
   "stevearc/conform.nvim",
   event = "BufReadPre",
+  keys = {
+    {
+      "<leader>cf",
+      function()
+        require("conform").format()
+      end,
+      desc = "[C]ode [F]ormatter",
+    },
+  },
   opts = {
     formatters_by_ft = {
       lua = { "stylua" },
@@ -8,10 +17,10 @@ return {
       tex = { "latexindent" },
       yml = { "yq" },
     },
-    format_on_save = {
-      timeout_ms = 500,
-      lsp_format = "fallback",
-    },
+    -- format_on_save = {
+    --   timeout_ms = 500,
+    --   lsp_format = "fallback",
+    -- },
     ignore_errors = false,
     -- Map of treesitter language to filetype
     lang_to_ft = {
