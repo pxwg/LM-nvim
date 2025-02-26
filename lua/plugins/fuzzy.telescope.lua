@@ -4,7 +4,7 @@ return {
     enabled = function()
       return vim.g.picker == "telescope"
     end,
-    event = "UIEnter",
+    event = "VeryLazy",
     dependencies = {
       "nvim-telescope/telescope.nvim",
       "kkharji/sqlite.lua",
