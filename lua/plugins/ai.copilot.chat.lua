@@ -20,7 +20,7 @@ return {
     {
       "<C-c>",
       function()
-        vim.cmd("CopilotChatToggle")
+        vim.cmd("AvanteAsk")
         vim.cmd("LspStart rime_ls")
         -- vim.cmd(":vert wincmd L")
       end,
