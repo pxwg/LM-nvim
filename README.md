@@ -18,3 +18,5 @@
 * 基于 [better-escape](https://github.com/max397574/better-escape.nvim)的无阻碍文本快捷键 (如`jj` 退出插入模式，`jn` 切换输入法等等)，不会在 `vim.o.timeoutlen` 时间内阻碍输入。
 
 更多杂项配置可以参考本仓库，也可以查找本人过去的配置 (大而全，基于[LazyVim](https://github.com/LazyVim/LazyVim)，因为维护总是要看社区的习惯，有时候会引入破坏性更新，我不是特别喜欢)。过去的配置会陆续转移到这里，但这个配置会专注于工作流本身的优化，而对新特性的增加保持谨慎态度。
+
+部分配置可能需要自行安装依赖，如`rime-ls`，`zathura` ，`Hammerspoon` 等。它们的官方文档和 issue 都是很好的参考。部分配置针对 macos 优化，但类似思想应当不难扩展到其他平台。
