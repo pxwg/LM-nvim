@@ -26,6 +26,9 @@ return {
               workspace = {
                 library = vim.api.nvim_get_runtime_file("", true),
               },
+              diagnostics = {
+                globals = { "hs" },
+              },
             },
           },
           -- 设置 root_dir 以确保正确的工作目录
