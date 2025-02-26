@@ -1,5 +1,7 @@
 # 极小 neovim 输入方案，仅包含必要的输入插件，专注于快速输入
 
+![dashboard](./readme_fig/dashboard.png)
+
 本插件是我自己使用的 neovim 插件，它包含了一套我个人逐渐修改的输入方案与工作流。包含
 
 * 输入法，基于[rime-ls](https://github.com/wlh320/rime-ls) 与 [blink-cmp](https://github.com/Saghen/blink.cmp) 实现。这是本配置最为关键的部分，经过一定个性化修改，支持：
