@@ -68,6 +68,38 @@ map("n", "<C-h>", function()
   end
 end, { noremap = true, silent = true, desc = "Move to left window" })
 
+local function DeleteLastCommandHistory()
+  -- Get the current command history
+  local history = vim.fn.histget("cmd", -1)
+
+  -- Check if there is a command to delete
+  if history ~= "" then
+    -- Delete the last command from the history
+    vim.fn.histdel("cmd", -1)
+  else
+  end
+end
+
+function ChNeovim()
+  if is_leftmost_window() then
+    vim.fn.system("hs -c 'focusPreviousWindow()'")
+    DeleteLastCommandHistory()
+  else
+    vim.cmd("wincmd h")
+    DeleteLastCommandHistory()
+  end
+end
+
+function ClNeovim()
+  if is_rightmost_window() then
+    vim.fn.system("hs -c 'focusPreviousWindow()'")
+    DeleteLastCommandHistory()
+  else
+    vim.cmd("wincmd l")
+    DeleteLastCommandHistory()
+  end
+end
+
 -- move between windows
 map("n", "<C-j>", "<C-w>j", { silent = true })
 map("n", "<C-k>", "<C-w>k", { silent = true })

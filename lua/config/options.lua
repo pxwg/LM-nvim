@@ -1,5 +1,6 @@
 -- @type "telescope" | "fzf"
 vim.g.picker = "telescope"
+vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"
 vim.opt.showmode = false
 vim.opt.tabstop = 2

@@ -129,6 +129,7 @@ autocmd("FileType", {
   callback = function()
     vim.cmd("LspStart rime_ls")
     vim.cmd("RenderMarkdown")
+    vim.api.nvim_buf_set_keymap(0, "n", "q", ":q<CR>", { noremap = true, silent = true })
   end,
 })
 
@@ -149,5 +150,20 @@ autocmd("VimLeavePre", {
         vim.api.nvim_buf_delete(buf, { force = true })
       end
     end
+  end,
+})
+
+-- Generate a unique log file name for each Neovim instance
+local function get_front_window_id()
+  local result = vim.fn.system("hs -c 'GetWinID()'")
+  return result:match("%d+")
+end
+
+local log_file = vim.fn.expand("~/.local/state/nvim/windows/") .. get_front_window_id() .. "_nvim_startup.log"
+
+-- Delete the unique log file on Neovim exit
+autocmd("VimLeavePre", {
+  callback = function()
+    os.remove(log_file)
   end,
 })
