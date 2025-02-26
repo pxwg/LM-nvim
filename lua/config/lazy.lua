@@ -102,6 +102,20 @@ vim.api.nvim_create_autocmd("UIEnter", {
     require("config.autocmd")
     require("util.statusline")
     require("util.history_search")
+    local function get_front_window_id()
+      local result = vim.fn.system("hs -c 'GetWinID()'")
+      return result:match("%d+")
+    end
+    local log_file = vim.fn.expand("~/.local/state/nvim/windows/") .. get_front_window_id() .. "_nvim_startup.log"
+
+    -- Record current window number and servername on Neovim startup
+    local current_win = get_front_window_id()
+    local servername = vim.fn.eval("v:servername")
+    local file = io.open(log_file, "w")
+    if file then
+      file:write(current_win .. "\n" .. servername)
+      file:close()
+    end
   end,
 })
 
