@@ -96,11 +96,12 @@ require("util.dashboard")
 --   end,
 -- })
 
-vim.api.nvim_create_autocmd("UIEnter", {
+require("util.statusline")
+vim.api.nvim_create_autocmd("User", {
+  pattern = "VeryLazy",
   callback = function()
     require("config.keymap")
     require("config.autocmd")
-    require("util.statusline")
     require("util.history_search")
     local function get_front_window_id()
       local result = vim.fn.system("hs -c 'GetWinID()'")
