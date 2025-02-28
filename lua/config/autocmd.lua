@@ -167,3 +167,31 @@ autocmd("VimLeavePre", {
     os.remove(log_file)
   end,
 })
+
+-- -- searching
+-- --- @param a string
+-- --- @param b string
+-- --- @return nil
+-- local function fold_paragraphs(a, b)
+--   local bufnr = vim.api.nvim_get_current_buf()
+--
+--   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+--
+--   local start_fold = nil
+--
+--   for i, line in ipairs(lines) do
+--     if line:find(a) then
+--       start_fold = i
+--     elseif line:find(b) and start_fold then
+--       vim.cmd(string.format("%d,%dfold", start_fold, i))
+--       start_fold = nil
+--     end
+--   end
+-- end
+--
+-- autocmd("BufWritePre", {
+--   pattern = "*.md",
+--   callback = function()
+--     fold_paragraphs("pdf", "end")
+--   end,
+-- })

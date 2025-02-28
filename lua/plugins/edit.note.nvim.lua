@@ -1,5 +1,5 @@
 return {
-  "pxwg/note.nvim",
+  "pxwg/phonograph.nvim",
   event = "VeryLazy",
   dependencies = {
     "MunifTanjim/nui.nvim",
