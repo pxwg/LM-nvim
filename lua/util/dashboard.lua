@@ -130,7 +130,7 @@ local lines = {
   "",
 }
 
-vim.api.nvim_create_autocmd("UIEnter", {
+vim.api.nvim_create_autocmd({ "UIEnter", "VimResized" }, {
   callback = function()
     if vim.fn.argc() == 0 then
       create_empty_buffer()
