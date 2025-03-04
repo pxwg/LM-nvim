@@ -38,22 +38,22 @@ return {
       },
     },
     {
-      -- Make sure to set this up properly if you have lazy=true
       "MeanderingProgrammer/render-markdown.nvim",
-      priority = 10,
-      -- event = "UIEnter",
       opts = {
-        file_types = { "markdown", "Avante", "copilot-chat" },
+        code = {
+          sign = false,
+          width = "block",
+          right_pad = 1,
+        },
         heading = {
           sign = false,
-          icons = { "󰼏 ", "󰎨 " },
-          position = "inline",
-          width = "block",
-          left_margin = 0.5,
-          left_pad = 0.2,
-          right_pad = 0.2,
+          icons = {},
+        },
+        checkbox = {
+          enabled = false,
         },
       },
+      ft = { "markdown", "norg", "rmd", "org", "codecompanion" },
     },
   },
 }

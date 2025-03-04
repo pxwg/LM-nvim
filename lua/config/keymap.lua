@@ -122,7 +122,9 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 
 --save
 map({ "n", "v", "i" }, "<C-s>", function()
-  save_and_delete_last_line()
+  -- save_and_delete_last_line()
+  -- vim.cmd("stopinsert")
+  vim.cmd("w")
   vim.cmd("stopinsert")
   if vim.bo.filetype ~= "tex" then
     require("conform").format()
@@ -227,4 +229,104 @@ end
 require("util.cn_char")
 
 -- debug
-map("n", "/", "<cmd>nunmap n<cr>/", { noremap = true, silent = true })
+map("n", "/", function()
+  local success = pcall(function()
+    vim.cmd("nunmap n")
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("/", "n", true)
+  else
+    vim.api.nvim_feedkeys("/", "n", true)
+  end
+end, { noremap = true, silent = true })
+
+-- jieba_nvim
+map({ "x", "n" }, "B", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_B()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("B", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "b", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_b()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("b", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "w", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_w()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("w", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "W", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_W()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("W", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "E", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_E()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("E", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "e", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_e()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("e", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "ge", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_ge()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("ge", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+map({ "x", "n" }, "gE", function()
+  local success = pcall(function()
+    require("jieba_nvim").wordmotion_gE()
+  end)
+  if not success then
+    vim.api.nvim_feedkeys("gE", "n", true)
+  end
+end, { noremap = false, silent = true })
+
+local function jump_forward()
+  local current_position = vim.fn.line(".")
+  local jump_list = vim.fn.getjumplist()[1]
+  local jump_index = vim.fn.getjumplist()[2]
+
+  if jump_index < #jump_list then
+    local next_jump = jump_list[jump_index + 1]
+    if next_jump.lnum ~= current_position then
+      vim.api.nvim_win_set_cursor(0, { next_jump.lnum, next_jump.col })
+      vim.fn.setjumplist(jump_index + 1)
+    end
+  end
+end
+
+map("n", "<C-I>", function()
+  jump_forward()
+end, { noremap = true, silent = true })
