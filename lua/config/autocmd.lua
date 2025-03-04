@@ -184,6 +184,7 @@ local function trim_trailing_blank_lines()
 
   -- Set the buffer lines, removing trailing blank lines
   vim.api.nvim_buf_set_lines(0, last_non_blank, -1, false, {})
+  vim.cmd("silent! undojoin")
 end
 
 -- Create a command to run the function
@@ -200,8 +201,6 @@ autocmd("BufReadPost", {
   callback = function()
     vim.opt_local.spell = true
     vim.cmd("set foldmethod=marker")
-    -- vim.schedule(function()
-    --   vim.cmd("ZenMode")
-    -- end)
+    vim.cmd("normal! zM")
   end,
 })
