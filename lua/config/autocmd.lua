@@ -168,30 +168,40 @@ autocmd("VimLeavePre", {
   end,
 })
 
--- -- searching
--- --- @param a string
--- --- @param b string
--- --- @return nil
--- local function fold_paragraphs(a, b)
---   local bufnr = vim.api.nvim_get_current_buf()
---
---   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
---
---   local start_fold = nil
---
---   for i, line in ipairs(lines) do
---     if line:find(a) then
---       start_fold = i
---     elseif line:find(b) and start_fold then
---       vim.cmd(string.format("%d,%dfold", start_fold, i))
---       start_fold = nil
---     end
---   end
--- end
---
--- autocmd("BufWritePre", {
---   pattern = "*.md",
---   callback = function()
---     fold_paragraphs("pdf", "end")
---   end,
--- })
+-- Function to trim trailing blank lines from the current buffer
+local function trim_trailing_blank_lines()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local last_non_blank = #lines
+
+  -- Find the last non-blank line
+  for i = #lines, 1, -1 do
+    if lines[i]:match("^%s*$") then
+      last_non_blank = i - 1
+    else
+      break
+    end
+  end
+
+  -- Set the buffer lines, removing trailing blank lines
+  vim.api.nvim_buf_set_lines(0, last_non_blank, -1, false, {})
+end
+
+-- Create a command to run the function
+vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_lines, {})
+
+-- Optionally, you can run the function automatically on save
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*",
+  callback = trim_trailing_blank_lines,
+})
+
+autocmd("BufReadPost", {
+  pattern = "*.md",
+  callback = function()
+    vim.opt_local.spell = true
+    vim.cmd("set foldmethod=marker")
+    -- vim.schedule(function()
+    --   vim.cmd("ZenMode")
+    -- end)
+  end,
+})
