@@ -20,7 +20,19 @@ local get_visual = function(args, parent)
 end
 
 return {
-  -- 马原论文引用快捷键
+  s(
+    { trig = "dates", wordTrig = true, snippetType = "autosnippet" },
+    f(function()
+      return os.date("%Y-%m-%d")
+    end)
+  ),
+  s(
+    { trig = "libais", wordTrig = true, snippetType = "autosnippet" },
+    f(function()
+      return os.date("%A") -- %A returns the full weekday name
+    end)
+  ),
+  s({ trig = "tds", wordTrig = true, snippetType = "autosnippet" }, fmta("- [ ] <>", { i(0) })),
   s(
     { trig = "inp", wordTrig = true, snippetType = "autosnippet", trigEngine = "ecma" },
     fmta([[*“<>”* <>]], { i(1), i(0) })

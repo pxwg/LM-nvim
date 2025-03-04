@@ -42,7 +42,7 @@ return {
           mode = { "i", "s" },
         },
         {
-          "<c-h>",
+          "<c-b>",
           "<Plug>luasnip-next-choice",
           mode = { "i", "s" },
         },

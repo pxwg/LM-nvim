@@ -26,6 +26,7 @@ local function set_keymaps(picker)
     f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>'
       or ':lua require("telescope.builtin").find_files()<cr>',
     g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ':lua require("telescope.builtin").live_grep()<cr>',
+    w = ":lua require('kiwi').open_wiki_index('personal')<cr>",
     s = ':lua require("persistence").load({ last = true })<cr>',
     l = ":Lazy<cr>",
     r = picker == "fzf" and ':lua require("fzf-lua").oldfiles()<cr>'
@@ -119,6 +120,7 @@ local lines = {
   "[F]ind Files       ",
   "[R]ecent Files     ",
   "[P]hysics Notes    ",
+  "[W]iki Personal    ",
   "[G]rep Words       ",
   "[C]onfig Files     ",
   "[S]ync Session     ",

@@ -16,6 +16,7 @@ return {
       plaintex = { "latexindent" },
       tex = { "latexindent" },
       yml = { "yq" },
+      markdown = { "autocorrect" },
     },
     -- format_on_save = {
     --   timeout_ms = 500,
