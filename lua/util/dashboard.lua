@@ -29,8 +29,9 @@ local function set_keymaps(picker)
     w = ":lua require('kiwi').open_wiki_index('personal')<cr>",
     s = ':lua require("persistence").load({ last = true })<cr>',
     l = ":Lazy<cr>",
-    r = picker == "fzf" and ':lua require("fzf-lua").oldfiles()<cr>'
-      or ':lua require("telescope.builtin").oldfiles()<cr>',
+    r = picker == "fzf"
+        and ':lua require("fzf-lua").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>'
+      or ':lua require("telescope.builtin").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>',
     q = ":q<cr>",
     p = ":cd ~/Desktop/physics/notes/<cr>",
   }

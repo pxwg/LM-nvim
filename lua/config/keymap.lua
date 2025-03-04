@@ -124,11 +124,11 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 map({ "n", "v", "i" }, "<C-s>", function()
   -- save_and_delete_last_line()
   -- vim.cmd("stopinsert")
-  vim.cmd("w")
-  vim.cmd("stopinsert")
   if vim.bo.filetype ~= "tex" then
     require("conform").format()
   end
+  vim.cmd("w")
+  vim.cmd("stopinsert")
 end, { noremap = true, silent = true })
 
 --better j but can't be used with esc
@@ -330,3 +330,11 @@ end
 map("n", "<C-I>", function()
   jump_forward()
 end, { noremap = true, silent = true })
+
+map("n", "<leader>nf", function()
+  require("util.note").process_markdown_image_link()
+end, { noremap = true, silent = true, desc = "[N]ote [F]igure (single)" })
+
+map("n", "<leader>nF", function()
+  require("util.note").process_all_markdown_image_links()
+end, { noremap = true, silent = true, desc = "[N]ote [F]igures (all)" })
