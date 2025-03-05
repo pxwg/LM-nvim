@@ -17,11 +17,6 @@ local function copy_image_to_destination(src_path, dest_path)
   end
 end
 
-copy_image_to_destination(
-  "/var/folders/5c/4r2cgs0s3394590rm2t4fh4h0000gn/T/TemporaryItems/NSIRD_screencaptureui_ZDjTpA/截屏2025-03-03%2020.44.38.png",
-  "/Users/pxwg-dogggie/Documents/personal-wiki/fig/截屏2025-03-03 20.44.38.png"
-)
-
 local function update_image_link(line, new_path)
   return line:gsub("!%[(.*)%]%((.*)%)", string.format("![%s](%s)", "%1", new_path))
 end

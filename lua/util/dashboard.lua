@@ -130,7 +130,10 @@ local lines = {
   "",
 }
 
+local group_id = vim.api.nvim_create_augroup("DashboardGroup", { clear = true })
+
 vim.api.nvim_create_autocmd({ "UIEnter", "VimResized" }, {
+  group = group_id,
   callback = function()
     if vim.fn.argc() == 0 then
       create_empty_buffer()
@@ -139,5 +142,12 @@ vim.api.nvim_create_autocmd({ "UIEnter", "VimResized" }, {
       set_buffer_lines(centered_lines)
       vim.cmd("setfiletype hello")
     end
+  end,
+})
+
+vim.api.nvim_create_autocmd("BufWipeout", {
+  group = group_id,
+  callback = function()
+    vim.api.nvim_del_augroup_by_id(group_id)
   end,
 })
