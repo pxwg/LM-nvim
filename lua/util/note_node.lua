@@ -13,16 +13,20 @@ local function get_relative_note_path(file_path, current_buffer_path)
   local clean_file_path = file_path:gsub("/Documents", "")
   local clean_buffer_path = current_buffer_path:gsub("/Documents", "")
 
+  local file_parts = vim.split(clean_file_path, "/")
+  local buffer_parts = vim.split(clean_buffer_path, "/")
+
   local i = 1
-  while
-    i <= #clean_file_path
-    and i <= #clean_buffer_path
-    and clean_file_path:sub(i, i) == clean_buffer_path:sub(i, i)
-  do
+  while i <= #file_parts and i <= #buffer_parts and file_parts[i] == buffer_parts[i] do
     i = i + 1
   end
 
-  local relative_path = clean_file_path:sub(i)
+  local relative_parts = {}
+  for j = i, #file_parts do
+    table.insert(relative_parts, file_parts[j])
+  end
+
+  local relative_path = table.concat(relative_parts, "/")
 
   return "./" .. relative_path
 end
