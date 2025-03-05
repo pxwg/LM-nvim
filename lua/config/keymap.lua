@@ -1,5 +1,7 @@
 local map = vim.keymap.set
 local cn = require("util.autocorrect")
+local fit = require("util.fit")
+
 require("util.fast_keymap")
 
 -- windows with hammerspoon function
@@ -332,9 +334,48 @@ map("n", "<C-I>", function()
 end, { noremap = true, silent = true })
 
 map("n", "<leader>nf", function()
-  require("util.note").process_markdown_image_link()
+  require("util.note_fig").process_markdown_image_link()
 end, { noremap = true, silent = true, desc = "[N]ote [F]igure (single)" })
 
 map("n", "<leader>nF", function()
-  require("util.note").process_all_markdown_image_links()
+  require("util.note_fig").process_all_markdown_image_links()
 end, { noremap = true, silent = true, desc = "[N]ote [F]igures (all)" })
+
+-- workout fit
+map("n", "<leader>nv", function()
+  local line = vim.api.nvim_get_current_line()
+
+  if line ~= "" then
+    local tables = fit.generate_working_tables(line)
+    local total_volume = fit.calculate_total_volume(tables)
+    print("Total volume: " .. total_volume)
+  end
+end, { noremap = true, silent = true, desc = "[N]ote [V]olume (single)" })
+
+map("v", "<leader>nV", function()
+  local start_line = vim.fn.line("v")
+  local end_line = vim.fn.line(".")
+  if start_line > end_line then
+    start_line, end_line = end_line, start_line
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+  local total_weight = 0
+
+  for _, line in ipairs(lines) do
+    if line ~= "" then
+      local tables = fit.generate_working_tables(line)
+      local line_weight = fit.calculate_total_volume(tables)
+      total_weight = total_weight + line_weight
+    end
+  end
+  vim.api.nvim_buf_set_lines(0, end_line + 1, end_line + 1, false, { "Total weight: " .. total_weight })
+end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
+
+map("n", "<leader>nn", function()
+  if vim.bo.filetype == "markdown" then
+    local path = vim.fn.expand("%:p")
+    vim.cmd("nohlsearch")
+    require("util.note_node").search_file_name_in_dir(path)
+  end
+end)

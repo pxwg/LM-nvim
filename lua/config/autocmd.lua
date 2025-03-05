@@ -204,3 +204,11 @@ autocmd("BufReadPost", {
     vim.cmd("normal! zM")
   end,
 })
+
+autocmd("VimResized", {
+  callback = function()
+    vim.cmd("wincmd =")
+  end,
+})
+
+require("util.note_md")
