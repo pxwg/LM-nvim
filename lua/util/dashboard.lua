@@ -141,6 +141,7 @@ vim.api.nvim_create_autocmd({ "UIEnter", "VimResized" }, {
       local centered_lines = get_centered_lines(lines)
       set_buffer_lines(centered_lines)
       vim.cmd("setfiletype hello")
+      vim.cmd("setlocal nowrap")
     end
   end,
 })
