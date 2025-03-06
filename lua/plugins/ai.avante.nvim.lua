@@ -47,13 +47,13 @@ return {
         },
         heading = {
           sign = false,
-          icons = {},
+          icons = { "󰎤 ", "󰎧 ", "󰎪 ", "󰎭 ", "󰎱 ", "󰎳 " },
         },
         checkbox = {
           enabled = false,
         },
       },
-      ft = { "markdown", "norg", "rmd", "org", "codecompanion" },
+      ft = { "markdown", "norg", "rmd", "org", "codecompanion", "Avante" },
     },
   },
 }
