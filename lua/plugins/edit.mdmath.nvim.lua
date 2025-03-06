@@ -2,9 +2,9 @@ return {
   "Thiago4532/mdmath.nvim",
   ft = { "markdown" },
   enabled = false,
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-  },
+  -- dependencies = {
+  --   "nvim-treesitter/nvim-treesitter",
+  -- },
   opts = { dynamic = true },
 
   -- The build is already done by default in lazy.nvim, so you don't need

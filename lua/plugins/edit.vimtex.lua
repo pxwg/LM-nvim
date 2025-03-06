@@ -1,23 +1,23 @@
 return {
-  "lervag/vimtex",
-  priority = 100,
-  config = function()
-    vim.cmd([[
+  {
+    "lervag/vimtex",
+    priority = 100,
+    -- ft = { "latex", "markdown" },
+    -- enable = false,
+    config = function()
+      vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
+      vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
+      vim.cmd([[
 let g:tex_flavor='latex'
 let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
-let g:vimtex_quickfix_mode=0
+"let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=0
 set conceallevel=2
-let g:tex_conceal="abdgm"
+"let g:tex_conceal="abdgm"
 " 启用 conceal 功能
-set concealcursor=nc
-
-" 为 Markdown 文件启用 vimtex 的 conceal 设置
-autocmd FileType markdown setlocal conceallevel=2
-autocmd FileType markdown setlocal concealcursor=nc
-
+"set concealcursor=nc
 let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_general_options = '--synctex-forward @line:@col:@pdf @tex'
 
@@ -45,11 +45,11 @@ let g:vimtex_syntax_conceal = {
           \ 'math_fracs': 1,
           \ 'math_super_sub': 1,
           \ 'math_symbols': 1,
-          \ 'sections': 0,
+          \ 'sections': 1,
           \ 'styles': 1,
           \}
 ]])
-    vim.cmd([[
+      vim.cmd([[
 let g:vimtex_compiler_latexmk = {
         \ 'aux_dir' : '',
         \ 'out_dir' : '',
@@ -65,5 +65,13 @@ let g:vimtex_compiler_latexmk = {
         \ ],
         \}
 ]])
-  end,
+    end,
+  },
+  {
+    "ixru/nvim-markdown",
+    config = function()
+      vim.cmd([[let g:vim_markdown_math = 1]])
+      vim.cmd([[let g:vim_markdown_conceal = 2]])
+    end,
+  },
 }
