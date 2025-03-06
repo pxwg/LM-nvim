@@ -12,7 +12,7 @@ return {
   },
   opts = {
     formatters_by_ft = {
-      lua = { "stylua" },
+      lua = { "stylua", "injected" },
       plaintex = { "latexindent" },
       tex = { "latexindent" },
       yml = { "yq" },

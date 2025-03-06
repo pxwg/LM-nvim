@@ -13,6 +13,7 @@ return {
           mocha = {
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2e
             Conceal = { fg = "#f5c2e7" },
+            SnacksImageMath = { fg = "#cdd6f4" },
             TelescopeeTitle = { fg = "#1e1e2e", bg = "#eba0ac" },
             TelescopePromptTitle = { fg = "#1e1e2e", bg = "#f5c2e7", italic = true, bold = true },
             TelescopePreviewTitle = { fg = "#1e1e2e", bg = "#b4befe", bold = true },

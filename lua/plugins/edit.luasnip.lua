@@ -35,6 +35,13 @@ return {
           mode = "s",
         },
         {
+          "<S-Tab>",
+          function()
+            require("luasnip").jump(-1)
+          end,
+          mode = { "i", "s" },
+        },
+        {
           "<C-j>",
           function()
             require("luasnip").jump(-1)
