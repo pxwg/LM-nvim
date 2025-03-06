@@ -378,4 +378,17 @@ map("n", "<leader>nn", function()
     vim.cmd("nohlsearch")
     require("util.note_node").search_file_name_in_dir(path)
   end
-end)
+end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+
+-- smart tab for copilot, insertion and completion via luasnip
+map("i", "<Tab>", function()
+  local success = require("copilot.suggestion").is_visible()
+  local jumpable = require("luasnip").jumpable(1)
+  if jumpable then
+    require("luasnip").jump(1)
+  elseif not success then
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
+  else
+    require("copilot.suggestion").accept_line()
+  end
+end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
