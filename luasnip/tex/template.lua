@@ -150,13 +150,12 @@ return {
     { trig = "eqt", snippetType = "autosnippet" },
     fmta(
       [[
-        <>\begin{equation}
+        \begin{equation}
           <>
         \end{equation}<>]],
       {
-        i(0),
         i(1),
-        i(2),
+        i(0),
       }
     ),
     { condition = line_begin }
@@ -166,13 +165,12 @@ return {
     { trig = "eqs", snippetType = "autosnippet" },
     fmta(
       [[
-        <>\begin{equation*}
+        \begin{equation*}
           <>
         \end{equation*}<>]],
       {
-        i(0),
         i(1),
-        i(2),
+        i(0),
       }
     ),
     { condition = line_begin }
