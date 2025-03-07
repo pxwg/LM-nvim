@@ -10,8 +10,10 @@ function M.insert_item()
     local prev_line = vim.fn.getline(insert_line)
     local indent = prev_line:match("^%s*")
 
-    vim.fn.append(insert_line, indent .. "\\item ")
-    vim.api.nvim_win_set_cursor(0, { insert_line + 1, 1000000 })
+    vim.schedule(function()
+      vim.fn.append(insert_line, indent .. "\\item ")
+      vim.api.nvim_win_set_cursor(0, { insert_line + 1, 1000000 })
+    end)
   else
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
   end
@@ -27,16 +29,18 @@ function M.insert_item_on_newline(is_above)
     if is_above then
       vim.fn.append(insert_line - 1, indent .. "\\item ")
       vim.api.nvim_win_set_cursor(0, { insert_line, 1000000 })
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("a", true, false, true), "n", true)
     else
       vim.fn.append(insert_line, indent .. "\\item ")
       vim.api.nvim_win_set_cursor(0, { insert_line + 1, 1000000 })
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("a", true, false, true), "n", true)
     end
   else
     -- Simulate 'o' or 'O' based on the is_above flag
     if is_above then
-      vim.cmd("normal! O")
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), "n", true)
     else
-      vim.cmd("normal! o")
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
     end
   end
 end
