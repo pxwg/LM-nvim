@@ -99,12 +99,12 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 })
 
 -- Enable Treesitter highlighting for Markdown files
-autocmd("FileType", {
-  pattern = "markdown",
-  callback = function()
-    vim.cmd("TSBufEnable highlight")
-  end,
-})
+-- autocmd("FileType", {
+--   pattern = "markdown",
+--   callback = function()
+--     vim.cmd("TSBufEnable highlight")
+--   end,
+-- })
 
 -- Firenvim settings
 
@@ -199,14 +199,22 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 autocmd("FileType", {
   pattern = "markdown",
   callback = function()
-    -- vim.cmd("TSBufDisable highlight")
+    --     vim.cmd("TSBufEnable highlight")
     vim.opt_local.spell = true
-    vim.cmd("set foldmethod=marker")
     vim.cmd("normal! zM")
+  end,
+})
+
+autocmd("BufEnter", {
+  pattern = "*.md",
+  callback = function()
     vim.cmd([[
       syn include @tex syntax/tex.vim
       syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
       syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
+      "syn region mkdCodeBlock start="^```" end="^```" contains=@Spell
+      "syn region mkdMath matchgroup=mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend containedin= mkdCodeBlock
+      "syn region mkdMath matchgroup=mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend containedin= mkdCodeBlock
     ]])
   end,
 })

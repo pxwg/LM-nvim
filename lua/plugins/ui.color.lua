@@ -12,13 +12,13 @@ return {
         highlight_overrides = {
           mocha = {
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2e
-            Conceal = { fg = "#f5c2e7" },
-            mkdLink = { fg = "#7dc4e4" },
-            htmlItalic = { fg = "#f5c2e7", italic = true },
-            mkdItalic = { fg = "#f5c2e7", italic = true },
+            Conceal = { fg = "#f5c2e7", bg = "" },
+            -- mkdLink = { fg = "#7dc4e4" },
+            -- htmlItalic = { fg = "#f5c2e7", italic = true },
+            -- mkdItalic = { fg = "#f5c2e7", italic = true },
             --- Bold would be Green
-            mkdBold = { fg = "#89b4fa", bold = true },
-            htmlBold = { fg = "#89b4fa", bold = true },
+            -- mkdBold = { fg = "#89b4fa", bold = true },
+            -- htmlBold = { fg = "#89b4fa", bold = true },
             ["@markup.math"] = { fg = "" },
             ["@text.math"] = { fg = "" },
             SnacksImageMath = { fg = "#eba0ac" },

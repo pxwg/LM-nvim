@@ -398,9 +398,9 @@ map("i", "<Tab>", function()
 end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
 
 map("i", "<CR>", function()
-  if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_below()
-  elseif vim.bo.filetype == "tex" then
+  -- if vim.bo.filetype == "markdown" then
+  -- return nt_file.new_line_below()
+  if vim.bo.filetype == "tex" then
     return require("util.tex_item").insert_item()
   else
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
