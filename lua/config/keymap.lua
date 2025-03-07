@@ -1,6 +1,7 @@
 local map = vim.keymap.set
 local cn = require("util.autocorrect")
 local fit = require("util.fit")
+local nt_file = require("util.note_file_index")
 
 require("util.fast_keymap")
 
@@ -384,11 +385,48 @@ end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 map("i", "<Tab>", function()
   local success = require("copilot.suggestion").is_visible()
   local jumpable = require("luasnip").jumpable(1)
+  -- local regex_match = vim.fn.searchpair("[([{<|“‘《]", "", "[)\\]}>|”’》]", "W") > 0
   if jumpable then
     require("luasnip").jump(1)
+  elseif success then
+    require("copilot.suggestion").accept_line()
   elseif not success then
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
   else
     require("copilot.suggestion").accept_line()
   end
 end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
+
+map("i", "<CR>", function()
+  if vim.bo.filetype == "markdown" then
+    return nt_file.new_line_below()
+  elseif vim.bo.filetype == "tex" then
+    return require("util.tex_item").insert_item()
+  else
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
+  end
+end)
+
+map("n", "o", function()
+  if vim.bo.filetype == "markdown" then
+    return nt_file.new_line_below()
+  elseif vim.bo.filetype == "tex" then
+    require("util.tex_item").insert_item_on_newline(false)
+    return vim.cmd("startinsert!")
+  else
+    vim.cmd("normal! o")
+    vim.cmd("startinsert")
+  end
+end)
+
+map("n", "O", function()
+  if vim.bo.filetype == "markdown" then
+    return nt_file.new_line_above()
+  elseif vim.bo.filetype == "tex" then
+    require("util.tex_item").insert_item_on_newline(true)
+    return vim.cmd("startinsert!")
+  else
+    vim.cmd("normal! O")
+    vim.cmd("startinsert")
+  end
+end)

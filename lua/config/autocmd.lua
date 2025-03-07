@@ -134,7 +134,7 @@ autocmd("FileType", {
 })
 
 autocmd("FileType", {
-  pattern = { "Avante", "copilot-chat", "markdown" },
+  pattern = { "Avante", "copilot-chat" },
   callback = function()
     vim.cmd("RenderMarkdown")
     vim.cmd("TSBufEnable highlight")
@@ -196,12 +196,18 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   callback = trim_trailing_blank_lines,
 })
 
-autocmd("BufReadPost", {
-  pattern = "*.md",
+autocmd("FileType", {
+  pattern = "markdown",
   callback = function()
+    -- vim.cmd("TSBufDisable highlight")
     vim.opt_local.spell = true
     vim.cmd("set foldmethod=marker")
     vim.cmd("normal! zM")
+    vim.cmd([[
+      syn include @tex syntax/tex.vim
+      syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
+      syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
+    ]])
   end,
 })
 
