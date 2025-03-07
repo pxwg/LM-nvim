@@ -403,30 +403,27 @@ map("i", "<CR>", function()
   elseif vim.bo.filetype == "tex" then
     return require("util.tex_item").insert_item()
   else
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
+    -- return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
   end
-end)
+end, { noremap = true, silent = true, expr = true })
 
 map("n", "o", function()
   if vim.bo.filetype == "markdown" then
     return nt_file.new_line_below()
   elseif vim.bo.filetype == "tex" then
     require("util.tex_item").insert_item_on_newline(false)
-    return vim.cmd("startinsert!")
   else
-    vim.cmd("normal! o")
-    vim.cmd("startinsert")
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
   end
 end)
 
 map("n", "O", function()
   if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_above()
+    return nt_file.new_line_below()
   elseif vim.bo.filetype == "tex" then
     require("util.tex_item").insert_item_on_newline(true)
-    return vim.cmd("startinsert!")
   else
-    vim.cmd("normal! O")
-    vim.cmd("startinsert")
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), "n", true)
   end
 end)
