@@ -212,9 +212,21 @@ autocmd("BufEnter", {
       syn include @tex syntax/tex.vim
       syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
       syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
-      "syn region mkdCodeBlock start="^```" end="^```" contains=@Spell
-      "syn region mkdMath matchgroup=mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend containedin= mkdCodeBlock
-      "syn region mkdMath matchgroup=mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend containedin= mkdCodeBlock
+      syn match markdownH1 "^# .*$"
+      syn match markdownH2 "^## .*$"
+      syn match markdownH3 "^### .*$"
+      syn match markdownH4 "^#### .*$"
+      syn match markdownH5 "^##### .*$"
+      syn match markdownH6 "^###### .*$"
+
+      " Link syntax to highlight groups
+      highlight link markdownH1 rainbow1
+      highlight link markdownH2 rainbow2
+      highlight link markdownH3 rainbow3
+      highlight link markdownH4 rainbow4
+      highlight link markdownH5 rainbow5
+      highlight link markdownH6 rainbow6
+
     ]])
   end,
 })
