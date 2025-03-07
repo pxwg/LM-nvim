@@ -73,7 +73,8 @@ let g:vimtex_compiler_latexmk = {
   },
   {
     "ixru/nvim-markdown",
-    enabled = false,
+    -- event = "VeryLazy",
+    -- enabled = false,
     config = function()
       vim.cmd([[let g:vim_markdown_math = 1]])
       vim.cmd([[let g:vim_markdown_conceal = 2]])
