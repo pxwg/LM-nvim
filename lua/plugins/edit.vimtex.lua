@@ -21,6 +21,10 @@ set conceallevel=2
 let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_general_options = '--synctex-forward @line:@col:@pdf @tex'
 
+let g:vimtex_syntax_custom_cmds = [
+      \ {'name': 'exp', 'cmdre': 'exp>', 'mathmode': 1, 'argstyle': 'bold', 'concealchar': 'E'},
+      \ {'name': 'R', 'cmdre': 'R>', 'mathmode': 1, 'concealchar': 'ℝ'},
+      \]
 let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \ {'name': 'ket',
           \  'mathmode': 1,
@@ -69,9 +73,11 @@ let g:vimtex_compiler_latexmk = {
   },
   {
     "ixru/nvim-markdown",
+    enabled = false,
     config = function()
       vim.cmd([[let g:vim_markdown_math = 1]])
       vim.cmd([[let g:vim_markdown_conceal = 2]])
+      vim.cmd([[let g:vim_markdown_no_default_key_mappings = 1]])
     end,
   },
 }

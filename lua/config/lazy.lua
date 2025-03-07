@@ -120,7 +120,7 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
-vim.cmd([[  function OpenMarkdownPreview (url)
-    execute "silent ! open -a Firefox -n --args --new-window " . a:url
-  endfunction
-  let g:mkdp_browserfunc = 'OpenMarkdownPreview']])
+-- vim.cmd([[  function OpenMarkdownPreview (url)
+--     execute "! open -a Google\ Chrome --args --new-window " . a:url
+--   endfunction
+--   let g:mkdp_browserfunc = 'OpenMarkdownPreview']])

@@ -8,7 +8,7 @@ return {
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   opts = {
     provider = "copilot",
-    auto_suggestions_provider = "copilot", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
+    -- auto_suggestions_provider = "copilot", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
     rag_service = {
       enabled = false, -- Enables the rag service, requires OPENAI_API_KEY to be set
     },
@@ -47,10 +47,29 @@ return {
         },
         heading = {
           sign = false,
-          icons = { "󰎤 ", "󰎧 ", "󰎪 ", "󰎭 ", "󰎱 ", "󰎳 " },
+          icons = { "󰎤  ", "󰎧  ", "󰎪  ", "󰎭  ", "󰎱  ", "󰎳  " },
         },
         checkbox = {
           enabled = false,
+        },
+        win_options = { conceallevel = { rendered = 2 } },
+        latex = {
+          -- Turn on / off latex rendering.
+          enabled = false,
+          -- Additional modes to render latex.
+          render_modes = true,
+          -- Executable used to convert latex formula to rendered unicode.
+          converter = "latex2text",
+          -- Highlight for latex blocks.
+          highlight = "RenderMarkdownMath",
+          -- Determines where latex formula is rendered relative to block.
+          -- | above | above latex block |
+          -- | below | below latex block |
+          position = "above",
+          -- Number of empty lines above latex blocks.
+          top_pad = 0,
+          -- Number of empty lines below latex blocks.
+          bottom_pad = 0,
         },
       },
       ft = { "markdown", "norg", "rmd", "org", "codecompanion", "Avante" },

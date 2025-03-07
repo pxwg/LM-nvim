@@ -77,13 +77,7 @@ M.in_table = function()
 end
 -- -- For markdown
 M.in_latex = function()
-  local captures = vim.treesitter.get_captures_at_cursor(0)
-  for _, capture in ipairs(captures) do
-    if capture == "markup.math" then
-      return "math"
-    end
-  end
-  return false
+  return vim.fn["vimtex#syntax#in_mathzone"]() == 1
 end
 
 M.clean = function()
