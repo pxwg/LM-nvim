@@ -186,6 +186,8 @@ return {
         defaults = {
           preview = {
             hide_on_startup = false,
+            treesitter = true,
+            hilight_limit = false,
           },
           sorting_strategy = "ascending",
           file_previewer = image_preview.file_previewer,

@@ -53,7 +53,7 @@ return {
       highlight = {
         enable = true,
         -- additional_vim_regex_highlighting = false,
-        -- additional_vim_regex_highlighting = { "latex", "markdown" },
+        -- additional_vim_regex_highlighting = { "markdown" },
         disable = { "latex" },
       },
     })
