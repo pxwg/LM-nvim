@@ -120,30 +120,6 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
--- vim.cmd([[  function OpenMarkdownPreview (url)
---     execute "! open -a Google\ Chrome --args --new-window " . a:url
---   endfunction
---   let g:mkdp_browserfunc = 'OpenMarkdownPreview']])
-vim.cmd([[
-      syn include @tex syntax/tex.vim
-      syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
-      syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
-      syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
-      highlight link mkdTaskItem RenderMarkdownTodo
+require("util.note_node_path")
 
-      syn match markdownH1 "^# .*$"
-      syn match markdownH2 "^## .*$"
-      syn match markdownH3 "^### .*$"
-      syn match markdownH4 "^#### .*$"
-      syn match markdownH5 "^##### .*$"
-      syn match markdownH6 "^###### .*$"
-
-      " Link syntax to highlight groups
-      highlight link markdownH1 rainbow1
-      highlight link markdownH2 rainbow2
-      highlight link markdownH3 rainbow3
-      highlight link markdownH4 rainbow4
-      highlight link markdownH5 rainbow5
-      highlight link markdownH6 rainbow6
-
-    ]])
+require("util.note_node_get_graph")

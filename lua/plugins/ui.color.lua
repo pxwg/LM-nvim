@@ -12,16 +12,33 @@ return {
         highlight_overrides = {
           mocha = {
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2e
+            --- Math in md
             Conceal = { fg = "#f5c2e7", bg = "" },
-            -- mkdLink = { fg = "#7dc4e4" },
-            -- htmlItalic = { fg = "#f5c2e7", italic = true },
-            -- mkdItalic = { fg = "#f5c2e7", italic = true },
-            --- Bold would be Green
-            -- mkdBold = { fg = "#89b4fa", bold = true },
-            -- htmlBold = { fg = "#89b4fa", bold = true },
             ["@markup.math"] = { fg = "" },
             ["@text.math"] = { fg = "" },
+            ["@markup.link.label.markdown_inline"] = { fg = "#7dc4e4" },
             SnacksImageMath = { fg = "#eba0ac" },
+            --- Math in tex
+            texEnvArgName = { fg = "#9399b3" },
+            texOptEqual = { fg = "#7dc4e4" },
+            texMathDelim = { fg = "#f9e2af" },
+            texFileArg = { fg = "#b4befe" },
+            texPartConcArgTitle = { fg = "#89b4fa", bold = true },
+            texCmdRef = { fg = "#7dc4e4" },
+            texCmdEnv = { fg = "#b4befe", italic = true },
+            texCmdInput = { fg = "#7dc4e4", italic = true },
+            texCmdClass = { fg = "#eba0ac", italic = true, bold = true },
+            texRefArg = { fg = "#f5c2e7", bold = true },
+            Function = { fg = "" },
+            -- Delimiter = { fg = "" },
+            Include = { fg = "" },
+            Label = { fg = "" },
+            texMathDelimZoneTD = { fg = "" },
+            -- Special = { fg = "" },
+            ["@function.macro"] = { fg = "" },
+            ["@variable.parameter"] = { fg = "" },
+            ["@string.special.path.latex"] = { fg = "" },
+            --- Telescope
             TelescopeeTitle = { fg = "#1e1e2e", bg = "#eba0ac" },
             TelescopePromptTitle = { fg = "#1e1e2e", bg = "#f5c2e7", italic = true, bold = true },
             TelescopePreviewTitle = { fg = "#1e1e2e", bg = "#b4befe", bold = true },

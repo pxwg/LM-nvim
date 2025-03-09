@@ -1,4 +1,47 @@
 local autocmd = vim.api.nvim_create_autocmd
+local function mkdMath()
+  vim.cmd([[
+      set foldmethod=marker
+      syn include @tex /Users/pxwg-dogggie/.local/share/nvim/lazy/vimtex/syntax/tex.vim
+
+
+syn region mkdMath
+      \ start="\$" end="\$"
+      \ skip="\\\$"
+      \ containedin=@markdownTop
+      \ contains=@tex
+      \ keepend
+      \ oneline
+
+syn region mkdMath
+      \ start="\$\$" end="\$\$"
+      \ skip="\\\$"
+      \ containedin=@markdownTop
+      \ contains=@tex
+      \ keepend
+
+      syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
+      highlight link mkdTaskItem RenderMarkdownTodo
+      syn match mkdItemDot /^\s*\*/
+      highlight link mkdItemDot @markup.list
+
+      syn match markdownH1 "^# .*$"
+      syn match markdownH2 "^## .*$"
+      syn match markdownH3 "^### .*$"
+      syn match markdownH4 "^#### .*$"
+      syn match markdownH5 "^##### .*$"
+      syn match markdownH6 "^###### .*$"
+
+      " Link syntax to highlight groups
+      highlight link markdownH1 rainbow1
+      highlight link markdownH2 rainbow2
+      highlight link markdownH3 rainbow3
+      highlight link markdownH4 rainbow4
+      highlight link markdownH5 rainbow5
+      highlight link markdownH6 rainbow6
+
+    ]])
+end
 
 -- set up rime_ls lsp when enter tex
 autocmd("FileType", {
@@ -136,8 +179,9 @@ autocmd("FileType", {
 autocmd("FileType", {
   pattern = { "Avante", "copilot-chat" },
   callback = function()
-    vim.cmd("RenderMarkdown")
-    vim.cmd("TSBufEnable highlight")
+    vim.cmd("set filetype=markdown")
+    -- vim.cmd("RenderMarkdown")
+    -- vim.cmd("TSBufEnable highlight")
   end,
 })
 
@@ -197,40 +241,16 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 autocmd("FileType", {
-  pattern = "markdown",
+  pattern = { "Avante", "copilot-chat", "markdown" },
   callback = function()
-    --     vim.cmd("TSBufEnable highlight")
-    vim.opt_local.spell = true
-    vim.cmd("normal! zM")
+    mkdMath()
   end,
 })
 
-autocmd("BufEnter", {
-  pattern = "*.md",
+autocmd({ "BufEnter", "BufWinEnter" }, {
+  pattern = { "*.md", "*.Avante", "*.copilot-chat" },
   callback = function()
-    vim.cmd([[
-      syn include @tex syntax/tex.vim
-      syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
-      syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
-      syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
-      highlight link mkdTaskItem RenderMarkdownTodo
-
-      syn match markdownH1 "^# .*$"
-      syn match markdownH2 "^## .*$"
-      syn match markdownH3 "^### .*$"
-      syn match markdownH4 "^#### .*$"
-      syn match markdownH5 "^##### .*$"
-      syn match markdownH6 "^###### .*$"
-
-      " Link syntax to highlight groups
-      highlight link markdownH1 rainbow1
-      highlight link markdownH2 rainbow2
-      highlight link markdownH3 rainbow3
-      highlight link markdownH4 rainbow4
-      highlight link markdownH5 rainbow5
-      highlight link markdownH6 rainbow6
-
-    ]])
+    mkdMath()
   end,
 })
 
@@ -242,33 +262,11 @@ autocmd("VimResized", {
 
 require("util.note_md")
 
-vim.api.nvim_create_autocmd("User", {
-  pattern = "TelescopePreviewerLoaded",
-  callback = function(args)
-    if args.data.filetype == "markdown" then
-      vim.cmd([[
-      syn include @tex syntax/tex.vim
-      syn region mkdMath start="\\\@<!\$" end="\$" skip="\\\$" contains=@tex keepend
-      syn region mkdMath start="\\\@<!\$\$" end="\$\$" skip="\\\$" contains=@tex keepend
-      syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
-      highlight link mkdTaskItem RenderMarkdownTodo
-
-      syn match markdownH1 "^# .*$"
-      syn match markdownH2 "^## .*$"
-      syn match markdownH3 "^### .*$"
-      syn match markdownH4 "^#### .*$"
-      syn match markdownH5 "^##### .*$"
-      syn match markdownH6 "^###### .*$"
-
-      " Link syntax to highlight groups
-      highlight link markdownH1 rainbow1
-      highlight link markdownH2 rainbow2
-      highlight link markdownH3 rainbow3
-      highlight link markdownH4 rainbow4
-      highlight link markdownH5 rainbow5
-      highlight link markdownH6 rainbow6
-
-    ]])
-    end
-  end,
-})
+-- vim.api.nvim_create_autocmd("User", {
+--   pattern = "TelescopePreviewerLoaded",
+--   callback = function(args)
+--     if args.data.filetype == "markdown" then
+--       mkdMath()
+--     end
+--   end,
+-- })

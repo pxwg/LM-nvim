@@ -30,6 +30,12 @@ let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \  'mathmode': 1,
           \  'cchar_open': '|',
           \  'cchar_close': '>'},
+          \ {'name': 'frac',
+          \  'nargs': 2,
+          \  'mathmode': 1,
+          \  'cchar_open': '',
+          \  'cchar_mid': '/',
+          \  'cchar_close': ''},
           \ {'name': 'binom',
           \  'nargs': 2,
           \  'mathmode': 1,
@@ -74,7 +80,7 @@ let g:vimtex_compiler_latexmk = {
   {
     "ixru/nvim-markdown",
     -- event = "VeryLazy",
-    -- enabled = false,
+    enabled = false,
     config = function()
       vim.cmd([[let g:vim_markdown_math = 1]])
       vim.cmd([[let g:vim_markdown_conceal = 2]])
