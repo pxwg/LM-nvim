@@ -37,7 +37,6 @@ return {
       [[
 % !TeX program = xelatex
 \documentclass[14pt]{<>}
-\usepackage[mocha,styleAll]{catppuccinpalette}
 \input{../preamble.tex}
 \fancyhf{}
 \fancypagestyle{plain}{
