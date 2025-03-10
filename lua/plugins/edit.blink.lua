@@ -129,7 +129,7 @@ return {
           "fallback",
         },
       },
-      cmdline = {enabled = false},
+      cmdline = { enabled = false },
       completion = {
         ghost_text = { enabled = true },
         documentation = {
@@ -167,7 +167,7 @@ return {
       snippets = { preset = "luasnip" },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
-        default = { "lsp", "path", "buffer", "copilot" },
+        default = { "lsp", "path", "buffer", "copilot", "lazydev" },
         providers = {
           lsp = {
             min_keyword_length = 0,
@@ -186,6 +186,12 @@ return {
               end
               return items
             end,
+          },
+          lazydev = {
+            name = "LazyDev",
+            module = "lazydev.integrations.blink",
+            -- make lazydev completions top priority (see `:h blink.cmp`)
+            score_offset = 100,
           },
           buffer = { max_items = 5 },
           copilot = {
