@@ -50,8 +50,8 @@ return {
 
         -- This is what I changed to make my images look smaller, like a
         -- thumbnail, the default value is 50
-        -- max_height_window_percentage = 20,
-        max_height_window_percentage = 40,
+        max_height_window_percentage = 100,
+        max_height_window_percentage = 100,
 
         -- toggles images when windows are overlapped
         window_overlap_clear_enabled = false,
