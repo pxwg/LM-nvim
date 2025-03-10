@@ -24,8 +24,8 @@ return {
         float = false,
         -- Sets the size of the image
         -- max_width = 60,
-        max_width = vim.g.neovim_mode == "skitty" and 20 or 40,
-        max_height = vim.g.neovim_mode == "skitty" and 10 or 20,
+        max_width = vim.g.neovim_mode == "skitty" and 20 or 60,
+        max_height = vim.g.neovim_mode == "skitty" and 10 or 40,
         -- max_height = 30,
         -- Apparently, all the images that you preview in neovim are converted
         -- to .png and they're cached, original image remains the same, but
