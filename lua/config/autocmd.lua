@@ -262,11 +262,11 @@ autocmd("VimResized", {
 
 require("util.note_md")
 
--- vim.api.nvim_create_autocmd("User", {
---   pattern = "TelescopePreviewerLoaded",
---   callback = function(args)
---     if args.data.filetype == "markdown" then
---       mkdMath()
---     end
---   end,
--- })
+vim.api.nvim_create_autocmd("User", {
+  pattern = "TelescopePreviewerLoaded",
+  callback = function(args)
+    if args.data.filetype == "markdown" then
+      vim.cmd("TSBufDisable highlight")
+    end
+  end,
+})
