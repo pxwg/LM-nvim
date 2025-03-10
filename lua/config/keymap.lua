@@ -377,7 +377,8 @@ map("n", "<leader>nn", function()
   if vim.bo.filetype == "markdown" then
     local path = vim.fn.expand("%:p")
     vim.cmd("nohlsearch")
-    require("util.note_node").search_file_name_in_dir(path)
+    local inlines = require("util.note_node_get_graph").get_buffer_inlines_node()
+    require("util.note_node_get_graph").show_buffer_inlines_menu(inlines)
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
@@ -403,8 +404,7 @@ map("i", "<CR>", function()
   if vim.bo.filetype == "tex" then
     return require("util.tex_item").insert_item()
   else
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
-    -- return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
   end
 end, { noremap = true, silent = true, expr = true })
 
@@ -420,7 +420,7 @@ end)
 
 map("n", "O", function()
   if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_below()
+    return nt_file.new_line_above()
   elseif vim.bo.filetype == "tex" then
     require("util.tex_item").insert_item_on_newline(true)
   else
