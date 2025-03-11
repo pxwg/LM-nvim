@@ -54,6 +54,7 @@ function double_chain:forward()
   end
 end
 
+--- TODO: while link is url, open it!
 local function show_buffer_inlines_menu(buffer_inlines)
   if #buffer_inlines == 0 then
     vim.notify("No References", vim.log.levels.WARN)
