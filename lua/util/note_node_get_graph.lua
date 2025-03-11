@@ -38,7 +38,7 @@ function double_chain:forward()
   -- local bufpath = filename .. ".md"
   local filename = vim.fn.expand("%:t:r")
   local bufpath = vim.fn.expand("%:p")
-  local command = string.format("rg -o '\\[.*?\\]\\((.*?)\\)' %s", bufpath)
+  local command = string.format("rg -o '\\[.*?\\]\\((.*?.md)\\)' %s", bufpath)
   local handle = io.popen(command)
   if handle then
     local result = handle:read("*a")
