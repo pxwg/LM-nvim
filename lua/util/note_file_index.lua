@@ -295,4 +295,33 @@ function M.new_line_below()
   newline(insert_line, folded)
 end
 
+function M.new_line_above()
+  local insert_line = vim.fn.line(".")
+  local folded
+
+  local bullet = parse_bullet(insert_line)
+
+  if vim.fn.mode() == "i" then
+    local column = vim.api.nvim_win_get_cursor(0)[2] + 1
+    local line = vim.api.nvim_get_current_line()
+
+    -- Normal return if in the middle of a line, or there is no bullet
+    if column < #line or not bullet then
+      key = vim.api.nvim_replace_termcodes("<CR><Up>", true, false, true)
+      vim.api.nvim_feedkeys(key, "n", true)
+      return
+    end
+  else
+    if vim.fn.foldclosed(".") > 0 then
+      insert_line = vim.fn.foldclosed(".")
+      folded = true
+    elseif not bullet then
+      vim.api.nvim_feedkeys("O", "n", true)
+      return
+    end
+  end
+
+  newline(insert_line - 1, folded)
+end
+
 return M

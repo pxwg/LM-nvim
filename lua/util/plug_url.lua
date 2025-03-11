@@ -91,14 +91,16 @@ local function show_plugin_menu(plugin_names)
       height = 5,
     },
     border = {
-      style = { " ", " ", " ", " ", " ", " ", " ", " " },
+      -- style = { " ", " ", " ", " ", " ", " ", " ", " " },
+      style = "rounded",
       text = {
         top = "Choose a Plugin",
         top_align = "center",
       },
     },
     win_options = {
-      winhighlight = "Normal:TelescopeNormal,FloatBorder:TelescopeBorder,FloatTitle:TelescopePromptTitle",
+      -- winblend = 10,
+      winhighlight = "Normal:Normal",
     },
   }, {
     lines = lines,
@@ -110,7 +112,7 @@ local function show_plugin_menu(plugin_names)
       submit = { "<CR>", "<Space>", "<C-y>" },
     },
     on_submit = function(item)
-      local open = item.text:gsub(" :", "")
+      local open = item.text:gsub(" : ", "")
       open_github_url(open)
     end,
   })

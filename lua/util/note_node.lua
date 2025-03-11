@@ -9,6 +9,8 @@ local function get_file_name(file_path)
   return file_path:match("^.+/(.+)$")
 end
 
+M.get_file_name = get_file_name
+
 local function get_relative_note_path(file_path, current_buffer_path)
   local clean_file_path = file_path:gsub("/Documents", "")
   local clean_buffer_path = current_buffer_path:gsub("/Documents", "")
@@ -30,6 +32,8 @@ local function get_relative_note_path(file_path, current_buffer_path)
 
   return "./" .. relative_path
 end
+
+M.get_relative_note_path = get_relative_note_path
 
 -- Function to handle the selection from Telescope and insert formatted string
 --- @param file_path string
@@ -56,11 +60,6 @@ local function extract_name(input_string)
   return input_string:match(".*/(.-)%.%w+:%w+")
 end
 
--- {{{url: Nerd Fonts - Iconic font aggregator
--- Nerd Fonts - Iconic font aggregator
--- 251451434
--- https://www.nerdfonts.com/cheat-sheet
--- }}}
 -- Function to search for a file name in a directory using Telescope
 --- @param file_path string
 function M.search_file_name_in_dir(file_path)
