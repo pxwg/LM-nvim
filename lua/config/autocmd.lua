@@ -19,6 +19,10 @@ syn region mkdMath
       \ contains=@tex
       \ keepend
 
+      syn match mkdTaskItem /\v^\s*-\s*\[\s*s*\]/
+      highlight link mkdTaskItem RenderMarkdownTodo
+      syn match mkdItemDash /^\s*-\s/
+      highlight link mkdItemDash @markup.list
       syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
       highlight link mkdTaskItem RenderMarkdownTodo
       syn match mkdItemDot /^\s*\*/
