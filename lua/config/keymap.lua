@@ -373,14 +373,14 @@ map("v", "<leader>nV", function()
   vim.api.nvim_buf_set_lines(0, end_line + 1, end_line + 1, false, { "Total weight: " .. total_weight })
 end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 
-map("n", "<leader>ng", function()
+map("n", "<leader>nn", function()
   if vim.bo.filetype == "markdown" then
     local path = vim.fn.expand("%:p")
     vim.cmd("nohlsearch")
     local inlines = require("util.note_node_get_graph").get_buffer_inlines_node()
     require("util.note_node_get_graph").show_buffer_inlines_menu(inlines)
   end
-end, { noremap = true, silent = true, desc = "[N]ote [G]o" })
+end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 -- smart tab for copilot, insertion and completion via luasnip
 map("i", "<Tab>", function()
