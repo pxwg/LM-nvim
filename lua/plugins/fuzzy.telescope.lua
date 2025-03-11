@@ -40,6 +40,8 @@ return {
         function()
           require("telescope.builtin").find_files({
             cwd = require("util.cwd_attach").cwd(),
+            layout_strategy = "horizontal",
+            layout_config = { width = 0.5 },
           })
         end,
         desc = "Find Files (cwd)",
@@ -193,7 +195,7 @@ return {
           file_previewer = image_preview.file_previewer,
           buffer_previewer_maker = image_preview.buffer_previewer_maker,
           layout_strategy = "flex",
-          layout_config = { height = 0.7 },
+          layout_config = { height = 0.3 },
 
           -- prompt_prefix = " ",
           prompt_prefix = "  ",
@@ -231,7 +233,7 @@ return {
           find_files = {
             find_command = find_command,
             hidden = true,
-            theme = "ivy",
+            -- theme = "ivy",
           },
         },
       }
