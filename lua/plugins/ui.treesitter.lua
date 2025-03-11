@@ -1,4 +1,4 @@
-require("util.lazyfile")
+require("util.lazyfile").lazy_file()
 return {
   "nvim-treesitter/nvim-treesitter",
   -- enabled = false,

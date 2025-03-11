@@ -21,6 +21,14 @@ end
 
 return {
   s(
+    { trig = "H(%d)", regTrig = true, wordTrig = true, snippetType = "autosnippet" },
+    f(function(_, snip)
+      local level = tonumber(snip.captures[1])
+      return string.rep("#", level) .. " "
+    end),
+    { condition = line_begin }
+  ),
+  s(
     { trig = "dates", wordTrig = true, snippetType = "autosnippet" },
     f(function()
       return os.date("%Y-%m-%d")

@@ -55,6 +55,40 @@ return {
             CmpItemAbbrDefault = { fg = "#b4befe" },
             CmpItemAbbr = { fg = "#bac2de" },
           },
+          lattie = {
+            -- Normal         xxx guifg=#4c4f69 guibg=#ffffff
+            --- Math in md
+            Conceal = { fg = "#d3869b", bg = "" },
+            ["@markup.math"] = { fg = "#4c4f69" },
+            ["@text.math"] = { fg = "#4c4f69" },
+            ["@markup.link.label.markdown_inline"] = { fg = "#458588" },
+            SnacksImageMath = { fg = "#cc241d" },
+            --- Math in tex
+            texEnvArgName = { fg = "#7c6f64" },
+            texOptEqual = { fg = "#458588" },
+            texMathDelim = { fg = "#d79921" },
+            texFileArg = { fg = "#83a598" },
+            texPartConcArgTitle = { fg = "#b16286", bold = true },
+            texCmdRef = { fg = "#458588" },
+            texCmdEnv = { fg = "#83a598", italic = true },
+            texCmdInput = { fg = "#458588", italic = true },
+            texCmdClass = { fg = "#cc241d", italic = true, bold = true },
+            texRefArg = { fg = "#d3869b", bold = true },
+            Function = { fg = "#4c4f69" },
+            Include = { fg = "#4c4f69" },
+            Label = { fg = "#4c4f69" },
+            texMathDelimZoneTD = { fg = "#4c4f69" },
+            ["@function.macro"] = { fg = "#4c4f69" },
+            ["@variable.parameter"] = { fg = "#4c4f69" },
+            ["@string.special.path.latex"] = { fg = "#4c4f69" },
+            --- Telescope
+            TelescopeeTitle = { fg = "#ffffff", bg = "#cc241d" },
+            TelescopePromptTitle = { fg = "#ffffff", bg = "#d3869b", italic = true, bold = true },
+            TelescopePreviewTitle = { fg = "#ffffff", bg = "#83a598", bold = true },
+            TelescopeResultsTitle = { fg = "#ffffff", bg = "#fabd2f", bold = true },
+            TelescopeNormal = { fg = "#4c4f69", bg = "#f9f5d7" },
+            TelescopePrompt = { fg = "#d3869b", bg = "#ffffff" },
+          },
         },
       })
       vim.cmd("colorscheme catppuccin")

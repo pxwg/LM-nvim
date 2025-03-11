@@ -1,8 +1,9 @@
-require("util.lazyfile").lazy_file()
+-- require("util.lazyfile").lazy_file()
 return {
   {
     "folke/lazydev.nvim",
     ft = "lua", -- only load on lua files
+    priority = 1000,
     opts = {
       library = {
         -- See the configuration section for more details
@@ -13,7 +14,8 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    event = { "LazyFile" },
+    event = { "VeryLazy", "BufEnter", "BufReadPost", "BufWritePost", "BufNewFile" },
+    -- event = { "LazyFile" },
     cmd = "LspStart",
     dependencies = {
       -- Setup lsp installed in mason
@@ -30,12 +32,21 @@ return {
       -- Load mason_lspconfig
       require("mason-lspconfig").setup_handlers({
         function(server_name)
+          -- if server_name.workspace_folders then
+          --   local path = server_name.workspace_folders[1].name
+          --   if
+          --     path ~= vim.fn.stdpath("config")
+          --     and (vim.loop.fs_stat(path .. "/.luarc.json") or vim.loop.fs_stat(path .. "/.luarc.jsonc"))
+          --   then
+          --     return
+          --   end
+          -- end
           require("lspconfig")[server_name].setup({
             offset_encoding = "utf-8", -- wtf? if not set, it shows warning
             capabilities = capabilities,
             root_dir = function(fname)
               return lspconfig.util.root_pattern(".git", "package.json", "pyproject.toml")(fname)
-                or vim.fs.dir_name(fname)
+                or vim.fs.dirname(fname)
             end,
             settings = {
               Lua = {
