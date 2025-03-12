@@ -27,7 +27,13 @@ return {
       },
       {
         "<leader>/",
-        "<cmd>Telescope live_grep<cr>",
+        function()
+          require("telescope.builtin").live_grep({
+            cwd = require("util.cwd_attach").cwd(),
+            layout_strategy = "horizontal",
+            layout_config = { width = 0.8, height = 0.8 },
+          })
+        end,
         desc = "[G]rep (Root Dir)",
       },
       {
