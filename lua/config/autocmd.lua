@@ -294,7 +294,9 @@ vim.api.nvim_create_autocmd("User", {
   pattern = "TelescopePreviewerLoaded",
   callback = function(args)
     if args.data.filetype == "markdown" then
-      vim.cmd("TSBufDisable highlight")
+      vim.cmd("TSBufEnable highlight")
+      mkdMath()
+      vim.cmd("redraw")
     end
   end,
 })
