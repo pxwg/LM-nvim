@@ -48,6 +48,7 @@ return {
             cwd = require("util.cwd_attach").cwd(),
             layout_strategy = "horizontal",
             layout_config = { width = 0.5 },
+            theme = "cursor",
           })
         end,
         desc = "Find Files (cwd)",

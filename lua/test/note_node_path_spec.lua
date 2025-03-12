@@ -1,6 +1,14 @@
 local bfs_shortest_path = require("util.note_node_path").bfs_shortest_path
 
 describe("BFS Shortest Path", function()
+  it("should return a distance of 0 for a self-loop", function()
+    local graph = {
+      A = { "A" }, -- Node A connects to itself
+    }
+    local path = bfs_shortest_path(graph, "A", "A")
+    assert.are.same({ "A" }, path) -- The path should be just ["A"]
+  end)
+
   it("should return the shortest path in a simple graph", function()
     local graph = {
       A = { "B", "C" },

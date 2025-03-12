@@ -14,8 +14,12 @@ local M = {}
 --- @param goal string
 --- @return ShortestPathResult
 local function bfs_shortest_path(graph, start, goal)
-  if not graph[start] or not graph[goal] then
-    return { path = "", length = nil }
+  if start == goal then
+    return { path = { start }, length = 0 }
+  end
+
+  if not graph or not graph[start] or not graph[goal] then
+    return { path = "", length = 10 }
   end
 
   local queue = { start }
@@ -35,6 +39,10 @@ local function bfs_shortest_path(graph, start, goal)
       return { path = path, length = #path - 1 }
     end
 
+    if graph[current] == nil then
+      print("man")
+      return { path = "", length = math.huge }
+    end
     for _, neighbor in ipairs(graph[current]) do
       if not visited[neighbor] then
         visited[neighbor] = true
@@ -44,7 +52,7 @@ local function bfs_shortest_path(graph, start, goal)
     end
   end
 
-  return { path = "", length = nil }
+  return { path = "", length = 10 }
 end
 
 M.bfs_shortest_path = bfs_shortest_path
