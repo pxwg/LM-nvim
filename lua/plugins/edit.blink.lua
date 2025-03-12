@@ -18,6 +18,10 @@ return {
       "saghen/blink.compat",
       opts = { impersonate_nvim_cmp = true, enable_events = true },
     },
+    {
+      "Kaiser-Yang/blink-cmp-dictionary",
+      dependencies = { "nvim-lua/plenary.nvim" },
+    },
   },
   config = function()
     -- if last char is number, and the only completion item is provided by rime-ls, accept it
@@ -181,7 +185,7 @@ return {
                 -- end
                 local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
                 if item.kind == require("blink.cmp.types").CompletionItemKind.Text then
-                  item.score_offset = item.score_offset + 2
+                  item.score_offset = item.score_offset + 10
                 end
               end
               return items
@@ -192,6 +196,16 @@ return {
             module = "lazydev.integrations.blink",
             -- make lazydev completions top priority (see `:h blink.cmp`)
             score_offset = 100,
+          },
+          dictionary = {
+            module = "blink-cmp-dictionary",
+            name = "Dict",
+            -- Make sure this is at least 2.
+            -- 3 is recommended
+            min_keyword_length = 3,
+            opts = {
+              -- options for blink-cmp-dictionary
+            },
           },
           buffer = { max_items = 5 },
           copilot = {
