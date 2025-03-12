@@ -375,6 +375,28 @@ end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 
 map("n", "<leader>nn", function()
   if vim.bo.filetype == "markdown" then
+    -- local input = vim.fn.input("Search Level: ")
+    local path = vim.fn.expand("%:p")
+    local name = vim.fn.fnamemodify(path, ":t:r")
+
+    vim.cmd("nohlsearch")
+
+    local chain = require("util.note_node_get_graph").double_chain
+    chain.filepath = path
+    chain.filename = name
+
+    local start_time = vim.loop.hrtime()
+
+    require("util.note_node_get_graph").show_buffer_inlines_menu({}, math.huge)
+
+    local end_time = vim.loop.hrtime()
+    vim.notify("Find links in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
+  end
+end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+
+map("n", "<leader>ni", function()
+  if vim.bo.filetype == "markdown" then
+    local input = vim.fn.input("Search Level: ")
     local path = vim.fn.expand("%:p")
     local name = vim.fn.fnamemodify(path, ":t:r")
 
@@ -385,17 +407,7 @@ map("n", "<leader>nn", function()
     chain.filename = name
 
     local start_time = vim.loop.hrtime() -- Start time in nanoseconds
-
-    local backlinks = require("util.note_node_get_graph").double_chain:backward()
-    local forwardlinks = require("util.note_node_get_graph").double_chain:forward()
-    local inlines = {}
-    for _, link in ipairs(backlinks) do
-      table.insert(inlines, link)
-    end
-    for _, link in ipairs(forwardlinks) do
-      table.insert(inlines, link)
-    end
-    require("util.note_node_get_graph").show_buffer_inlines_menu(inlines)
+    require("util.note_telescope").double_chain_insert({}, tonumber(input))
 
     local end_time = vim.loop.hrtime()
     vim.notify("Find links in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
