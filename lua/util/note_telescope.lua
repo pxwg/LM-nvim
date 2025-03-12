@@ -12,6 +12,9 @@ local function double_chain_search(opts)
   opts = opts or { width = 0.5 }
   local start_node = { filepath = vim.fn.expand("%:p"), filename = vim.fn.expand("%:t:r") }
   local sorted_results = double_chain:calculate_shortest_paths(start_node, 3)
+  table.sort(sorted_results, function(a, b)
+    return a.path_length < b.path_length
+  end)
 
   pickers
     .new(opts, {
@@ -19,8 +22,8 @@ local function double_chain_search(opts)
       finder = finders.new_table({
         results = vim.tbl_map(function(item)
           return {
-            display = vim.fn.fnamemodify(item.node, ":t"),
-            value = item.node, -- Store the full file path here
+            display = "  " .. vim.fn.fnamemodify(item.node, ":t"),
+            value = item.node,
           }
         end, sorted_results),
         entry_maker = function(entry)
