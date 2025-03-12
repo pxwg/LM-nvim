@@ -14,6 +14,18 @@ end
 --- @field filename string
 local double_chain = { filepath = "", filename = "" }
 
+local function execute_rg_command(command)
+  -- local handle = io.popen(command)
+  local handle = vim.fn.system(command)
+  if handle then
+    -- local result = handle:read("*a")
+    return handle
+  else
+    vim.notify("Command execution failed", vim.log.levels.ERROR)
+    return ""
+  end
+end
+
 function double_chain:backward()
   local filepath = self.filepath
   local filename = self.filename .. ".md"
@@ -24,41 +36,28 @@ function double_chain:backward()
   end
 
   local command = string.format("rg -l '\\(./%s\\)' %s", filename, directory)
-  local handle = io.popen(command)
-  if handle then
-    local result = handle:read("*a")
-    handle:close()
-    local files_with_text = {}
-    for file in result:gmatch("[^\r\n]+") do
-      table.insert(files_with_text, convert_to_absolute_path(file))
-    end
-    return files_with_text
-  else
-    vim.notify("No files found", vim.log.levels.WARN)
-    return {}
+  local result = execute_rg_command(command)
+  local files_with_text = {}
+  for file in result:gmatch("[^\r\n]+") do
+    table.insert(files_with_text, convert_to_absolute_path(file))
   end
+  return files_with_text
 end
 
 function double_chain:forward()
   local filepath = self.filepath
   local command = string.format("rg -o '\\[.*?\\]\\((.*?.md)\\)' %s", filepath)
-  local handle = io.popen(command)
-  if handle then
-    local result = handle:read("*a")
-    handle:close()
-    local links = {}
-    for link in result:gmatch("%((.-)%)") do
-      table.insert(links, convert_to_absolute_path(link))
-    end
-    return links
-  else
-    vim.notify("No markdown links found", vim.log.levels.WARN)
-    return {}
+  local result = execute_rg_command(command)
+  local links = {}
+  for link in result:gmatch("%((.-)%)") do
+    table.insert(links, convert_to_absolute_path(link))
   end
+  return links
 end
 
 function double_chain:find_all_related(start_node, max_distance)
   max_distance = max_distance or math.huge
+  start_node = start_node or self
   local visited = {}
   local queue = { { node = start_node, distance = 1 } }
   local graph = {}
@@ -108,6 +107,11 @@ function double_chain:find_all_related(start_node, max_distance)
   return graph
 end
 
+---@class ShortestPath
+---@field node string
+---@field path_length number
+
+---@return ShortestPath[]
 function double_chain:calculate_shortest_paths(start_node, max)
   max = max or math.huge
   local graph = self:find_all_related(start_node, max) or {}
@@ -126,8 +130,8 @@ function double_chain:calculate_shortest_paths(start_node, max)
   return shortest_paths
 end
 
-local function show_buffer_inlines_menu()
-  require("util.note_telescope").double_chain_search()
+local function show_buffer_inlines_menu(opt, max)
+  require("util.note_telescope").double_chain_search(opt, max + 1)
 end
 
 M.show_buffer_inlines_menu = show_buffer_inlines_menu
