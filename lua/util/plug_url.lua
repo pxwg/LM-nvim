@@ -112,7 +112,7 @@ local function show_plugin_menu(plugin_names)
       submit = { "<CR>", "<Space>", "<C-y>" },
     },
     on_submit = function(item)
-      local open = item.text:gsub(" : ", "")
+      local open = item.text:gsub(" :", "")
       open_github_url(open)
     end,
   })
@@ -139,7 +139,7 @@ local function get_plugin_name()
     -- Apply the highlight to the symbol
     for i, name in ipairs(plugin_names) do
       local line = i - 1 -- Adjust for 0-based indexing
-      local symbol, rest = string.match(name, "^( :)(.+)$")
+      local symbol, rest = string.match(name, "( :)(.+)$")
       if symbol and rest then
         local before_slash, after_slash = string.match(rest, "([^/]+)/(.+)")
         if before_slash and after_slash then
