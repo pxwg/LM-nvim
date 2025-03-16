@@ -22,7 +22,7 @@ return {
       -- Setup lsp installed in mason
       "williamboman/mason-lspconfig.nvim",
       -- Useful status updates for LSP
-      { "j-hui/fidget.nvim", config = true },
+      { "j-hui/fidget.nvim", config = true, opts = { notification = { window = { winblend = 100 } } } },
     },
     config = function()
       local lspconfig = require("lspconfig")
@@ -67,6 +67,26 @@ return {
       lspconfig.texlab.setup({
         filetypes = { "tex", "bib" },
         -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
+        capabilities = capabilities,
+      })
+
+      -- Register the dictionary LSP server first
+      local configs = require("lspconfig.configs")
+      if not configs.dictionary then
+        configs.dictionary = {
+          default_config = {
+            filetypes = { "markdown" },
+            cmd = { vim.fn.expand("~/dictionary_lsp/target/release/dictionary_lsp") },
+            root_dir = function(fname)
+              local startpath = fname
+              return vim.fs.dirname(vim.fs.find(".git", { path = startpath, upward = true })[1]) or vim.fn.getcwd()
+            end,
+          },
+        }
+      end
+
+      -- Then set it up
+      lspconfig.dictionary.setup({
         capabilities = capabilities,
       })
     end,
