@@ -4,6 +4,7 @@ return {
     "folke/lazydev.nvim",
     ft = "lua", -- only load on lua files
     priority = 1000,
+    enabled = false,
     opts = {
       library = {
         -- See the configuration section for more details
