@@ -8,7 +8,9 @@ return {
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   opts = {
     provider = "copilot",
-    -- auto_suggestions_provider = "copilot", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
+    copilot = {
+      model = "o3-mini", -- Or another valid Claude model identifier
+    },
     rag_service = {
       enabled = false, -- Enables the rag service, requires OPENAI_API_KEY to be set
     },

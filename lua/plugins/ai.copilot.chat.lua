@@ -9,7 +9,7 @@ return {
 
   keys = {
     {
-      "<leader>aA",
+      "<leader>aa",
       function()
         vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
@@ -20,7 +20,7 @@ return {
     {
       "<C-c>",
       function()
-        vim.cmd("AvanteAsk")
+        vim.cmd("CopilotChatToggle")
         vim.cmd("LspStart rime_ls")
         -- vim.cmd(":vert wincmd L")
       end,
@@ -41,18 +41,18 @@ return {
         insert = "<localleader>s",
       },
       question_header = "󰩃  Doggie  ",
-      answer_header = "  Copilot ",
+      answer_header = "  Copilot ",
+      model = "claude-3.7-sonnet-thought", -- Set Claude model as default
       window = {
         layout = "float", -- 'vertical', 'horizontal', 'float', 'replace'
         width = 0.4, -- fractional width of parent, or absolute width in columns when > 1
         -- Options below only apply to floating windows
-        relative = "cursor", -- 'editor', 'win', 'cursor', 'mouse'
-        border = "none", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
+        relative = "mouse", -- 'editor', 'win', 'cursor', 'mouse'
+        border = "rounded", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
         row = nil, -- row position of the window, default is centered
         col = nil, -- column position of the window, default is centered
-        title = "Copilot Chat", -- title of chat window
+        title = "", -- title of chat window
         footer = nil, -- footer of chat window
-        zindex = 1, -- determines if window is on top or below other floating windows
       },
     }
   end,
