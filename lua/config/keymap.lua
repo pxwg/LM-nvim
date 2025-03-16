@@ -390,7 +390,7 @@ map("n", "<leader>nn", function()
     require("util.note_node_get_graph").show_buffer_inlines_menu({}, math.huge)
 
     local end_time = vim.loop.hrtime()
-    vim.notify("Find links in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
+    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
@@ -410,7 +410,7 @@ map("n", "<leader>ni", function()
     require("util.note_telescope").double_chain_insert({}, tonumber(input))
 
     local end_time = vim.loop.hrtime()
-    vim.notify("Find links in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
+    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
