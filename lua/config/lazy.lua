@@ -120,6 +120,4 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
--- require("util.note_node_path")
-
 -- require("util.note_node_get_graph")
