@@ -414,8 +414,59 @@ map("n", "<leader>ni", function()
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
+map("n", "<Tab>", function()
+  if vim.bo.filetype == "markdown" then
+    local success = require("util.markdown_link").goto_next_link()
+    if not success then
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
+    end
+  else
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
+  end
+end, { noremap = true, silent = true })
+
+map("n", "<CR>", function()
+  local line = vim.fn.getline(".")
+  local col = vim.fn.col(".")
+  local link_pattern = "%[.-%]%((.-)%)"
+
+  -- Find markdown link in current line
+  local start_idx = 1
+  while true do
+    local link_start, link_end, link_target = string.find(line, link_pattern, start_idx)
+    if not link_start then
+      break
+    end
+
+    -- Check if cursor is positioned on this link
+    if link_start <= col and col <= link_end then
+      -- Open URL
+      if link_target:match("^https?://") then
+        vim.fn.jobstart("open " .. vim.fn.shellescape(link_target))
+      else
+        local file_path = link_target
+        -- Related Path
+        if not file_path:match("^[/~]") then
+          local current_dir = vim.fn.expand("%:p:h")
+          file_path = current_dir .. "/" .. file_path
+        end
+        vim.cmd("edit " .. vim.fn.fnameescape(file_path))
+      end
+      break
+    end
+    start_idx = link_end + 1
+  end
+end, { desc = "Open markdown links (file or URL)" })
+
+map("n", "<C-x>", function()
+  require("util.note_todo").toggle()
+end)
+
 -- smart tab for copilot, insertion and completion via luasnip
 map("i", "<Tab>", function()
+  if vim.fn.pumvisible() == 1 then
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
+  end
   local success = require("copilot.suggestion").is_visible()
   local jumpable = require("luasnip").jumpable(1)
   -- local regex_match = vim.fn.searchpair("[([{<|“‘《]", "", "[)\\]}>|”’》]", "W") > 0
