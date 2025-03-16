@@ -1,6 +1,6 @@
 return {
   "serenevoid/kiwi.nvim",
-  enabled = false,
+  -- enabled = false,
   opts = {
     {
       name = "work",
