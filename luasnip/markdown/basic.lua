@@ -21,6 +21,17 @@ end
 
 return {
   s(
+    { trig = "cdb", wordTrig = true, snippetType = "autosnippet", trigEngine = "ecma" },
+    fmta(
+      [[
+      ```<>
+      <>
+      ```
+    ]],
+      { i(1, "lua"), i(0) }
+    )
+  ),
+  s(
     { trig = "H(%d)", regTrig = true, wordTrig = true, snippetType = "autosnippet" },
     f(function(_, snip)
       local level = tonumber(snip.captures[1])
