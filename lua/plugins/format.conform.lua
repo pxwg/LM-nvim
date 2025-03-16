@@ -16,6 +16,7 @@ return {
       plaintex = { "latexindent" },
       tex = { "latexindent" },
       yml = { "yq" },
+      json = { "fixjson" },
       markdown = { "autocorrect", "injected" },
       -- markdown = { "autocorrect", "prettier" },
     },
