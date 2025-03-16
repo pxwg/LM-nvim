@@ -202,7 +202,7 @@ return {
           file_previewer = image_preview.file_previewer,
           buffer_previewer_maker = image_preview.buffer_previewer_maker,
           layout_strategy = "flex",
-          layout_config = { height = 0.3 },
+          layout_config = { height = 0.3, width = 0.7 },
 
           -- prompt_prefix = " ",
           prompt_prefix = "  ",
