@@ -72,7 +72,7 @@ end
 local function double_chain_insert(opts, max)
   opts = opts or { width = 0.5 }
   local start_node = { filepath = vim.fn.expand("%:p"), filename = vim.fn.expand("%:t:r") }
-  local sorted_results = double_chain:calculate_shortest_paths(start_node, max)
+  local sorted_results = double_chain:calculate_shortest_paths(start_node, max + 1)
   table.sort(sorted_results, function(a, b)
     return a.path_length < b.path_length
   end)

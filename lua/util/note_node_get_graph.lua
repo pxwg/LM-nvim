@@ -55,6 +55,13 @@ function double_chain:forward()
   return links
 end
 
+--- @class DoubleChainGraph
+--- @field node DobuleChainNode
+--- @field distance number
+
+--- @param start_node DobuleChainNode
+--- @param max_distance number
+--- @return table<string, DoubleChainGraph>
 function double_chain:find_all_related(start_node, max_distance)
   max_distance = max_distance or math.huge
   start_node = start_node or self
