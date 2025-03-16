@@ -18,6 +18,7 @@ return {
       yml = { "yq" },
       json = { "fixjson" },
       markdown = { "autocorrect", "injected" },
+      rust = { "rustfmt" },
       -- markdown = { "autocorrect", "prettier" },
     },
     -- format_on_save = {
