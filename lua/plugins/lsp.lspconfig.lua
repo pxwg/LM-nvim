@@ -24,12 +24,24 @@ return {
       -- Useful status updates for LSP
       { "j-hui/fidget.nvim", config = true, opts = { notification = { window = { winblend = 100 } } } },
     },
+    opts = {
+      ui = {
+        windows = {
+          default_options = {
+            border = "rounded",
+          },
+        },
+      },
+    },
     config = function()
       local lspconfig = require("lspconfig")
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
       capabilities.general.positionEncodings = { "utf-8", "utf-16" }
 
+      vim.lsp.config.signature_help = {
+        border = "rounded",
+      }
       -- Load mason_lspconfig
       require("mason-lspconfig").setup_handlers({
         function(server_name)
@@ -75,7 +87,7 @@ return {
       if not configs.dictionary then
         configs.dictionary = {
           default_config = {
-            filetypes = { "markdown" },
+            filetypes = { "markdown", "copilot-chat" },
             cmd = { vim.fn.expand("~/dictionary_lsp/target/release/dictionary_lsp") },
             root_dir = function(fname)
               local startpath = fname
