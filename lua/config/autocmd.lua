@@ -27,6 +27,8 @@ syn region mkdMath
       highlight link mkdTaskItem RenderMarkdownTodo
       syn match mkdItemDot /^\s*\*/
       highlight link mkdItemDot @markup.list
+      syn match markdownCodeDelimiter /^```\w*/ conceal
+      syn match markdownCodeDelimiter /^```$/ conceal
 
       syn match markdownH1 "^# .*$"
       syn match markdownH2 "^## .*$"
@@ -45,6 +47,8 @@ syn region mkdMath
 
     ]])
 end
+
+_G.mkdMath = mkdMath
 
 local function mdHL()
   vim.cmd([[

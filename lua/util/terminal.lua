@@ -78,7 +78,7 @@ local function open_terminal_split(key)
   vim.cmd("vsplit")
   vim.cmd("wincmd " .. key)
   -- Resize the new split to 40% of the screen width
-  vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.35))
+  vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.3))
 
   local current_file_path = vim.fn.expand(require("util.cwd_attach").cwd())
   local terminal_path = vim.fn.getcwd()
