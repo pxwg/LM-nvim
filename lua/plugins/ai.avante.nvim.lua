@@ -43,7 +43,8 @@ return {
       "MeanderingProgrammer/render-markdown.nvim",
       opts = {
         code = {
-          sign = false,
+          enabled = true,
+          sign = true,
           width = "block",
           right_pad = 1,
         },
