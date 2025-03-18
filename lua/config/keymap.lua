@@ -150,10 +150,12 @@ map(
 )
 map(
   { "i" },
-  "<C-a>",
+  "<C-d>",
   "<cmd>lua vim.lsp.buf.signature_help()<CR>",
   { noremap = true, silent = true, desc = "Show Signature [H]elp" }
 )
+--- LSP dictionary
+map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
 -- Lsp-telescope
 if vim.g.picker == "telescope" then
   map("n", "gd", "<cmd>Telescope lsp_definitions theme=cursor<cr>", { desc = "Goto [D]efinition" })
@@ -413,6 +415,33 @@ map("n", "<leader>ni", function()
     vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+
+map("v", "<CR>", function()
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
+
+  local selection_start = vim.fn.getpos("'<")
+  local selection_end = vim.fn.getpos("'>")
+  local start_line, start_col = selection_start[2], selection_start[3]
+  local end_line, end_col = selection_end[2], selection_end[3]
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+  if #lines == 0 then
+    return
+  elseif #lines == 1 then
+    lines[1] = string.sub(lines[1], start_col, end_col)
+  else
+    lines[1] = string.sub(lines[1], start_col)
+    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+  end
+  local selected_text = table.concat(lines, "\n")
+  local filename = selected_text:gsub(" ", "_"):gsub("\\", "") .. ".md"
+  local file_path = vim.fn.expand("%:p:h")
+  local new_mkdn = "[" .. selected_text .. "]"
+  new_mkdn = new_mkdn .. "(./" .. filename .. ")"
+  local newline = vim.fn.getline("."):sub(1, start_col - 1) .. new_mkdn .. vim.fn.getline("."):sub(end_col + 1)
+  vim.api.nvim_set_current_line(newline)
+  local buffer_number = vim.fn.bufnr(vim.fs.joinpath(file_path, filename), true)
+  vim.api.nvim_win_set_buf(0, buffer_number)
+end)
 
 map("n", "<Tab>", function()
   if vim.bo.filetype == "markdown" then
