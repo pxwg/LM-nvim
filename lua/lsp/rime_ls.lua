@@ -98,6 +98,7 @@ A language server for librime
 end
 
 function M.toggle_rime()
+  require("lsp.dictionary").toggle_dictionary()
   local client = vim.lsp.get_clients({ name = "rime_ls" })[1]
   if client then
     client.request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
