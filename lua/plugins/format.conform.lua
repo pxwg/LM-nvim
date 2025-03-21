@@ -19,6 +19,7 @@ return {
       json = { "fixjson" },
       markdown = { "autocorrect", "injected" },
       rust = { "rustfmt" },
+      python = { "ruft" },
       -- markdown = { "autocorrect", "prettier" },
     },
     -- format_on_save = {
