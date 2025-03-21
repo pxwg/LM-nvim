@@ -55,7 +55,7 @@ return {
           --   end
           -- end
           require("lspconfig")[server_name].setup({
-            offset_encoding = "utf-8", -- wtf? if not set, it shows warning
+            -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
             capabilities = capabilities,
             root_dir = function(fname)
               return lspconfig.util.root_pattern(".git", "package.json", "pyproject.toml")(fname)
