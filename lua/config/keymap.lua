@@ -378,6 +378,7 @@ end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 map("n", "<leader>nn", function()
   if vim.bo.filetype == "markdown" then
     -- local input = vim.fn.input("Search Level: ")
+    vim.cmd("wa")
     local path = vim.fn.expand("%:p")
     local name = vim.fn.fnamemodify(path, ":t:r")
 
@@ -398,6 +399,7 @@ end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 map("n", "<leader>ni", function()
   if vim.bo.filetype == "markdown" then
+    vim.cmd("wa")
     local input = vim.fn.input("Search Level: ")
     local path = vim.fn.expand("%:p")
     local name = vim.fn.fnamemodify(path, ":t:r")
@@ -417,30 +419,32 @@ map("n", "<leader>ni", function()
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 map("v", "<CR>", function()
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
+  if vim.bo.filetype == "markdown" then
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
 
-  local selection_start = vim.fn.getpos("'<")
-  local selection_end = vim.fn.getpos("'>")
-  local start_line, start_col = selection_start[2], selection_start[3]
-  local end_line, end_col = selection_end[2], selection_end[3]
-  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
-  if #lines == 0 then
-    return
-  elseif #lines == 1 then
-    lines[1] = string.sub(lines[1], start_col, end_col)
-  else
-    lines[1] = string.sub(lines[1], start_col)
-    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+    local selection_start = vim.fn.getpos("'<")
+    local selection_end = vim.fn.getpos("'>")
+    local start_line, start_col = selection_start[2], selection_start[3]
+    local end_line, end_col = selection_end[2], selection_end[3]
+    local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+    if #lines == 0 then
+      return
+    elseif #lines == 1 then
+      lines[1] = string.sub(lines[1], start_col, end_col)
+    else
+      lines[1] = string.sub(lines[1], start_col)
+      lines[#lines] = string.sub(lines[#lines], 1, end_col)
+    end
+    local selected_text = table.concat(lines, "\n")
+    local filename = selected_text:gsub(" ", "_"):gsub("\\", "") .. ".md"
+    local file_path = vim.fn.expand("%:p:h")
+    local new_mkdn = "[" .. selected_text .. "]"
+    new_mkdn = new_mkdn .. "(./" .. filename .. ")"
+    local newline = vim.fn.getline("."):sub(1, start_col - 1) .. new_mkdn .. vim.fn.getline("."):sub(end_col + 1)
+    vim.api.nvim_set_current_line(newline)
+    local buffer_number = vim.fn.bufnr(vim.fs.joinpath(file_path, filename), true)
+    vim.api.nvim_win_set_buf(0, buffer_number)
   end
-  local selected_text = table.concat(lines, "\n")
-  local filename = selected_text:gsub(" ", "_"):gsub("\\", "") .. ".md"
-  local file_path = vim.fn.expand("%:p:h")
-  local new_mkdn = "[" .. selected_text .. "]"
-  new_mkdn = new_mkdn .. "(./" .. filename .. ")"
-  local newline = vim.fn.getline("."):sub(1, start_col - 1) .. new_mkdn .. vim.fn.getline("."):sub(end_col + 1)
-  vim.api.nvim_set_current_line(newline)
-  local buffer_number = vim.fn.bufnr(vim.fs.joinpath(file_path, filename), true)
-  vim.api.nvim_win_set_buf(0, buffer_number)
 end)
 
 map("n", "<Tab>", function()
@@ -451,6 +455,17 @@ map("n", "<Tab>", function()
     end
   else
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
+  end
+end, { noremap = true, silent = true })
+
+map("n", "<S-Tab>", function()
+  if vim.bo.filetype == "markdown" then
+    local success = require("util.markdown_link").goto_prev_link()
+    if not success then
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<S-Tab>", true, false, true), "n", true)
+    end
+  else
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<S-Tab>", true, false, true), "n", true)
   end
 end, { noremap = true, silent = true })
 

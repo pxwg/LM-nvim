@@ -56,8 +56,24 @@ function M.find_next_link(links, row, col)
   return 1
 end
 
+-- Find the previous link before the current cursor position
+function M.find_prev_link(links, row, col)
+  for i = #links, 1, -1 do
+    local link = links[i]
+    if link.row < row or (link.row == row and link.col < col) then
+      return i
+    end
+  end
+
+  -- If no previous link found, wrap around to the last link
+  return #links
+end
+
 -- Jump to the specified link
-function M.jump_to_link(link_index, bufnr)
+--- @param link_index number
+--- @param bufnr number
+--- @param direction 0 | 1
+function M.jump_to_link(link_index, bufnr, direction)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local links = vim.b[bufnr].md_links
 
@@ -66,7 +82,13 @@ function M.jump_to_link(link_index, bufnr)
   end
 
   vim.b[bufnr].md_links_index = link_index
-  vim.api.nvim_win_set_cursor(0, { links[link_index].row + 1, links[link_index].col })
+  vim.api.nvim_win_set_cursor(
+    0,
+    {
+      links[((link_index + direction - 1 - 1) % #links) + 1].row + 1,
+      links[((link_index + direction - 1 - 1) % #links) + 1].col + 1,
+    }
+  )
   return true
 end
 
@@ -82,7 +104,21 @@ function M.goto_next_link()
   end
 
   local next_index = M.find_next_link(links, row, col)
-  return M.jump_to_link(next_index, bufnr)
+  return M.jump_to_link(next_index, bufnr, 1)
+end
+
+function M.goto_prev_link()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local row, col = cursor[1] - 1, cursor[2]
+
+  local links = M.get_buffer_links(bufnr)
+  if #links == 0 then
+    return false
+  end
+
+  local prev_index = M.find_prev_link(links, row, col)
+  return M.jump_to_link(prev_index, bufnr, 0)
 end
 
 return M
