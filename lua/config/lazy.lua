@@ -120,5 +120,7 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
+-- The LSP completion handler is now managed through completion plugins like nvim-cmp
+-- If you're using nvim-cmp, this manual handler configuration is not needed
 -- require("util.current_function")
 -- require("util.note_node_get_graph")
