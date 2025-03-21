@@ -13,6 +13,7 @@ return {
     "zbirenbaum/copilot-cmp",
     "zbirenbaum/copilot.lua",
     "dmitmel/cmp-digraphs",
+    "hrsh7th/cmp-nvim-lsp",
     "giuxtaposition/blink-cmp-copilot",
     {
       "saghen/blink.compat",
@@ -169,6 +170,14 @@ return {
         },
       },
       snippets = { preset = "luasnip" },
+      signature = {
+        enabled = false,
+        trigger = {
+          enabled = true,
+          show_on_trigger_character = false,
+          show_on_insert_on_trigger_character = false,
+        },
+      },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
         default = { "lsp", "path", "buffer", "copilot" },
@@ -183,10 +192,12 @@ return {
                 -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
                 --   item.score_offset = item.score_offset - 3
                 -- end
-                local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
                 if item.kind == require("blink.cmp.types").CompletionItemKind.Text then
-                  item.score_offset = item.score_offset + 10
+                  item.score_offset = item.score_offset + 2
                 end
+                -- if item.kind == require("blink.cmp.types").CompletionItemKind.Keyword then
+                --   item.score_offset = item.score_offset + 3
+                -- end
               end
               return items
             end,
