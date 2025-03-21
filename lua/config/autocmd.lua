@@ -246,10 +246,10 @@ autocmd("VimLeavePre", {
 
 -- Function to trim trailing blank lines from the current buffer
 local function trim_trailing_blank_lines()
+  -- Save the cursor position
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   local last_non_blank = #lines
-
-  -- Find the last non-blank line
   for i = #lines, 1, -1 do
     if lines[i]:match("^%s*$") then
       last_non_blank = i - 1
@@ -257,10 +257,15 @@ local function trim_trailing_blank_lines()
       break
     end
   end
-
-  -- Set the buffer lines, removing trailing blank lines
-  vim.api.nvim_buf_set_lines(0, last_non_blank, -1, false, {})
-  vim.cmd("silent! undojoin")
+  -- Only make changes if needed and preserve undo history
+  if last_non_blank < #lines then
+    vim.cmd("undojoin")
+    vim.api.nvim_buf_set_lines(0, last_non_blank, -1, false, {})
+  end
+  -- Restore cursor position if it was beyond the new end
+  if cursor_pos[1] > last_non_blank and last_non_blank > 0 then
+    vim.api.nvim_win_set_cursor(0, { last_non_blank, cursor_pos[2] })
+  end
 end
 
 -- Create a command to run the function
