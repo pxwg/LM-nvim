@@ -23,6 +23,7 @@ return {
             texEnvArgName = { fg = "#9399b3" },
             texOptEqual = { fg = "#7dc4e4" },
             texMathDelim = { fg = "#f9e2af" },
+            texMathSymbol = { fg = "#89b4fa" },
             texFileArg = { fg = "#b4befe" },
             texPartConcArgTitle = { fg = "#89b4fa", bold = true },
             texCmdRef = { fg = "#7dc4e4" },
