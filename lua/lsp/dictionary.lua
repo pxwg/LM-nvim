@@ -1,7 +1,7 @@
 local M = {}
 
 function M.dictionary_setup()
-  local dictionary_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante" }
+  local dictionary_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante", "help" }
   local configs = require("lspconfig.configs")
   vim.g.dict_enabled = false
   local lspconfig = require("lspconfig")
