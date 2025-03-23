@@ -195,9 +195,6 @@ return {
                 if item.kind == require("blink.cmp.types").CompletionItemKind.Text then
                   item.score_offset = item.score_offset + 2
                 end
-                -- if item.kind == require("blink.cmp.types").CompletionItemKind.Keyword then
-                --   item.score_offset = item.score_offset + 3
-                -- end
               end
               return items
             end,
