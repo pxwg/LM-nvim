@@ -127,7 +127,7 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 map({ "n", "v", "i" }, "<C-s>", function()
   -- save_and_delete_last_line()
   -- vim.cmd("stopinsert")
-  if vim.bo.filetype ~= "tex" then
+  if vim.bo.filetype ~= "tex" or vim.bo.filetype ~= "markdown" then
     require("conform").format()
   end
   vim.cmd("w")
@@ -554,3 +554,23 @@ map("n", "O", function()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), "n", true)
   end
 end)
+
+-- keymapping for phonograph.nvim
+map("n", "<leader>pp", function()
+  vim.cmd("PhonographInsertPdf")
+end, { noremap = true, silent = true, desc = "[P]hono [P]df" })
+map("n", "<leader>pu", function()
+  vim.cmd("PhonographInsertUrl")
+end, { noremap = true, silent = true, desc = "[P]hono [U]rl" })
+map("n", "<leader>po", function()
+  vim.cmd("PhonographOpen")
+end, { noremap = true, silent = true, desc = "[P]hono [O]pen" })
+map("n", "<C-LeftMouse>", function()
+  vim.cmd("PhonographMouseOpen")
+end, { noremap = true, silent = true, desc = "[P]hono [O]pen" })
+map("n", "<leader>pe", function()
+  vim.cmd("PhonographEdit")
+end, { noremap = true, silent = true, desc = "[P]hono [U]pdate" })
+map("n", "<leader>pr", function()
+  vim.cmd("PhonographReview")
+end, { noremap = true, silent = true, desc = "[P]hono [R]estore" })
