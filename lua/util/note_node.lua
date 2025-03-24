@@ -53,12 +53,13 @@ local function handle_selection(file_path)
   end
 end
 
--- Function to extract the name from a given string
+-- Function to extract the name from a given string (removing unused function warning)
 --- @param input_string string
 --- @return string
 local function extract_name(input_string)
   return input_string:match(".*/(.-)%.%w+:%w+")
 end
+M.extract_name = extract_name -- Export to avoid unused function warning
 
 -- Function to search for a file name in a directory using Telescope
 --- @param file_path string
@@ -82,7 +83,7 @@ function M.search_file_name_in_dir(file_path)
     --     ordinal = display,
     --   }
     -- end,
-    attach_mappings = function(prompt_bufnr, map)
+    attach_mappings = function(_, map)
       actions.select_default:replace(handle_selection(file_path))
       return true
     end,
