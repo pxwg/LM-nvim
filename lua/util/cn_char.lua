@@ -14,8 +14,15 @@ local function csmap(lhs, rhs_c, rhs_e)
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes([[<Left>]], true, true, true), "n", true)
       return nil
     else
-      vim.api.nvim_feedkeys(rhs_e, "n", true)
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes([[<Left>]], true, true, true), "n", true)
+      local line = vim.api.nvim_get_current_line()
+      local col = vim.api.nvim_win_get_cursor(0)[2]
+      local prev_char = col > 0 and line:sub(col, col) or ""
+      if prev_char == " " then
+        vim.api.nvim_feedkeys(rhs_e, "n", true)
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes([[<Left>]], true, true, true), "n", true)
+      else
+        vim.api.nvim_feedkeys(rhs_e:sub(1, 1), "n", true)
+      end
       return nil
     end
   end, { noremap = true, silent = true })
