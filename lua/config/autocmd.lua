@@ -276,12 +276,6 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = "*",
   callback = function()
     trim_trailing_blank_lines()
-    if vim.bo.filetype == "markdown" then
-      local node = require("util.note_node_get_graph").double_chain
-      node.filename = vim.fn.expand("%:t:r")
-      node.filepath = vim.fn.expand("%:p")
-      node:find_all_related(node, 1)
-    end
   end,
 })
 

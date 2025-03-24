@@ -377,23 +377,36 @@ end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 
 map("n", "<leader>nn", function()
   if vim.bo.filetype == "markdown" then
-    -- local input = vim.fn.input("Search Level: ")
     vim.cmd("wa")
+    local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+    local spinner_index = 1
+    local timer = vim.uv.new_timer()
+    timer:start(
+      0,
+      50,
+      vim.schedule_wrap(function()
+        vim.api.nvim_echo({ { "Building tree... " .. spinner_frames[spinner_index] } }, false, {})
+        spinner_index = (spinner_index % #spinner_frames) + 1
+      end)
+    )
     local path = vim.fn.expand("%:p")
     local name = vim.fn.fnamemodify(path, ":t:r")
 
     vim.cmd("nohlsearch")
+    local start_time = vim.uv.hrtime()
 
     local chain = require("util.note_node_get_graph").double_chain
     chain.filepath = path
     chain.filename = name
 
-    local start_time = vim.loop.hrtime()
-
     require("util.note_node_get_graph").show_buffer_inlines_menu({}, math.huge)
 
     local end_time = vim.loop.hrtime()
-    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
+    timer:stop()
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_echo({ { "Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms" } }, false, {})
+    end)
   end
 end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
