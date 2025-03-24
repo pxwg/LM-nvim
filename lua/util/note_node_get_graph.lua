@@ -26,7 +26,6 @@ local function execute_rg_command(command)
     stdout_buffered = true,
   })
 
-  -- Wait for 500ms max
   local timeout = 100
   local start_time = vim.loop.now()
   while vim.fn.jobwait({ job_id }, 0)[1] == -1 do
@@ -41,11 +40,11 @@ local function execute_rg_command(command)
   if output ~= "" then
     return output
   else
-    -- vim.notify("Command execution failed", vim.log.levels.ERROR)
     return ""
   end
 end
 
+-- Hack: Use a unexpected output for avoid bad dir
 function double_chain:backward()
   local filepath = self.filepath
   local filename = self.filename .. ".md"
@@ -55,12 +54,17 @@ function double_chain:backward()
     return {}
   end
 
-  local command = string.format("rg -l '\\(./%s\\)' %s", filename, directory)
+  local command = string.format("rg -o '\\[.*?\\]\\(./%s\\)' %s", filename, directory)
+  -- print(command)
   local result = execute_rg_command(command)
   local files_with_text = {}
-  for file in result:gmatch("[^\r\n]+") do
-    table.insert(files_with_text, convert_to_absolute_path(file))
+  for line in result:gmatch("[^\r\n]+") do
+    local out_filepath = line:match("^([^:]+)")
+    if filepath then
+      table.insert(files_with_text, convert_to_absolute_path(out_filepath))
+    end
   end
+  -- print(vim.inspect(files_with_text))
   return files_with_text
 end
 
@@ -104,7 +108,7 @@ function double_chain:find_all_related(start_node, max_distance)
       end
 
       local forward_links = current_node:forward()
-      graph[current_path] = { links = forward_links or {}, distance = current.distance }
+      graph[current_path] = { links = {}, distance = current.distance }
 
       local backward_links = current_node:backward()
       for _, link in ipairs(backward_links) do
@@ -113,19 +117,19 @@ function double_chain:find_all_related(start_node, max_distance)
         end
         table.insert(graph[link].links, current_path)
         if not visited[link] then
-          table.insert(
-            queue,
-            { node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") }, distance = current.distance + 1 }
-          )
+          table.insert(queue, {
+            node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+            distance = current.distance + 1,
+          })
         end
       end
 
       for _, link in ipairs(forward_links) do
         if not visited[link] then
-          table.insert(
-            queue,
-            { node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") }, distance = current.distance + 1 }
-          )
+          table.insert(queue, {
+            node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+            distance = current.distance + 1,
+          })
         end
       end
     end
