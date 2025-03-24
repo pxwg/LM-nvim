@@ -1,4 +1,5 @@
 local M = {}
+-- TODO: ????Rewrite in sqlite.lua????
 
 -- Cache to store previous results and avoid repeated expensive operations
 local results_cache = {
@@ -129,7 +130,7 @@ function double_chain:forward()
   if
     results_cache.forward_links[cache_key]
     and results_cache.timestamp[cache_key]
-    and (os.time() - results_cache.timestamp[cache_key] < 30)
+    and (os.time() - results_cache.timestamp[cache_key] < 10)
     and not files_have_changed()
   then -- 30s cache validity
     return results_cache.forward_links[cache_key]
@@ -166,7 +167,7 @@ function double_chain:find_all_related(start_node, max_distance)
   local cache_key = start_path .. "_graph_" .. tostring(max_distance)
   local use_cache = results_cache.graph[cache_key]
     and results_cache.timestamp[cache_key]
-    and (os.time() - results_cache.timestamp[cache_key] < 60)
+    and (os.time() - results_cache.timestamp[cache_key] < 10)
     and not files_have_changed()
 
   local graph = {}
@@ -179,8 +180,6 @@ function double_chain:find_all_related(start_node, max_distance)
   local visited = {}
   local queue = { { node = start_node, distance = 1 } }
 
-  -- If using cache, we'll only process level 1 connections
-  local max_process_distance = use_cache and 1 or max_distance
   -- Process nodes in batches for better responsiveness
   while #queue > 0 do
     local batch_size = math.min(10, #queue) -- Process up to 10 nodes at a time
@@ -196,7 +195,7 @@ function double_chain:find_all_related(start_node, max_distance)
       current_node.filename = vim.fn.fnamemodify(current.node.filepath, ":t:r")
       local current_path = current_node.filepath
 
-      if not visited[current_path] and current.distance <= max_process_distance then
+      if not visited[current_path] and current.distance <= max_distance then
         visited[current_path] = current.distance
 
         if not use_cache or current.distance == 1 then
@@ -233,9 +232,6 @@ function double_chain:find_all_related(start_node, max_distance)
         end
       end
     end
-
-    -- Allow UI updates between batches
-    vim.cmd("redraw")
   end
 
   -- Cache the results

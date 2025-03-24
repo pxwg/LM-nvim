@@ -274,7 +274,15 @@ vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_l
 -- Optionally, you can run the function automatically on save
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = "*",
-  callback = trim_trailing_blank_lines,
+  callback = function()
+    trim_trailing_blank_lines()
+    if vim.bo.filetype == "markdown" then
+      local node = require("util.note_node_get_graph").double_chain
+      node.filename = vim.fn.expand("%:t:r")
+      node.filepath = vim.fn.expand("%:p")
+      node:find_all_related(node, 1)
+    end
+  end,
 })
 
 autocmd("FileType", {
