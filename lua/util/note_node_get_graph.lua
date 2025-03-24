@@ -6,7 +6,11 @@ local results_cache = {
   backward_links = {},
   graph = {},
   timestamp = {},
+  last_file_check = 0, -- Last time we checked file modifications
+  file_mtimes = {}, -- Store file modification times
 }
+
+local notes_directory = "/Users/pxwg-dogggie/personal-wiki/"
 
 local function convert_to_absolute_path(path)
   local root_directory = "/Users/pxwg-dogggie/personal-wiki/"
@@ -40,9 +44,9 @@ local function execute_rg_command(command)
 
   -- More responsive timeout handling with shorter sleep intervals
   local timeout = 200 -- Slightly increased timeout for better results
-  local start_time = vim.loop.now()
+  local start_time = os.time() * 1000
   while vim.fn.jobwait({ job_id }, 0)[1] == -1 do
-    if (vim.loop.now() - start_time) > timeout then
+    if ((os.time() * 1000) - start_time) > timeout then
       vim.fn.jobstop(job_id)
       vim.notify("Command execution timed out after " .. timeout .. "ms", vim.log.levels.WARN)
       return ""
@@ -51,6 +55,32 @@ local function execute_rg_command(command)
   end
 
   return output ~= "" and output or ""
+end
+
+local function files_have_changed()
+  local current_time = os.time()
+
+  -- Only check once every 10 seconds at most
+  if current_time - results_cache.last_file_check < 10 then
+    return false
+  end
+
+  -- Get list of markdown files
+  local command = string.format(
+    "find %s -name '*.md' -type f -newer \"%s%s\"",
+    notes_directory,
+    notes_directory,
+    ".last_check_timestamp"
+  )
+
+  local output = execute_rg_command(command)
+
+  -- Update timestamp file
+  os.execute(string.format("touch %s%s", notes_directory, ".last_check_timestamp"))
+  results_cache.last_file_check = current_time
+
+  -- If we found any files newer than our timestamp, cache is invalidated
+  return output and output ~= ""
 end
 
 -- Hack: Use a unexpected output for avoid bad dir
@@ -68,8 +98,9 @@ function double_chain:backward()
   if
     results_cache.backward_links[cache_key]
     and results_cache.timestamp[cache_key]
-    and (vim.loop.now() - results_cache.timestamp[cache_key] < 30000)
-  then -- 30s cache validity
+    and (os.time() - results_cache.timestamp[cache_key] < 30)
+    and not files_have_changed()
+  then
     return results_cache.backward_links[cache_key]
   end
 
@@ -86,7 +117,7 @@ function double_chain:backward()
 
   -- Cache results
   results_cache.backward_links[cache_key] = files_with_text
-  results_cache.timestamp[cache_key] = vim.loop.now()
+  results_cache.timestamp[cache_key] = os.time()
 
   return files_with_text
 end
@@ -94,12 +125,12 @@ end
 function double_chain:forward()
   local filepath = self.filepath
 
-  -- Check cache first
   local cache_key = filepath .. "_forward"
   if
     results_cache.forward_links[cache_key]
     and results_cache.timestamp[cache_key]
-    and (vim.loop.now() - results_cache.timestamp[cache_key] < 30000)
+    and (os.time() - results_cache.timestamp[cache_key] < 30)
+    and not files_have_changed()
   then -- 30s cache validity
     return results_cache.forward_links[cache_key]
   end
@@ -114,7 +145,7 @@ function double_chain:forward()
 
   -- Cache results
   results_cache.forward_links[cache_key] = links
-  results_cache.timestamp[cache_key] = vim.loop.now()
+  results_cache.timestamp[cache_key] = os.time()
 
   return links
 end
@@ -133,24 +164,29 @@ function double_chain:find_all_related(start_node, max_distance)
 
   -- Check cache for the graph
   local cache_key = start_path .. "_graph_" .. tostring(max_distance)
-  if
-    results_cache.graph[cache_key]
+  local use_cache = results_cache.graph[cache_key]
     and results_cache.timestamp[cache_key]
-    and (vim.loop.now() - results_cache.timestamp[cache_key] < 60000)
-  then -- 60s cache validity
-    return results_cache.graph[cache_key]
+    and (os.time() - results_cache.timestamp[cache_key] < 60)
+    and not files_have_changed()
+
+  local graph = {}
+
+  if use_cache then
+    -- Use the cached graph but we'll update level 1 connections
+    graph = results_cache.graph[cache_key]
   end
 
   local visited = {}
   local queue = { { node = start_node, distance = 1 } }
-  local graph = {}
 
+  -- If using cache, we'll only process level 1 connections
+  local max_process_distance = use_cache and 1 or max_distance
   -- Process nodes in batches for better responsiveness
   while #queue > 0 do
     local batch_size = math.min(10, #queue) -- Process up to 10 nodes at a time
     local batch = {}
 
-    for i = 1, batch_size do
+    for _ = 1, batch_size do
       table.insert(batch, table.remove(queue, 1))
     end
 
@@ -160,35 +196,39 @@ function double_chain:find_all_related(start_node, max_distance)
       current_node.filename = vim.fn.fnamemodify(current.node.filepath, ":t:r")
       local current_path = current_node.filepath
 
-      if not visited[current_path] and current.distance <= max_distance then
+      if not visited[current_path] and current.distance <= max_process_distance then
         visited[current_path] = current.distance
-        graph[current_path] = { links = {}, distance = current.distance }
 
-        -- Get forward and backward links
-        local forward_links = current_node:forward()
-        local backward_links = current_node:backward()
+        if not use_cache or current.distance == 1 then
+          -- For level 1 connections or full recalculation, compute links
+          graph[current_path] = { links = {}, distance = current.distance }
 
-        -- Process backward links
-        for _, link in ipairs(backward_links) do
-          if not graph[link] then
-            graph[link] = { links = {}, distance = nil }
+          -- Get forward and backward links
+          local forward_links = current_node:forward()
+          local backward_links = current_node:backward()
+
+          -- Process backward links
+          for _, link in ipairs(backward_links) do
+            if not graph[link] then
+              graph[link] = { links = {}, distance = nil }
+            end
+            table.insert(graph[link].links, current_path)
+            if not visited[link] then
+              table.insert(queue, {
+                node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+                distance = current.distance + 1,
+              })
+            end
           end
-          table.insert(graph[link].links, current_path)
-          if not visited[link] then
-            table.insert(queue, {
-              node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
-              distance = current.distance + 1,
-            })
-          end
-        end
 
-        -- Process forward links
-        for _, link in ipairs(forward_links) do
-          if not visited[link] then
-            table.insert(queue, {
-              node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
-              distance = current.distance + 1,
-            })
+          -- Process forward links
+          for _, link in ipairs(forward_links) do
+            if not visited[link] then
+              table.insert(queue, {
+                node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+                distance = current.distance + 1,
+              })
+            end
           end
         end
       end
