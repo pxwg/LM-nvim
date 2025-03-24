@@ -15,13 +15,33 @@ end
 local double_chain = { filepath = "", filename = "" }
 
 local function execute_rg_command(command)
-  -- local handle = io.popen(command)
-  local handle = vim.fn.system(command)
-  if handle then
-    -- local result = handle:read("*a")
-    return handle
+  -- Execute command with timeout
+  local output = ""
+  local job_id = vim.fn.jobstart(command, {
+    on_stdout = function(_, data)
+      if data then
+        output = output .. table.concat(data, "\n")
+      end
+    end,
+    stdout_buffered = true,
+  })
+
+  -- Wait for 500ms max
+  local timeout = 100
+  local start_time = vim.loop.now()
+  while vim.fn.jobwait({ job_id }, 0)[1] == -1 do
+    if (vim.loop.now() - start_time) > timeout then
+      vim.fn.jobstop(job_id)
+      vim.notify("Command execution timed out after " .. timeout .. "ms", vim.log.levels.WARN)
+      return ""
+    end
+    vim.cmd("sleep 10m")
+  end
+
+  if output ~= "" then
+    return output
   else
-    vim.notify("Command execution failed", vim.log.levels.ERROR)
+    -- vim.notify("Command execution failed", vim.log.levels.ERROR)
     return ""
   end
 end
