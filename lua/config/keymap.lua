@@ -375,48 +375,11 @@ map("v", "<leader>nV", function()
   vim.api.nvim_buf_set_lines(0, end_line + 1, end_line + 1, false, { "Total weight: " .. total_weight })
 end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 
-map("n", "<leader>nn", function()
-  if vim.bo.filetype == "markdown" then
-    -- local input = vim.fn.input("Search Level: ")
-    vim.cmd("wa")
-    local path = vim.fn.expand("%:p")
-    local name = vim.fn.fnamemodify(path, ":t:r")
+map("n", "<leader>nn", "<cmd>NoteTreeLocal<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
-    vim.cmd("nohlsearch")
+map("n", "<leader>nN", "<cmd>NoteTreeGlobal<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
-    local chain = require("util.note_node_get_graph").double_chain
-    chain.filepath = path
-    chain.filename = name
-
-    local start_time = vim.loop.hrtime()
-
-    require("util.note_node_get_graph").show_buffer_inlines_menu({}, math.huge)
-
-    local end_time = vim.loop.hrtime()
-    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
-  end
-end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
-
-map("n", "<leader>ni", function()
-  if vim.bo.filetype == "markdown" then
-    vim.cmd("wa")
-    local input = vim.fn.input("Search Level: ")
-    local path = vim.fn.expand("%:p")
-    local name = vim.fn.fnamemodify(path, ":t:r")
-
-    vim.cmd("nohlsearch")
-
-    local chain = require("util.note_node_get_graph").double_chain
-    chain.filepath = path
-    chain.filename = name
-
-    local start_time = vim.loop.hrtime() -- Start time in nanoseconds
-    require("util.note_telescope").double_chain_insert({}, tonumber(input))
-
-    local end_time = vim.loop.hrtime()
-    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
-  end
-end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+map("n", "<leader>ni", "<cmd>NoteTreeLocalInsert<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 map("v", "<CR>", function()
   if vim.bo.filetype == "markdown" then

@@ -274,7 +274,9 @@ vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_l
 -- Optionally, you can run the function automatically on save
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = "*",
-  callback = trim_trailing_blank_lines,
+  callback = function()
+    trim_trailing_blank_lines()
+  end,
 })
 
 autocmd("FileType", {
