@@ -375,61 +375,11 @@ map("v", "<leader>nV", function()
   vim.api.nvim_buf_set_lines(0, end_line + 1, end_line + 1, false, { "Total weight: " .. total_weight })
 end, { noremap = true, silent = true, desc = "[N]ote [F]it (selection)" })
 
-map("n", "<leader>nn", function()
-  if vim.bo.filetype == "markdown" then
-    vim.cmd("wa")
-    local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
-    local spinner_index = 1
-    local timer = vim.uv.new_timer()
-    timer:start(
-      0,
-      50,
-      vim.schedule_wrap(function()
-        vim.api.nvim_echo({ { "Building tree... " .. spinner_frames[spinner_index] } }, false, {})
-        spinner_index = (spinner_index % #spinner_frames) + 1
-      end)
-    )
-    local path = vim.fn.expand("%:p")
-    local name = vim.fn.fnamemodify(path, ":t:r")
+map("n", "<leader>nn", "<cmd>NoteTreeLocal<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
-    vim.cmd("nohlsearch")
-    local start_time = vim.uv.hrtime()
+map("n", "<leader>nN", "<cmd>NoteTreeGlobal<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
-    local chain = require("util.note_node_get_graph").double_chain
-    chain.filepath = path
-    chain.filename = name
-
-    require("util.note_node_get_graph").show_buffer_inlines_menu({}, math.huge)
-
-    local end_time = vim.loop.hrtime()
-    timer:stop()
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_echo({ { "Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms" } }, false, {})
-    end)
-  end
-end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
-
-map("n", "<leader>ni", function()
-  if vim.bo.filetype == "markdown" then
-    vim.cmd("wa")
-    local input = vim.fn.input("Search Level: ")
-    local path = vim.fn.expand("%:p")
-    local name = vim.fn.fnamemodify(path, ":t:r")
-
-    vim.cmd("nohlsearch")
-
-    local chain = require("util.note_node_get_graph").double_chain
-    chain.filepath = path
-    chain.filename = name
-
-    local start_time = vim.loop.hrtime() -- Start time in nanoseconds
-    require("util.note_telescope").double_chain_insert({}, tonumber(input))
-
-    local end_time = vim.loop.hrtime()
-    vim.notify("Build tree in: " .. ((end_time - start_time) / 1e6) .. " ms", vim.log.levels.INFO)
-  end
-end, { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+map("n", "<leader>ni", "<cmd>NoteTreeLocalInsert<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 map("v", "<CR>", function()
   if vim.bo.filetype == "markdown" then
