@@ -164,67 +164,78 @@ end
 --- @param start_node DobuleChainNode
 --- @param max_distance number
 --- @return table<string, DoubleChainGraph>
-function double_chain:find_all_related(start_node, max_distance)
-  max_distance = max_distance or math.huge
-  start_node = start_node or self
-  local start_path = convert_to_absolute_path(start_node.filepath)
-
-  local rust_processor = require("graph_processor")
-
-  local cache_key = start_path .. "_graph_" .. tostring(max_distance)
-  local graph = {}
-  local visited = {}
-  local queue = { { node = start_node, distance = 1 } }
-
-  while #queue > 0 do
-    local current_level = {}
-    local batch_size = math.min(10, #queue)
-    for _ = 1, batch_size do
-      table.insert(current_level, table.remove(queue, 1))
-    end
-
-    local rust_nodes = {}
-    for _, current in ipairs(current_level) do
-      table.insert(rust_nodes, {
-        filepath = convert_to_absolute_path(current.node.filepath),
-        distance = current.distance,
-      })
-    end
-
-    local rust_result = rust_processor.process_layer(rust_nodes, max_distance)
-
-    for _, new_node in ipairs(rust_result.new_nodes) do
-      if not visited[new_node.filepath] then
-        visited[new_node.filepath] = new_node.distance
-        graph[new_node.filepath] = {
-          links = {},
-          distance = new_node.distance,
-        }
-        table.insert(queue, {
-          node = {
-            filepath = new_node.filepath,
-            filename = vim.fn.fnamemodify(new_node.filepath, ":t:r"),
-          },
-          distance = new_node.distance,
-        })
-      end
-    end
-
-    for target, sources in pairs(rust_result.backward_links) do
-      if not graph[target] then
-        graph[target] = { links = {}, distance = nil }
-      end
-      for _, source in ipairs(sources) do
-        table.insert(graph[target].links, source)
-      end
-    end
-  end
-
-  results_cache.graph[cache_key] = graph
-  results_cache.timestamp[cache_key] = os.time()
-
-  return graph
-end
+-- function double_chain:find_all_related(start_node, max_distance)
+--   max_distance = max_distance or math.huge
+--   start_node = start_node or self
+--   local start_path = convert_to_absolute_path(start_node.filepath)
+--
+--   local cache_key = start_path .. "_graph_" .. tostring(max_distance)
+--
+--   local graph = {}
+--
+--   local visited = {}
+--   local queue = { { node = start_node, distance = 1 } }
+--
+--   while #queue > 0 do
+--     local batch_size = math.min(10, #queue)
+--     local batch = {}
+--
+--     for _ = 1, batch_size do
+--       table.insert(batch, table.remove(queue, 1))
+--     end
+--
+--     for _, current in ipairs(batch) do
+--       local current_node = self
+--       current_node.filepath = convert_to_absolute_path(current.node.filepath)
+--       current_node.filename = vim.fn.fnamemodify(current.node.filepath, ":t:r")
+--       local current_path = current_node.filepath
+--
+--       if not visited[current_path] and current.distance <= max_distance then
+--         visited[current_path] = current.distance
+--
+--         -- if not use_cache or current.distance == 1 then
+--         -- For level 1 connections or full recalculation, compute links
+--         graph[current_path] = { links = {}, distance = current.distance }
+--
+--         -- Get forward and backward links
+--         local forward_links = current_node:forward()
+--         local backward_links = current_node:backward()
+--
+--         -- Process backward links
+--         for _, link in ipairs(backward_links) do
+--           if not graph[link] then
+--             graph[link] = { links = {}, distance = nil }
+--           end
+--           table.insert(graph[link].links, current_path)
+--           if not visited[link] then
+--             table.insert(queue, {
+--               node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+--               distance = current.distance + 1,
+--             })
+--           end
+--         end
+--
+--         -- Process forward links
+--         for _, link in ipairs(forward_links) do
+--           if not visited[link] then
+--             table.insert(queue, {
+--               node = { filepath = link, filename = vim.fn.fnamemodify(link, ":t:r") },
+--               distance = current.distance + 1,
+--             })
+--           end
+--           -- end
+--         end
+--       end
+--     end
+--   end
+--
+--   -- Cache the results
+--   results_cache.graph[cache_key] = graph
+--   results_cache.timestamp[cache_key] = os.time()
+--
+--   print(vim.inspect(graph))
+--   return graph
+-- end
 
 ---@class ShortestPath
 ---@field node string
@@ -238,8 +249,10 @@ function double_chain:calculate_shortest_paths(start_node, max)
 
   local shortest_paths = {}
 
-  for node, data in pairs(graph) do
-    table.insert(shortest_paths, { node = node, path_length = data.distance or math.huge })
+  for _, data in pairs(graph) do
+    for i = 1, #data do
+      table.insert(shortest_paths, { node = data[i].links.filepath, path_length = data[i].distance })
+    end
   end
 
   table.sort(shortest_paths, function(a, b)
@@ -247,6 +260,11 @@ function double_chain:calculate_shortest_paths(start_node, max)
   end)
 
   return shortest_paths
+end
+
+function double_chain:find_all_related(start_node, max_distance)
+  local rust_processor = require("utils.tree_builder").generate_double_chain_graph(start_node, 10)
+  return rust_processor
 end
 
 local function show_buffer_inlines_menu(opt, max)

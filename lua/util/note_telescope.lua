@@ -8,6 +8,9 @@ local telescope = require("telescope")
 
 local double_chain = require("util.note_node_get_graph").double_chain
 
+--- Use telescope to search for links in the double chain graph
+--- @param opts table
+--- @param max number
 local function double_chain_search(opts, max)
   opts = opts or { width = 0.5 }
   local start_node = { filepath = vim.fn.expand("%:p"), filename = vim.fn.expand("%:t:r") }
