@@ -20,7 +20,10 @@ vim.opt.clipboard = "unnamedplus"
 vim.o.ttyfast = true
 vim.o.lazyredraw = true
 vim.opt.laststatus = 3
+vim.opt.splitright = true
+vim.opt.splitbelow = true
 vim.diagnostic.config({
+  virtual_text = true,
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "",
