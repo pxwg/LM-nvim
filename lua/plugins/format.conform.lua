@@ -13,8 +13,8 @@ return {
   opts = {
     formatters_by_ft = {
       lua = { "stylua", "injected" },
-      plaintex = { "latexindent" },
-      tex = { "latexindent" },
+      plaintex = { "latexindent", "autocorrect" },
+      tex = { "latexindent", "autocorrect" },
       yml = { "yq" },
       json = { "fixjson" },
       markdown = { "autocorrect", "injected" },

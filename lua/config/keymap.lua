@@ -127,7 +127,7 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 map({ "n", "v", "i" }, "<C-s>", function()
   -- save_and_delete_last_line()
   -- vim.cmd("stopinsert")
-  if vim.bo.filetype ~= "tex" or vim.bo.filetype ~= "markdown" then
+  if vim.bo.filetype ~= "markdown" then
     require("conform").format()
   end
   vim.cmd("w")
