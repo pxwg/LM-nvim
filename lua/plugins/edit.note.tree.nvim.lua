@@ -1,9 +1,10 @@
 return {
   "pxwg/note-tree.nvim",
   dev = true,
-  dependencies = {
-    "MunifTanjim/nui.nvim",
-    { "3rd/image.nvim", lazy = true, build = true }, -- Optional image support in pdf preview
+  event = "VeryLazy",
+  build = "make lua51",
+  opts = {
+    max_depth = 10,
+    root = "~/personal-wiki",
   },
-  branch = "feature",
 }
