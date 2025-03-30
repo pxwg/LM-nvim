@@ -12,8 +12,8 @@ let g:tex_flavor='latex'
 let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
-"let g:vimtex_quickfix_mode=0
-let g:vimtex_fold_enabled=0
+let g:vimtex_quickfix_mode=0
+let g:vimtex_fold_enabled=1
 set conceallevel=2
 "let g:tex_conceal="abdgm"
 " 启用 conceal 功能

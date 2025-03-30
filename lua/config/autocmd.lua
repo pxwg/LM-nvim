@@ -137,18 +137,9 @@ autocmd("VimLeavePre", {
   end,
 })
 
-autocmd("CursorMovedI", {
+autocmd({ "CursorMovedI", "CursorMoved", "BufEnter" }, {
   callback = function()
-    local statusline_parts = {
-      "%f", -- 文件名
-      "%m", -- 修改标志
-      "%=",
-      "", -- 占位符
-      require("util.battery").get_battery_icon() .. " ",
-    }
-    statusline_parts[4] = "[" .. require("util.rime_ls").rime_toggle_word() .. "] "
-    require("util.rime_ls").change_cursor_color()
-    vim.o.statusline = table.concat(statusline_parts)
+    require("util.statusline").update_hl()
   end,
 })
 

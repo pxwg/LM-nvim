@@ -44,15 +44,8 @@ return {
       answer_header = "  Copilot ",
       model = "claude-3.7-sonnet-thought", -- Set Claude model as default
       window = {
-        layout = "float", -- 'vertical', 'horizontal', 'float', 'replace'
-        width = 0.4, -- fractional width of parent, or absolute width in columns when > 1
-        -- Options below only apply to floating windows
-        relative = "mouse", -- 'editor', 'win', 'cursor', 'mouse'
-        border = "rounded", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
-        row = nil, -- row position of the window, default is centered
-        col = nil, -- column position of the window, default is centered
-        title = "", -- title of chat window
-        footer = nil, -- footer of chat window
+        layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
+        width = 0.3, -- fractional width of parent, or absolute width in columns when > 1
       },
     }
   end,
