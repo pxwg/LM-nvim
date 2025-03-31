@@ -34,7 +34,7 @@ Job:new({
   end,
 }):sync()
 
-local home = vim.fn.expand("$HOME")
+local home = _G.HOMEPARH
 local filename = vim.fn.expand("%:f"):gsub(home, "")
 vim.o.statusline = table.concat({
   "%#StatusLineFile#" .. filename, -- 文件名
