@@ -23,22 +23,6 @@ M.cache = {
   battery_time = 0,
 }
 
-local function get_branch()
-  local current_time = vim.loop.now()
-  -- Update git branch at most every 5 seconds
-  if current_time - M.cache.branch_time > 5000 then
-    local branch =
-      vim.fn.system("git -C " .. vim.fn.expand("%:p:h") .. " branch --show-current 2>/dev/null | tr -d '\n'")
-    if vim.v.shell_error == 0 and branch ~= "" then
-      M.cache.branch = " " .. branch
-    else
-      M.cache.branch = ""
-    end
-    M.cache.branch_time = current_time
-  end
-  return M.cache.branch
-end
-
 local Job = require("plenary.job")
 local branch = ""
 Job:new({
@@ -50,8 +34,10 @@ Job:new({
   end,
 }):sync()
 
+local home = vim.fn.expand("$HOME")
+local filename = vim.fn.expand("%:f"):gsub(home, "")
 vim.o.statusline = table.concat({
-  "%#StatusLineFile#%f", -- 文件名
+  "%#StatusLineFile#" .. filename, -- 文件名
   "%#StatusLineModified#%m", -- 修改标志
   "%=",
   symbols.get(),
@@ -80,8 +66,9 @@ function M.update_hl()
     end,
   }):sync()
 
+  filename = vim.fn.expand("%:f"):gsub(home, "")
   vim.o.statusline = table.concat({
-    "%#StatusLineFile#%f", -- 文件名
+    "%#StatusLineFile#" .. filename, -- 文件名
     "%#StatusLineModified#%m", -- 修改标志
     "%=",
     symbols.get(),

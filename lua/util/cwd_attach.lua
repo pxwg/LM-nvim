@@ -3,7 +3,7 @@ local M = {}
 local last_file_dir = nil
 local last_git_dir = nil
 
-local function cwd()
+local function cwd(ignore_home)
   local file_dir = vim.fn.expand("%:p:h")
   local git_dir = vim.fn.system("git -C " .. file_dir .. " rev-parse --show-toplevel")
 
