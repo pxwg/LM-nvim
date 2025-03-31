@@ -1,4 +1,4 @@
--- require("util.lazyfile").lazy_file()
+require("util.lazyfile").lazy_file()
 return {
   {
     "folke/lazydev.nvim",
@@ -15,8 +15,8 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    event = { "VeryLazy", "BufEnter", "BufReadPost", "BufWritePost", "BufNewFile" },
-    -- event = { "LazyFile" },
+    -- event = { "VeryLazy", "BufEnter", "BufReadPost", "BufWritePost", "BufNewFile" },
+    event = { "LazyFile" },
     cmd = "LspStart",
     dependencies = {
       -- Setup lsp installed in mason
@@ -58,8 +58,8 @@ return {
             -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
             capabilities = capabilities,
             root_dir = function(fname)
-              return lspconfig.util.root_pattern(".git", "package.json", "pyproject.toml")(fname)
-                or vim.fs.dirname(fname)
+              local dir = require("util.cwd_attach").get_cwd(fname)
+              return dir
             end,
             settings = {
               Lua = {

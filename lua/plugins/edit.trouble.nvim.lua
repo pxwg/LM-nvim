@@ -24,6 +24,20 @@ return {
       desc = "LSP Definitions / references / ... (Trouble)",
     },
     {
+      "<leader>cr",
+      function()
+        vim.lsp.buf.rename()
+      end,
+      desc = "Rename (LSP)",
+    },
+    {
+      "<leader>ca",
+      function()
+        vim.lsp.buf.code_action()
+      end,
+      desc = "Code Action (LSP)",
+    },
+    {
       "<leader>xL",
       "<cmd>Trouble loclist toggle<cr>",
       desc = "Location List (Trouble)",

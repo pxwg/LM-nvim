@@ -24,6 +24,30 @@ local function cwd()
   end
 end
 
+local function get_cwd(fname)
+  local file_path = vim.fn.expand(fname)
+  local file_dir = vim.fn.fnamemodify(file_path, ":p:h")
+  local git_cmd = "git -C " .. vim.fn.shellescape(file_dir) .. " rev-parse --show-toplevel"
+  local git_dir = vim.fn.system(git_cmd)
+
+  if vim.v.shell_error == 0 then
+    local git_root = vim.fn.trim(git_dir)
+    local home_dir = vim.fn.expand("$HOME")
+
+    if git_root == home_dir then
+      last_file_dir = file_dir
+      return last_file_dir
+    else
+      last_git_dir = git_root
+      return last_git_dir
+    end
+  else
+    last_file_dir = file_dir
+    return last_file_dir
+  end
+end
+
 M.cwd = cwd
+M.get_cwd = get_cwd
 
 return M
