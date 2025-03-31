@@ -138,8 +138,8 @@ end, { noremap = true, silent = true })
 -- map("i", "j", 'j<ESC>:lua require("util.fast_keymap").listen_for_key(200, "j")<CR>', { noremap = true, silent = true })
 
 --undo and redo
-map({ "n", "i" }, "<C-z>", "<C-o>:undo<CR>", { silent = true })
-map({ "n", "i" }, "<C-r>", "<C-o>:redo<CR>", { silent = true })
+map({ "n" }, "<C-z>", "u", { silent = true })
+map("i", "<C-z>", "<C-o>u", { silent = true })
 
 -- signature_help
 map(
