@@ -23,7 +23,7 @@ vim.opt.laststatus = 3
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.diagnostic.config({
-  virtual_text = true,
+  virtual_lines = true,
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "",
@@ -31,12 +31,6 @@ vim.diagnostic.config({
       [vim.diagnostic.severity.INFO] = "",
       [vim.diagnostic.severity.HINT] = "",
     },
-    -- linehl = {
-    --   [vim.diagnostic.severity.ERROR] = "ErrorMsg",
-    -- },
-    -- numhl = {
-    --   [vim.diagnostic.severity.WARN] = "WarningMsg",
-    -- },
   },
 })
 vim.opt.foldmethod = "marker"
