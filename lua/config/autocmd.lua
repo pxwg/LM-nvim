@@ -137,9 +137,31 @@ autocmd("VimLeavePre", {
   end,
 })
 
-autocmd({ "CursorMovedI", "CursorMoved", "BufEnter" }, {
+-- Use a more efficient event pattern
+local statusline_update_timer = vim.loop.new_timer()
+autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
   callback = function()
     require("util.statusline").update_hl()
+    -- Debounce cursor movement events
+    if statusline_update_timer then
+      statusline_update_timer:stop()
+    end
+  end,
+})
+
+-- Debounced updates for cursor movements
+autocmd({ "CursorMovedI", "CursorMoved" }, {
+  callback = function()
+    if statusline_update_timer then
+      statusline_update_timer:stop()
+      statusline_update_timer:start(
+        300,
+        0,
+        vim.schedule_wrap(function()
+          require("util.statusline").update_hl()
+        end)
+      )
+    end
   end,
 })
 
