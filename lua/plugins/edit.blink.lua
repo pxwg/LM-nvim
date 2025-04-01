@@ -180,7 +180,7 @@ return {
       },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
-        default = { "lsp", "path", "buffer", "copilot" },
+        default = { "lsp", "path", "buffer", "copilot", "lazydev" },
         providers = {
           lsp = {
             min_keyword_length = 0,
