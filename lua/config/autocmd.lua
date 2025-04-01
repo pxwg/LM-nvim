@@ -141,7 +141,7 @@ autocmd("VimLeavePre", {
 local statusline_update_timer = vim.loop.new_timer()
 autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
   callback = function()
-    if vim.bo.buftype ~= "terminal" then
+    if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" then
       require("util.statusline").update_hl()
       -- Debounce cursor movement events
       if statusline_update_timer then
@@ -154,7 +154,7 @@ autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
 -- Debounced updates for cursor movements
 autocmd({ "CursorMovedI", "CursorMoved" }, {
   callback = function()
-    if vim.bo.buftype ~= "terminal" then
+    if vim.bo.buftype ~= "terminal" or vim.bo.buftype ~= "nofile" then
       if statusline_update_timer then
         statusline_update_timer:stop()
         statusline_update_timer:start(
@@ -197,23 +197,6 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 --     vim.cmd("TSBufEnable highlight")
 --   end,
 -- })
-
--- Firenvim settings
-
-if vim.g.started_by_firenvim then
-  vim.api.nvim_create_autocmd("BufWritePost", {
-    callback = require("util.firenvim").adjust_minimum_lines,
-  })
-
-  vim.api.nvim_create_autocmd("BufEnter", {
-    callback = require("util.firenvim").adjust_minimum_lines,
-  })
-
-  vim.api.nvim_create_autocmd({ "BufEnter" }, {
-    pattern = "*.txt",
-    command = "set filetype=markdown",
-  })
-end
 
 -- avate.nvim
 autocmd("FileType", {
@@ -328,3 +311,19 @@ vim.api.nvim_create_autocmd("User", {
     end
   end,
 })
+
+--- firenvim
+if vim.g.started_by_firenvim then
+  vim.api.nvim_create_autocmd("BufWritePost", {
+    callback = require("util.firenvim").adjust_minimum_lines,
+  })
+
+  vim.api.nvim_create_autocmd("BufEnter", {
+    callback = require("util.firenvim").adjust_minimum_lines,
+  })
+
+  vim.api.nvim_create_autocmd({ "BufEnter" }, {
+    pattern = "*.txt",
+    command = "set filetype=markdown",
+  })
+end
