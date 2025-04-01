@@ -54,22 +54,22 @@ local function is_leftmost_window()
 end
 
 -- switch to right window
-map("n", "<C-l>", function()
-  if is_rightmost_window() then
-    vim.fn.system("hs -c 'focusNextWindow()'")
-  else
-    vim.cmd("wincmd l")
-  end
-end, { noremap = true, silent = true, desc = "Move to right window" })
+-- map("n", "<C-l>", function()
+--   if is_rightmost_window() then
+--     vim.fn.system("hs -c 'focusNextWindow()'")
+--   else
+--     vim.cmd("wincmd l")
+--   end
+-- end, { noremap = true, silent = true, desc = "Move to right window" })
 
 -- same for left
-map("n", "<C-h>", function()
-  if is_leftmost_window() then
-    vim.fn.system("hs -c 'focusPreviousWindow()'")
-  else
-    vim.cmd("wincmd h")
-  end
-end, { noremap = true, silent = true, desc = "Move to left window" })
+-- map("n", "<C-h>", function()
+--   if is_leftmost_window() then
+--     vim.fn.system("hs -c 'focusPreviousWindow()'")
+--   else
+--     vim.cmd("wincmd h")
+--   end
+-- end, { noremap = true, silent = true, desc = "Move to left window" })
 
 local function DeleteLastCommandHistory()
   -- Get the current command history
