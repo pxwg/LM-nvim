@@ -23,16 +23,31 @@ M.cache = {
   battery_time = 0,
 }
 
-local Job = require("plenary.job")
-local branch = ""
-Job:new({
-  command = "git",
-  args = { "branch", "--show-current" },
-  cwd = vim.fn.expand("%:p:h"),
-  on_exit = function(j, _)
-    branch = j:result()[1] or ""
-  end,
-}):sync()
+local function get_git_branch()
+  local git_dir = vim.fn.finddir(".git", vim.fn.expand("%:p:h") .. ";")
+  if git_dir == "" then
+    return ""
+  end
+
+  -- Try to get from git HEAD file first (reduces shell execution)
+  local head_file = git_dir .. "/HEAD"
+  if vim.fn.filereadable(head_file) == 1 then
+    local head_content = vim.fn.readfile(head_file)[1] or ""
+    local branch_match = head_content:match("ref: refs/heads/(.+)")
+    if branch_match then
+      return branch_match
+    end
+  end
+
+  -- Fall back to git command if needed
+  local output = vim.fn.system("git -C " .. vim.fn.shellescape(vim.fn.expand("%:p:h")) .. " branch --show-current")
+  if vim.v.shell_error ~= 0 then
+    return ""
+  end
+  return vim.fn.trim(output)
+end
+
+local branch = get_git_branch()
 
 local home = _G.HOMEPARH
 local filename = vim.fn.expand("%:f"):gsub(home, "")
@@ -42,30 +57,13 @@ vim.o.statusline = table.concat({
   "%=",
   symbols.get(),
   "%=",
-  "%#StatusLineGit#" .. branch .. " ",
+  "%#StatusLineGit#" .. get_git_branch() .. " ",
   "%#StatusLineLang#[" .. "en" .. "] ",
   "%#StatusLineBattery#" .. require("util.battery").get_battery_icon() .. " ",
   "%#Normal#",
 })
 
 function M.update_hl()
-  local current_time = vim.loop.now()
-  -- Update battery info at most every 30 seconds
-  if current_time - M.cache.battery_time > 30000 then
-    M.cache.battery_icon = require("util.battery").get_battery_icon()
-    M.cache.battery_time = current_time
-  end
-  local Job = require("plenary.job")
-  local branch = ""
-  Job:new({
-    command = "git",
-    args = { "branch", "--show-current" },
-    cwd = vim.fn.expand("%:p:h"),
-    on_exit = function(j, _)
-      branch = j:result()[1] or ""
-    end,
-  }):sync()
-
   filename = vim.fn.expand("%:f"):gsub(home, "")
   vim.o.statusline = table.concat({
     "%#StatusLineFile#" .. filename, -- 文件名
@@ -73,7 +71,7 @@ function M.update_hl()
     "%=",
     symbols.get(),
     "%=",
-    "%#StatusLineGit#" .. branch .. " ",
+    "%#StatusLineGit#" .. get_git_branch() .. " ",
     "%#StatusLineLang#" .. "[" .. require("util.rime_ls").rime_toggle_word() .. "] ",
     "%#StatusLineBattery#" .. M.cache.battery_icon .. " ",
     "%#Normal#", -- Reset highlight at the end
