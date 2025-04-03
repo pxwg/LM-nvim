@@ -86,20 +86,16 @@ end
 function ChNeovim()
   if is_leftmost_window() then
     vim.fn.system("hs -c 'focusPreviousWindow()'")
-    DeleteLastCommandHistory()
   else
     vim.cmd("wincmd h")
-    DeleteLastCommandHistory()
   end
 end
 
 function ClNeovim()
   if is_rightmost_window() then
     vim.fn.system("hs -c 'focusPreviousWindow()'")
-    DeleteLastCommandHistory()
   else
     vim.cmd("wincmd l")
-    DeleteLastCommandHistory()
   end
 end
 
@@ -127,9 +123,9 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 map({ "n", "v", "i" }, "<C-s>", function()
   -- save_and_delete_last_line()
   -- vim.cmd("stopinsert")
-  if vim.bo.filetype ~= "markdown" then
-    require("conform").format()
-  end
+  -- if vim.bo.filetype ~= "markdown" then
+  require("conform").format()
+  -- end
   vim.cmd("w")
   vim.cmd("stopinsert")
 end, { noremap = true, silent = true })
