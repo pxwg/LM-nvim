@@ -1,7 +1,7 @@
 local M = {}
 
 function M.dictionary_setup()
-  local dictionary_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante", "help" }
+  -- local dictionary_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante", "help" }
   local configs = require("lspconfig.configs")
   vim.g.dict_enabled = false
   local lspconfig = require("lspconfig")
@@ -9,7 +9,7 @@ function M.dictionary_setup()
   if not configs.dictionary then
     configs.dictionary = {
       default_config = {
-        filetypes = dictionary_filetypes,
+        -- filetypes = dictionary_filetypes,
         cmd = { vim.fn.expand("~/dictionary_lsp/target/release/dictionary_lsp") },
         autostart = true,
         single_file_support = true,
