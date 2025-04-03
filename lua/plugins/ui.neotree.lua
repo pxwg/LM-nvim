@@ -34,8 +34,13 @@ return {
     },
     { "<leader>e", "<leader>fe", desc = "[E]xplorer NeoTree (cwd)", remap = true },
     { "<leader>E", "<leader>fE", desc = "[E]xplorer NeoTree (Root Dir)", remap = true },
+    -- { "<leader>cs", ":Neotree document_symbols<CR>" },
   },
   opts = {
+    sources = { "filesystem", "git_status", "document_symbols" },
+    source_selector = {
+      winbar = true,
+    },
     window = {
       mappings = {
         ["l"] = "open",
