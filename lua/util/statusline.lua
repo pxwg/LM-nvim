@@ -78,4 +78,5 @@ function M.update_hl()
   })
   require("util.rime_ls").change_cursor_color()
 end
+
 return M
