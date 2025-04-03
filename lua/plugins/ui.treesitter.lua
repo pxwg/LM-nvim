@@ -9,7 +9,7 @@ return {
   opts = {},
   config = function()
     require("nvim-treesitter.configs").setup({
-      ignore_install = {},
+      ignore_install = { "markdown" },
       ensure_installed = {
         "bash",
         "c",
@@ -22,7 +22,7 @@ return {
         "lua",
         "luadoc",
         "luap",
-        "markdown",
+        -- "markdown",
         "markdown_inline",
         "printf",
         "python",
@@ -54,6 +54,19 @@ return {
         enable = true,
         -- additional_vim_regex_highlighting = false,
         additional_vim_regex_highlighting = { "latex" },
+      },
+      injections = {
+        markdown = {
+          latex_environment = {
+            query = [[
+          (inline_formula
+            (content) @latex)
+          (displayed_equation
+            (content) @latex)
+        ]],
+            languages = { latex = true },
+          },
+        },
       },
     })
   end,
