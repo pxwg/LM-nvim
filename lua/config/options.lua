@@ -23,7 +23,9 @@ vim.opt.laststatus = 3
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.diagnostic.config({
-  virtual_lines = true,
+  virtual_text = true,
+  virtual_lines = { current_line = true },
+  underline = true,
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "",
