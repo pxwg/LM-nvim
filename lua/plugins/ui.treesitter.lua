@@ -9,7 +9,7 @@ return {
   opts = {},
   config = function()
     require("nvim-treesitter.configs").setup({
-      ignore_install = { "markdown" },
+      ignore_install = {},
       ensure_installed = {
         "bash",
         "c",
@@ -22,7 +22,7 @@ return {
         "lua",
         "luadoc",
         "luap",
-        -- "markdown",
+        "markdown",
         "markdown_inline",
         "printf",
         "python",
