@@ -82,6 +82,21 @@ return {
         -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
         capabilities = capabilities,
       })
+
+      local pyright_capabilities = vim.lsp.protocol.make_client_capabilities()
+      pyright_capabilities = require("blink.cmp").get_lsp_capabilities(pyright_capabilities)
+
+      lspconfig.pyright.setup({
+        capabilities = pyright_capabilities,
+        settings = {
+          python = {
+            analysis = {
+              diagnosticMode = "off",
+              typeCheckingMode = "off",
+            },
+          },
+        },
+      })
     end,
   },
 }
