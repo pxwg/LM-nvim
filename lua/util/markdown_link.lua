@@ -82,13 +82,10 @@ function M.jump_to_link(link_index, bufnr, direction)
   end
 
   vim.b[bufnr].md_links_index = link_index
-  vim.api.nvim_win_set_cursor(
-    0,
-    {
-      links[((link_index + direction - 1 - 1) % #links) + 1].row + 1,
-      links[((link_index + direction - 1 - 1) % #links) + 1].col + 1,
-    }
-  )
+  vim.api.nvim_win_set_cursor(0, {
+    links[((link_index + direction - 1 - 1) % #links) + 1].row + 1,
+    links[((link_index + direction - 1 - 1) % #links) + 1].col + 1,
+  })
   return true
 end
 
