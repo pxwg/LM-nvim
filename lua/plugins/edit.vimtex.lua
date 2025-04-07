@@ -9,7 +9,8 @@ return {
       vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
       vim.cmd([[
 let g:tex_flavor='latex'
-let g:vimtex_view_method = 'zathura'
+"let g:vimtex_view_method = 'skim'
+"let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
 let g:vimtex_quickfix_mode=0
