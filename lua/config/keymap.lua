@@ -125,7 +125,6 @@ map({ "n", "v", "i" }, "<C-s>", function()
   -- vim.cmd("stopinsert")
   -- if vim.bo.filetype ~= "markdown" then
   require("conform").format()
-  -- end
   vim.cmd("w")
   vim.cmd("stopinsert")
 end, { noremap = true, silent = true })
@@ -376,6 +375,9 @@ map("n", "<leader>nn", "<cmd>NoteTreeLocal<CR>", { noremap = true, silent = true
 map("n", "<leader>nN", "<cmd>NoteTreeGlobal<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
 
 map("n", "<leader>ni", "<cmd>NoteTreeLocalInsert<CR>", { noremap = true, silent = true, desc = "[N]ote [N]ode" })
+
+--- anki
+map("n", "<leader>ne", "<cmd>NoteEngWords<CR>", { noremap = true, silent = true, desc = "[N]ote [E]nglish" })
 
 map("v", "<CR>", function()
   if vim.bo.filetype == "markdown" then
