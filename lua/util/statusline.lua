@@ -48,6 +48,7 @@ local function get_git_branch()
 end
 
 local branch = get_git_branch()
+vim.api.nvim_set_hl(0, "Statusline", { fg = "#cdd6f4", bg = "#1e1e2f" })
 
 local home = _G.HOMEPARH
 local filename = vim.fn.expand("%:f"):gsub(home, "")
@@ -60,11 +61,12 @@ vim.o.statusline = table.concat({
   "%#StatusLineGit#" .. get_git_branch() .. " ",
   "%#StatusLineLang#[" .. "en" .. "] ",
   "%#StatusLineBattery#" .. require("util.battery").get_battery_icon() .. " ",
-  "%#Normal#",
+  "%#Statusline#",
 })
 
 function M.update_hl()
   filename = vim.fn.expand("%:f"):gsub(home, "")
+  vim.api.nvim_set_hl(0, "Statusline", { fg = "#cdd6f4", bg = "#1e1e2f" })
   vim.o.statusline = table.concat({
     "%#StatusLineFile#" .. filename, -- 文件名
     "%#StatusLineModified#%m", -- 修改标志
@@ -74,7 +76,7 @@ function M.update_hl()
     "%#StatusLineGit#" .. get_git_branch() .. " ",
     "%#StatusLineLang#" .. "[" .. require("util.rime_ls").rime_toggle_word() .. "] ",
     "%#StatusLineBattery#" .. M.cache.battery_icon .. " ",
-    "%#Normal#", -- Reset highlight at the end
+    "%#Statusline#", -- Reset highlight at the end
   })
   require("util.rime_ls").change_cursor_color()
 end
