@@ -233,40 +233,38 @@ autocmd("VimLeavePre", {
   end,
 })
 
--- Function to trim trailing blank lines from the current buffer
-local function trim_trailing_blank_lines()
-  -- Save the cursor position
-  local cursor_pos = vim.api.nvim_win_get_cursor(0)
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local last_non_blank = #lines
-  for i = #lines, 1, -1 do
-    if lines[i]:match("^%s*$") then
-      last_non_blank = i - 1
-    else
-      break
-    end
-  end
-  -- Only make changes if needed and preserve undo history
-  if last_non_blank < #lines then
-    vim.cmd("undojoin")
-    vim.api.nvim_buf_set_lines(0, last_non_blank, -1, false, {})
-  end
-  -- Restore cursor position if it was beyond the new end
-  if cursor_pos[1] > last_non_blank and last_non_blank > 0 then
-    vim.api.nvim_win_set_cursor(0, { last_non_blank, cursor_pos[2] })
-  end
-end
-
--- Create a command to run the function
-vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_lines, {})
-
--- Optionally, you can run the function automatically on save
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*",
-  callback = function()
-    trim_trailing_blank_lines()
-  end,
-})
+-- -- Function to trim trailing blank lines from the current buffer
+-- local function trim_trailing_blank_lines()
+--   local bufnr = vim.api.nvim_get_current_buf()
+--   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+--
+--   local last_non_blank = #lines
+--   while last_non_blank > 0 and lines[last_non_blank]:match("^%s*$") do
+--     last_non_blank = last_non_blank - 1
+--   end
+--
+--   if last_non_blank < #lines then
+--     vim.cmd([[
+--       let save_view = winsaveview()
+--       let save_ul = &undolevels
+--       set undolevels=-1
+--       silent! execute "keepjumps lockmarks " . (]] .. last_non_blank .. [[+1) . ",$delete _"
+--       let &undolevels = save_ul
+--       call winrestview(save_view)
+--     ]])
+--   end
+-- end
+--
+-- -- Create a command to run the function
+-- vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_lines, {})
+--
+-- -- Optionally, you can run the function automatically on save
+-- vim.api.nvim_create_autocmd("BufWritePre", {
+--   pattern = "*",
+--   callback = function()
+--     trim_trailing_blank_lines()
+--   end,
+-- })
 
 autocmd("FileType", {
   pattern = { "copilot-chat", "markdown" },
