@@ -61,8 +61,8 @@ return {
 
 <>
 
+\label{LastPage}
 \end{document}
-
     ]],
       {
         i(1, "extarticle"),
