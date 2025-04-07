@@ -11,13 +11,56 @@ return {
     },
   },
   opts = {
+    log_level = vim.log.levels.DEBUG,
+    remove_trailing_blanks = {
+      fn = function(bufnr)
+        -- Get buffer content
+        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+        -- Find the last non-blank line
+        local last_non_blank = #lines
+        while last_non_blank > 0 and lines[last_non_blank]:match("^%s*$") do
+          last_non_blank = last_non_blank - 1
+        end
+
+        -- If there are trailing blank lines
+        if last_non_blank < #lines then
+          -- Keep only non-blank lines
+          local new_lines = vim.list_slice(lines, 1, last_non_blank)
+          -- Return the changes
+          return {
+            {
+              start = 0, -- Start at beginning of buffer
+              finish = #lines - 1, -- End at last line of buffer
+              replacement = new_lines,
+            },
+          }
+        end
+
+        -- No changes needed
+        return {}
+      end,
+    },
+    formatters = {
+      trimlines = {
+        command = vim.fn.stdpath("config") .. "/trim_blank_fmt/target/release/trim_blank_fmt",
+        args = { "--input", "-" },
+        stdin = true,
+      }, -- HACK: a hacky way to avoid trailing blank lines
+    },
     formatters_by_ft = {
       lua = { "stylua", "injected" },
-      plaintex = { "latexindent", "autocorrect" },
-      tex = { "latexindent", "autocorrect" },
+      plaintex = { "autocorrect", "latexindent", "trimlines" },
+      tex = { "autocorrect", "latexindent", "trimlines" },
       yml = { "yq" },
       json = { "fixjson" },
-      markdown = { "autocorrect", "injected" },
+      markdown = {
+        -- { "/Users/pxwg-dogggie/trim_blank_fmt/target/release/trim_blank_fmt" },
+        "autocorrect",
+        "trimlines",
+        -- "prettier", --- sooooooo slow
+        "injected",
+      },
       rust = { "rustfmt" },
       python = function(bufnr)
         if require("conform").get_formatter_info("ruff_format", bufnr).available then
