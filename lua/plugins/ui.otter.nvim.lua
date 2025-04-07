@@ -1,6 +1,8 @@
+require("util.lazyfile").lazy_file()
 return {
   "jmbuhr/otter.nvim",
-  event = "VeryLazy",
+  event = { "LazyFile", "VeryLazy" },
+  -- event = "VeryLazy",
   ft = { "markdown", "Avante", "copilot-chat" },
   -- dependencies = {
   --   "nvim-treesitter/nvim-treesitter",
