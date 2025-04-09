@@ -1,3 +1,15 @@
+local alsp = require("agents.lsp")
+
+local function input_lsp(callback, source)
+  return alsp.input_lsp(callback, source)
+end
+
+local function resolve_lsp(init_func, input, source)
+  return alsp.resolve_lsp(init_func, input, source)
+end
+
+-- print(vim.inspect(resolve_lsp(nil, "resolve_lsp", { bufnr = 0 })))
+
 local USER_SYSTEM_PROMPT = [[When asked for your name, you must respond with "GitHub Copilot".
 Follow the user's requirements carefully & to the letter.
 Keep your answers short and impersonal.
@@ -124,16 +136,15 @@ return {
       contexts = {
         neovim = {
           description = "Executes Neovim command and returns the output. Format: <command>",
-          input = function(callback, _source) -- Added underscore to mark unused param
+          input = function(callback, source)
             vim.ui.input({
               prompt = "Enter Neovim command> ",
             }, callback)
           end,
-          resolve = function(input, _source) -- Added underscore to mark unused param
+          resolve = function(input, source)
             if not input or input == "" then
               return {}
             end
-
             utils.schedule_main()
 
             -- Use execute() to capture output instead of redir
@@ -166,273 +177,19 @@ return {
             }
           end,
         },
-        function_def = {
-          description = "Gets precise function definition using LSP. Format: [filename:]function_name",
+        function_doc = {
+          description = "Gets precise function document with LSP. Format: [filepath:]function_name",
           input = function(callback, source)
-            local bufnr = source.bufnr
-            local filename = vim.api.nvim_buf_get_name(bufnr)
-
-            -- Check if LSP is available for this buffer
-            local clients = vim.lsp.get_clients({ bufnr = bufnr })
-            if #clients == 0 then
-              vim.notify("No LSP clients attached to buffer", vim.log.levels.WARN)
-              vim.ui.input({
-                prompt = "Enter [filename:]function_name> ",
-              }, callback)
-              return
-            end
-
-            -- Get document symbols from LSP
-            vim.lsp.buf_request(
-              bufnr,
-              "textDocument/documentSymbol",
-              { textDocument = vim.lsp.util.make_text_document_params(bufnr) },
-              function(err, result, _, _)
-                if err or not result or vim.tbl_isempty(result) then
-                  vim.notify("Failed to get symbols from LSP: " .. (err or "No symbols found"), vim.log.levels.WARN)
-                  vim.ui.input({
-                    prompt = "Enter [filename:]function_name> ",
-                  }, callback)
-                  return
-                end
-
-                -- Find all symbols that represent function calls
-                local function_calls = {}
-                local seen = {}
-
-                -- Recursive function to traverse symbol tree
-                local function collect_functions(items)
-                  if not items or vim.tbl_isempty(items) then
-                    return
-                  end
-
-                  for _, item in ipairs(items) do
-                    -- Function (12) or Method (6) kinds
-                    if item.kind == 12 or item.kind == 6 then
-                      local name = item.name
-                      if not seen[name] then
-                        seen[name] = true
-                        table.insert(function_calls, {
-                          name = name,
-                          kind = item.kind == 12 and "Function" or "Method",
-                        })
-                      end
-                    end
-
-                    -- Check children for nested functions
-                    if item.children then
-                      collect_functions(item.children)
-                    end
-                  end
-                end
-
-                -- Process all symbols
-                collect_functions(result)
-
-                -- If no function calls found, allow manual input
-                if #function_calls == 0 then
-                  vim.notify("No functions found in document", vim.log.levels.INFO)
-                  vim.ui.input({
-                    prompt = "Enter [filename:]function_name> ",
-                  }, callback)
-                  return
-                end
-
-                -- Sort function calls alphabetically
-                table.sort(function_calls, function(a, b)
-                  return a.name < b.name
-                end)
-
-                -- Display function call selector
-                vim.ui.select(function_calls, {
-                  prompt = "Select function:",
-                  format_item = function(item)
-                    return string.format("%s (%s)", item.name, item.kind)
-                  end,
-                }, function(choice)
-                  if not choice then
-                    callback("")
-                    return
-                  end
-
-                  if vim.fn.filereadable(filename) == 1 then
-                    callback(choice.name)
-                  else
-                    callback(filename .. ":" .. choice.name)
-                  end
-                end)
-              end
-            )
+            return input_lsp(callback, source)
           end,
           resolve = function(input, source)
-            if not input or input == "" then
-              return {}
-            end
-
-            utils.schedule_main()
-
-            local filename, func_name
-            if input:find(":") then
-              filename, func_name = input:match("([^:]+):(.+)")
-            else
-              filename = vim.api.nvim_buf_get_name(source.bufnr)
-              func_name = input
-            end
-
-            -- Get or open buffer for the file
-            local bufnr
-            if vim.fn.filereadable(filename) == 1 then
-              bufnr = vim.fn.bufnr(filename)
-              if bufnr == -1 then
-                bufnr = vim.fn.bufadd(filename)
-                vim.fn.bufload(bufnr)
-              end
-            else
-              return {
-                {
-                  content = "File not found: " .. filename,
-                  filename = "function_error",
-                  filetype = "text",
-                },
-              }
-            end
-
-            local clients = vim.lsp.get_clients({ bufnr = bufnr })
-            if #clients == 0 then
-              return {
-                {
-                  content = "No LSP clients attached to buffer: " .. filename,
-                  filename = "function_error",
-                  filetype = "markdown",
-                },
-              }
-            end
-
-            -- Request document symbols from LSP
-            local symbols = vim.lsp.buf_request_sync(
-              bufnr,
-              "textDocument/documentSymbol",
-              { textDocument = vim.lsp.util.make_text_document_params(bufnr) },
-              1000
-            )
-            -- Process symbols to find our function
-            local function_range = nil
-
-            -- Helper function to recursively search for function in symbols
-            local function find_function(items)
-              if not items or vim.tbl_isempty(items) then
-                return nil
-              end
-
-              for _, item in ipairs(items) do
-                if (item.kind == 12 or item.kind == 9) and item.name == func_name then -- Function or Method
-                  return item.range or (item.location and item.location.range)
-                end
-
-                -- Check for children/nested symbols
-                if item.children then
-                  local range = find_function(item.children)
-                  if range then
-                    return range
-                  end
-                end
-              end
-              return nil
-            end
-
-            if not symbols then
-              return {
-                {
-                  content = "No response from LSP for " .. filename,
-                  filename = "function_error",
-                  filetype = "text",
-                },
-              }
-            end
-
-            for _, client_response in pairs(symbols or {}) do
-              if client_response and client_response.result then
-                function_range = find_function(client_response.result)
-                if function_range then
-                  break
-                end
-              end
-            end
-
-            if not function_range then
-              return {
-                {
-                  content = "Function '" .. func_name .. "' not found in " .. filename,
-                  filename = "function_not_found",
-                  filetype = "text",
-                },
-              }
-            end
-
-            -- Extract function text from buffer
-            local start_line = function_range.start.line
-            local end_line = function_range["end"].line + 1
-            local function_text = ""
-
-            -- Try to get function documentation using LSP hover
-            local hover_params = {
-              textDocument = vim.lsp.util.make_text_document_params(bufnr),
-              position = { line = start_line, character = 0 },
-            }
-
-            local hover_result = vim.lsp.buf_request_sync(bufnr, "textDocument/hover", hover_params, 1000)
-            if hover_result then
-              for _, client_result in pairs(hover_result) do
-                if client_result.result and client_result.result.contents then
-                  local contents = client_result.result.contents
-                  local doc = ""
-
-                  if type(contents) == "string" then
-                    doc = contents
-                  elseif type(contents) == "table" then
-                    if contents.kind == "markdown" then
-                      doc = contents.value
-                    elseif contents.value then
-                      doc = contents.value
-                    elseif #contents > 0 then
-                      for _, content in ipairs(contents) do
-                        if type(content) == "string" then
-                          doc = doc .. content .. "\n"
-                        elseif content.value then
-                          doc = doc .. content.value .. "\n"
-                        end
-                      end
-                    end
-                  end
-
-                  if doc ~= "" then
-                    function_text = "/* Documentation:\n" .. doc .. "*/\n\n"
-                    break
-                  end
-                end
-              end
-            end
-
-            -- Append function implementation
-            function_text = function_text
-              .. table.concat(vim.api.nvim_buf_get_lines(bufnr, start_line, end_line, false), "\n")
-
-            local filetype = vim.bo[bufnr].filetype
-            print(function_text)
-            return {
-              {
-                content = function_text,
-                filename = "function_" .. func_name,
-                filetype = filetype,
-                score = 1.0, -- High relevance
-              },
-            }
+            return resolve_lsp(utils.schedule_main(), input, source)
           end,
         },
       },
 
       auto_insert_mode = false, -- Automatically enter insert mode when opening window and on new prompt
-      debug = true, -- Enable debugging
+      debug = false, -- Enable debugging
       reset = {
         normal = "<C-b>",
         insert = "<C-b>",
