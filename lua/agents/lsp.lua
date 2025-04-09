@@ -120,13 +120,12 @@ end
 --- Parse the function input string
 --- @param input string The input string to parse
 --- @return string|nil filename The filename if provided
---- @return string func_name The function name
+--- @return string|nil func_name The function name
 local function parse_function_input(input)
   if not input or input == "" then
     return nil, nil
   end
 
-  -- Clean up the input
   input = input:gsub("function_doc:", ""):gsub("`", ""):gsub(">", "")
 
   local filename, func_name
@@ -386,6 +385,7 @@ local function resolve_lsp(init_func, input, source)
 
   -- Fetch function documentation
   local function_text = fetch_function_documentation(bufnr, func_location)
+  vim.notify("Function documentation fetched successfully: " .. function_text, vim.log.levels.INFO)
 
   -- Create and return the result
   local filetype = vim.bo[bufnr].filetype
