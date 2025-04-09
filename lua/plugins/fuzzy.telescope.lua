@@ -172,79 +172,81 @@ return {
     },
     opts = function()
       local actions = require("telescope.actions")
-      local image_preview = require("util.telescope-figure").telescope_image_preview()
+      if not vim.g.started_by_firenvim then
+        local image_preview = require("util.telescope-figure").telescope_image_preview()
 
-      local function find_command()
-        if 1 == vim.fn.executable("rg") then
-          return { "rg", "--files", "--color", "never", "-g", "!.git" }
-        elseif 1 == vim.fn.executable("fd") then
-          return { "fd", "--type", "f", "--color", "never", "-E", ".git" }
-        elseif 1 == vim.fn.executable("fdfind") then
-          return { "fdfind", "--type", "f", "--color", "never", "-E", ".git" }
-        elseif 1 == vim.fn.executable("find") and vim.fn.has("win32") == 0 then
-          return { "find", ".", "-type", "f" }
-        elseif 1 == vim.fn.executable("where") then
-          return { "where", "/r", ".", "*" }
+        local function find_command()
+          if 1 == vim.fn.executable("rg") then
+            return { "rg", "--files", "--color", "never", "-g", "!.git" }
+          elseif 1 == vim.fn.executable("fd") then
+            return { "fd", "--type", "f", "--color", "never", "-E", ".git" }
+          elseif 1 == vim.fn.executable("fdfind") then
+            return { "fdfind", "--type", "f", "--color", "never", "-E", ".git" }
+          elseif 1 == vim.fn.executable("find") and vim.fn.has("win32") == 0 then
+            return { "find", ".", "-type", "f" }
+          elseif 1 == vim.fn.executable("where") then
+            return { "where", "/r", ".", "*" }
+          end
         end
-      end
 
-      return {
-        extensions = {
-          file_browser = { hijack_netrw = true },
-        },
-        defaults = {
-          preview = {
-            hide_on_startup = false,
-            treesitter = true,
-            hilight_limit = false,
+        return {
+          extensions = {
+            file_browser = { hijack_netrw = true },
           },
-          sorting_strategy = "ascending",
-          file_previewer = image_preview.file_previewer,
-          buffer_previewer_maker = image_preview.buffer_previewer_maker,
-          layout_strategy = "flex",
-          layout_config = { height = 0.3, width = 0.7 },
-          borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+          defaults = {
+            preview = {
+              hide_on_startup = false,
+              treesitter = true,
+              hilight_limit = false,
+            },
+            sorting_strategy = "ascending",
+            file_previewer = image_preview.file_previewer,
+            buffer_previewer_maker = image_preview.buffer_previewer_maker,
+            layout_strategy = "flex",
+            layout_config = { height = 0.3, width = 0.7 },
+            borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
 
-          -- prompt_prefix = " ",
-          prompt_prefix = "  ",
-          selection_caret = " ",
-          -- selection_caret = " ",
-          get_selection_window = function()
-            local wins = vim.api.nvim_list_wins()
-            table.insert(wins, 1, vim.api.nvim_get_current_win())
-            for _, win in ipairs(wins) do
-              local buf = vim.api.nvim_win_get_buf(win)
-              if vim.bo[buf].buftype == "" then
-                return win
+            -- prompt_prefix = " ",
+            prompt_prefix = "  ",
+            selection_caret = " ",
+            -- selection_caret = " ",
+            get_selection_window = function()
+              local wins = vim.api.nvim_list_wins()
+              table.insert(wins, 1, vim.api.nvim_get_current_win())
+              for _, win in ipairs(wins) do
+                local buf = vim.api.nvim_win_get_buf(win)
+                if vim.bo[buf].buftype == "" then
+                  return win
+                end
               end
-            end
-            return 0
-          end,
-          mappings = {
-            i = {
-              ["<C-n>"] = actions.move_selection_next,
-              ["<C-p>"] = actions.move_selection_previous,
-              ["<C-k>"] = actions.preview_scrolling_up,
-              ["<C-j>"] = actions.preview_scrolling_down,
-              ["<C-Down>"] = actions.cycle_history_next,
-              ["<C-Up>"] = actions.cycle_history_prev,
-              ["<C-f>"] = actions.preview_scrolling_down,
-              ["<C-b>"] = actions.preview_scrolling_up,
-              ["<C-x>"] = actions.delete_buffer + actions.move_to_top,
-            },
-            n = {
-              ["q"] = actions.close,
+              return 0
+            end,
+            mappings = {
+              i = {
+                ["<C-n>"] = actions.move_selection_next,
+                ["<C-p>"] = actions.move_selection_previous,
+                ["<C-k>"] = actions.preview_scrolling_up,
+                ["<C-j>"] = actions.preview_scrolling_down,
+                ["<C-Down>"] = actions.cycle_history_next,
+                ["<C-Up>"] = actions.cycle_history_prev,
+                ["<C-f>"] = actions.preview_scrolling_down,
+                ["<C-b>"] = actions.preview_scrolling_up,
+                ["<C-x>"] = actions.delete_buffer + actions.move_to_top,
+              },
+              n = {
+                ["q"] = actions.close,
+              },
             },
           },
-        },
-        pickers = {
-          find_files = {
-            find_command = find_command,
-            hidden = true,
-            -- theme = "ivy",
+          pickers = {
+            find_files = {
+              find_command = find_command,
+              hidden = true,
+              -- theme = "ivy",
+            },
           },
-        },
-      }
+        }
+      end
     end,
   },
 }

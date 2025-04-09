@@ -7,6 +7,8 @@ function M.telescope_image_preview()
   local Previewers = require("telescope.previewers")
 
   local previewers = require("telescope.previewers")
+  require("image").setup({})
+
   local image_api = require("image")
 
   local is_image_preview = false

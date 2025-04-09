@@ -1,6 +1,7 @@
 return {
   "pxwg/phonograph.nvim",
   dev = true,
+  enabled = not vim.g.neovide and not vim.g.started_by_firenvim,
   event = "VeryLazy",
   dependencies = {
     "MunifTanjim/nui.nvim",
