@@ -171,11 +171,11 @@ return {
       },
       snippets = { preset = "luasnip" },
       signature = {
-        enabled = false,
+        enabled = true,
         trigger = {
           enabled = true,
-          show_on_trigger_character = false,
-          show_on_insert_on_trigger_character = false,
+          show_on_trigger_character = true,
+          show_on_insert_on_trigger_character = true,
         },
       },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
