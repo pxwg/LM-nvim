@@ -266,14 +266,6 @@ autocmd("VimLeavePre", {
 --   end,
 -- })
 
-autocmd("FileType", {
-  pattern = { "copilot-chat", "markdown" },
-  callback = function()
-    vim.cmd("SidenoteRestoreAll")
-    -- mkdMath()
-  end,
-})
-
 autocmd({ "BufEnter", "BufWinEnter" }, {
   pattern = { "*.md", "*.copilot-chat" },
   callback = function()
