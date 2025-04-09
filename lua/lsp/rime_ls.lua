@@ -94,6 +94,16 @@ A language server for librime
     -- on_attach = attach_in_insert_mode,
     on_attach = rime_on_attach,
     capabilities = capabilities,
+    handlers = {
+      ["window/logMessage"] = function(_, result, ctx, config)
+        -- Filter out ALL messages from rime_ls regardless of level
+        return
+      end,
+      ["window/showMessage"] = function(_, result, ctx, config)
+        -- Also filter out showMessage notifications
+        return
+      end,
+    },
   })
 end
 
