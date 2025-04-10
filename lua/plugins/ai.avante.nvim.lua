@@ -41,6 +41,7 @@ return {
     },
     {
       "MeanderingProgrammer/render-markdown.nvim",
+      enabled = false,
       opts = {
         code = {
           enabled = true,
@@ -51,6 +52,10 @@ return {
         heading = {
           sign = false,
           icons = { "", "", "", "", "", "" },
+        },
+        bullet = {
+          enabled = false,
+          icons = { "•", "◦", "▸", "▹", "▾", "▸" },
         },
         checkbox = {
           enabled = false,
