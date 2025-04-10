@@ -1,9 +1,35 @@
 return {
   {
+    "mathjiajia/latex.nvim",
+    enabled = false,
+    opts = {
+      conceals = {
+        enabled = {
+          "greek",
+          "math",
+          "script",
+          "delim",
+          "font",
+        },
+        add = {},
+      },
+      imaps = {
+        enabled = false,
+        add = {},
+        default_leader = "`",
+      },
+      surrounds = {
+        enabled = false,
+        command = "c",
+        environment = "e",
+      },
+    },
+  },
+  {
     "lervag/vimtex",
     priority = 100,
     -- ft = { "latex", "markdown" },
-    -- enable = false,
+    enabled = false,
     config = function()
       vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
       vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
@@ -15,7 +41,7 @@ let g:tex_flavor='latex'
 " let g:vimtex_view_enabled = 0
 let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=1
-set conceallevel=2
+"set conceallevel=2
 "let g:tex_conceal="abdgm"
 " 启用 conceal 功能
 "set concealcursor=nc
@@ -45,19 +71,19 @@ let g:vimtex_syntax_custom_cmds_with_concealed_delims = [
           \  'cchar_close': ')'},
           \]
 let g:vimtex_syntax_conceal = {
-          \ 'accents': 1,
-          \ 'ligatures': 1,
-          \ 'cites': 1,
-          \ 'fancy': 1,
-          \ 'spacing': 1,
-          \ 'greek': 1,
-          \ 'math_bounds': 1,
-          \ 'math_delimiters': 1,
-          \ 'math_fracs': 1,
-          \ 'math_super_sub': 1,
-          \ 'math_symbols': 1,
-          \ 'sections': 1,
-          \ 'styles': 1,
+          \ 'accents': 0,
+          \ 'ligatures': 0,
+          \ 'cites': 0,
+          \ 'fancy': 0,
+          \ 'spacing': 0,
+          \ 'greek': 0,
+          \ 'math_bounds': 0,
+          \ 'math_delimiters': 0,
+          \ 'math_fracs': 0,
+          \ 'math_super_sub': 0,
+          \ 'math_symbols': 0,
+          \ 'sections': 0,
+          \ 'styles': 0,
           \}
 ]])
       vim.cmd([[

@@ -29,6 +29,7 @@ return {
         "query",
         "regex",
         "toml",
+        "latex",
         "tsx",
         "typescript",
         "vim",
@@ -39,10 +40,6 @@ return {
 
       -- Install parsers synchronously (only applied to `ensure_installed`)
       sync_install = false,
-      incremental_selection = {
-        enable = true,
-      },
-
       -- Automatically install missing parsers when entering buffer
       -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
       auto_install = true,
@@ -55,18 +52,11 @@ return {
         -- additional_vim_regex_highlighting = false,
         additional_vim_regex_highlighting = { "latex" },
       },
-      injections = {
-        markdown = {
-          latex_environment = {
-            query = [[
-          (inline_formula
-            (content) @latex)
-          (displayed_equation
-            (content) @latex)
-        ]],
-            languages = { latex = true },
-          },
-        },
+      -- indent = {
+      --   enable = true,
+      -- },
+      incremental_selection = {
+        enable = true,
       },
     })
   end,
