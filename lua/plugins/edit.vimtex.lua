@@ -29,7 +29,7 @@ return {
     "lervag/vimtex",
     priority = 100,
     -- ft = { "latex", "markdown" },
-    enabled = false,
+    -- enabled = false,
     config = function()
       vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
       vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
@@ -40,6 +40,7 @@ let g:tex_flavor='latex'
 "let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
 let g:vimtex_quickfix_mode=0
+let g:vimtex_syntax_conceal_disable=1
 let g:vimtex_fold_enabled=1
 "set conceallevel=2
 "let g:tex_conceal="abdgm"
