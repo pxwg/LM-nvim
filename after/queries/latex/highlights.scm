@@ -827,30 +827,54 @@
 ; Common symbols - individual definitions
 ((command_name) @math_symbol
  (#any-of? @math_symbol 
-    "\\infty" "\\sum" "\\prod" "\\int" "\\pm" "\\mp" "\\cap" "\\cup")
+    "\\infty" "\\sum" "\\prod" "\\int" "\\pm" "\\mp" "\\cap" "\\cup" "\\nabla" "\\partial" "\\times" "\\wedge")
  (#has-ancestor? @math_symbol math_environment inline_formula displayed_equation)
  (#not-has-ancestor? @math_symbol label_definition text_mode))
 
 ((command_name) @_cmd
   (#eq? @_cmd "\\infty")
- (#not-has-ancestor? @_cmd label_definition text_mode)
- (#set! conceal "∞"))
+  (#set! conceal "∞"))  ; ∞
 
 ((command_name) @_cmd
- (#eq? @_cmd "\\sum")
- (#has-ancestor? @_cmd math_environment inline_formula displayed_equation)
- (#not-has-ancestor? @_cmd label_definition text_mode)
- (#set! conceal "∑"))
+  (#eq? @_cmd "\\sum")
+  (#set! conceal "∑"))  ; ∑
 
 ((command_name) @_cmd
- (#eq? @_cmd "\\prod")
- (#has-ancestor? @_cmd math_environment inline_formula displayed_equation)
- (#not-has-ancestor? @_cmd label_definition text_mode)
- (#set! conceal "∏"))
+  (#eq? @_cmd "\\prod")
+  (#set! conceal "∏"))  ; ∏
 
 ((command_name) @_cmd
- (#eq? @_cmd "\\int")
- (#has-ancestor? @_cmd math_environment inline_formula displayed_equation)
- (#not-has-ancestor? @_cmd label_definition text_mode)
- (#set! conceal "∫"))
+  (#eq? @_cmd "\\int")
+  (#set! conceal "∫"))  ; ∫
 
+((command_name) @_cmd
+  (#eq? @_cmd "\\pm")
+  (#set! conceal "±"))  ; ±
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\mp")
+  (#set! conceal "∓"))  ; ∓
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\cap")
+  (#set! conceal "∩"))  ; ∩
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\cup")
+  (#set! conceal "∪"))  ; ∪
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\nabla")
+  (#set! conceal "∇"))  ; ∇
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\partial")
+  (#set! conceal "∂"))  ; ∂
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\times")
+  (#set! conceal "×"))  ; ×
+
+((command_name) @_cmd
+  (#eq? @_cmd "\\wedge")
+  (#set! conceal "∧"))
