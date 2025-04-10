@@ -1,68 +1,5 @@
+local md_hl = require("util.markdown_highlight").markdown_latex
 local autocmd = vim.api.nvim_create_autocmd
-local function mkdMath()
-  vim.cmd([[
-      set foldmethod=marker
-      syn include @tex /Users/pxwg-dogggie/.local/share/nvim/lazy/vimtex/syntax/tex.vim
-
-syn region mkdMath
-      \ start="\$" end="\$"
-      \ skip="\\\$"
-      \ containedin=@markdownTop
-      \ contains=@tex
-      \ keepend
-      \ oneline
-
-syn region mkdMath
-      \ start="\$\$" end="\$\$"
-      \ skip="\\\$"
-      \ containedin=@markdownTop
-      \ contains=@tex
-      \ keepend]])
-end
-
-local function apply_math_highlight(bufnr)
-  if vim.bo[bufnr].filetype ~= "markdown" then
-    return
-  end
-  vim.schedule(function()
-    vim.api.nvim_buf_call(bufnr, function()
-      vim.cmd([[
-        syn clear mkdMath
-        syn cluster texMathZones remove=mkdMath
-      ]])
-      mkdMath()
-      vim.cmd([[
-        doautoall Syntax
-        redraw!
-      ]])
-    end)
-  end)
-end
-
-local function mdHL()
-  vim.cmd([[
-      syn match mkdTaskItem /\v^\s*-\s*\[\s*[x]\s*\]/
-      highlight link mkdTaskItem RenderMarkdownTodo
-      syn match mkdItemDot /^\s*\*/
-      highlight link mkdItemDot @markup.list
-
-      syn match markdownH1 "^# .*$"
-      syn match markdownH2 "^## .*$"
-      syn match markdownH3 "^### .*$"
-      syn match markdownH4 "^#### .*$"
-      syn match markdownH5 "^##### .*$"
-      syn match markdownH6 "^###### .*$"
-
-      " Link syntax to highlight groups
-      highlight link markdownH1 rainbow1
-      highlight link markdownH2 rainbow2
-      highlight link markdownH3 rainbow3
-      highlight link markdownH4 rainbow4
-      highlight link markdownH5 rainbow5
-      highlight link markdownH6 rainbow6
-
-    ]])
-end
 
 -- set up rime_ls lsp when enter tex
 autocmd("FileType", {
@@ -277,7 +214,7 @@ autocmd("FileType", {
 autocmd({ "BufEnter", "BufWinEnter" }, {
   pattern = { "*.md", "*.copilot-chat" },
   callback = function()
-    mkdMath()
+    -- mkdMath()
   end,
 })
 
@@ -348,3 +285,134 @@ vim.api.nvim_create_autocmd({ "CursorMoved", "DiagnosticChanged" }, {
     end
   end,
 })
+
+-- Create a namespace for the math delimiter concealer
+local ns_id = vim.api.nvim_create_namespace("math_delimiter_concealer")
+
+-- Function to conceal standalone math delimiter lines
+local function conceal_math_delimiters(bufnr)
+  bufnr = bufnr or 0
+
+  -- Get buffer lines
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+  -- Track which lines to conceal (only those with just $$ and nothing else)
+  for i, line in ipairs(lines) do
+    -- Check if the line contains only $$ and optional whitespace
+    if line:match("^%s*%$%$%s*$") then
+      print("Concealing line " .. i .. ": " .. line)
+      -- Found a line with only $$, conceal it entirely
+      vim.api.nvim_buf_set_extmark(bufnr, ns_id, i - 1, 0, {
+        end_row = i - 1,
+        end_col = 0, -- To the end of line
+        conceal = "", -- Empty string means completely hidden
+      })
+    end
+  end
+end
+
+-- -- Set up an autocommand to apply this to markdown files
+-- vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
+--   pattern = { "*.md" },
+--   callback = function(ev)
+--     conceal_math_delimiters(ev.buf)
+--   end,
+-- })
+--
+-- -- Ensure conceallevel is set appropriately for markdown files
+-- vim.api.nvim_create_autocmd("FileType", {
+--   pattern = "markdown",
+--   callback = function()
+--     vim.wo.conceallevel = 2
+--   end,
+-- })
+
+-- Add custom directive to conceal entire LaTeX delimiter lines
+-- vim.treesitter.query.add_directive("latex-line-conceal!", function(match, _, bufnr, _, metadata)
+--   local id = match.id
+--   local node = match[id]
+--   local start_row, _, end_row, _ = node:range()
+--
+--   -- Get the entire line content
+--   local line_content = vim.api.nvim_buf_get_lines(bufnr, start_row, start_row + 1, false)[1]
+--
+--   -- Set up for concealing the entire line
+--   if not metadata[id] then
+--     metadata[id] = {}
+--   end
+--   if not metadata[id].range then
+--     metadata[id].range = { node:range() }
+--   end
+--
+--   -- Extend concealment to cover the entire line
+--   metadata[id].range[2] = 0 -- Column start at beginning
+--   metadata[id].range[4] = #line_content -- Column end at end of line
+-- end, true)
+-- Script para convertir set-pairs! a múltiples directivas #set!
+-- local function process_highlights()
+--   local input_file = vim.fn.expand("~/.local/share/nvim/lazy/nvim-treesitter/queries/latex/highlights.scm.template")
+--   local output_file = vim.fn.expand("~/.local/share/nvim/lazy/nvim-treesitter/queries/latex/highlights.scm")
+--
+--   local content = {}
+--   local in_set_pairs = false
+--   local capture = ""
+--   local pairs = {}
+--
+--   for line in io.lines(input_file) do
+--     if line:match("#set%-pairs!%s+@%w+%s+%w+") then
+--       -- Empieza a capturar un bloque set-pairs!
+--       in_set_pairs = true
+--       capture = line:match("#set%-pairs!%s+(@%w+)%s+(%w+)")
+--       pairs = {}
+--     elseif in_set_pairs and line:match('"[^"]+"[^"]*"[^"]+"') then
+--       -- Captura cada par de concealment
+--       local key, value = line:match('"([^"]+)"%s+"([^"]+)"')
+--       if key and value then
+--         table.insert(pairs, { key, value })
+--       end
+--     elseif in_set_pairs and line:match("%)") then
+--       -- Fin del bloque set-pairs, genera los set! individuales
+--       in_set_pairs = false
+--       for _, pair in ipairs(pairs) do
+--         table.insert(content, string.format('(#set! %s "conceal" "%s" "%s")', capture, pair[1], pair[2]))
+--       end
+--     elseif not in_set_pairs then
+--       -- Líneas normales fuera de los bloques set-pairs!
+--       table.insert(content, line)
+--     end
+--   end
+--
+--   -- Escribir el archivo procesado
+--   local file = io.open(output_file, "w")
+--   if file then
+--     file:write(table.concat(content, "\n"))
+--     file:close()
+--   end
+-- end
+--
+-- process_highlights()
+
+-- vim.api.nvim_create_autocmd("FileType", {
+--   pattern = "markdown",
+--   callback = function()
+--     -- Enable LaTeX concealment for Markdown files
+--     vim.g.markdown_latex_conceal = 1
+--
+--     -- Use plenary's async to load the treesitter query asynchronously
+--     local async = require("plenary.async")
+--     -- async.run(function()
+--     vim.api.nvim_create_autocmd("BufEnter", {
+--       buffer = 0, -- current buffer
+--       once = true,
+--       callback = function()
+--         -- local query = require("vim.treesitter.query")
+--         -- query.set("latex", "highlights", md_hl)
+--       end,
+--       -- callback = async.void(function()
+--       --   local query = require("vim.treesitter.query")
+--       --   query.set("latex", "highlights", md_hl)
+--       -- end),
+--     })
+--     -- end)
+--   end,
+-- })
