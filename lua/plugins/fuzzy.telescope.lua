@@ -171,6 +171,9 @@ return {
       },
     },
     opts = function()
+      if vim.g.started_by_firenvim or vim.g.neovide then
+        return
+      end
       local actions = require("telescope.actions")
       local image_preview = require("util.telescope-figure").telescope_image_preview()
 

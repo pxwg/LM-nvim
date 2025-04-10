@@ -50,11 +50,11 @@ return {
       highlight = {
         enable = true,
         -- additional_vim_regex_highlighting = false,
-        additional_vim_regex_highlighting = { "latex" },
+        -- additional_vim_regex_highlighting = { "latex" },
       },
-      -- indent = {
-      --   enable = true,
-      -- },
+      indent = {
+        enable = true,
+      },
       incremental_selection = {
         enable = true,
       },

@@ -47,11 +47,26 @@ return {
         args = { "--input", "-" },
         stdin = true,
       }, -- HACK: a hacky way to avoid trailing blank lines
+      ["tex-fmt"] = {
+        command = "tex-fmt",
+        args = { "--stdin" },
+        stdin = true,
+      },
     },
     formatters_by_ft = {
       lua = { "stylua", "injected" },
-      plaintex = { "autocorrect", "latexindent", "trimlines" },
-      tex = { "autocorrect", "latexindent", "trimlines" },
+      plaintex = {
+        "autocorrect",
+        -- "latexindent",
+        "tex-fmt",
+        "trimlines",
+      },
+      tex = {
+        "autocorrect",
+        -- "latexindent",
+        "tex-fmt",
+        "trimlines",
+      },
       yml = { "yq" },
       json = { "fixjson" },
       markdown = {
