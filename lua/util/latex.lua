@@ -49,8 +49,15 @@ end
 -- environment detection via vimtex
 
 M.in_mathzone = function()
-  -- The `in_mathzone` function requires the VimTeX plugin
-  return vim.fn["vimtex#syntax#in_mathzone"]() == 1
+  return vim.fn["vimtex#syntax#in_mathzone"]() == true
+  -- local node = ts_utils.get_node_at_cursor()
+  -- local bufnr = vim.api.nvim_get_current_buf()
+  -- while node do
+  --   if node:type() == "math_environment" then
+  --     return true
+  --   end
+  -- end
+  -- return false
 end
 
 M.in_text = function()
@@ -77,7 +84,7 @@ M.in_table = function()
 end
 -- -- For markdown
 M.in_latex = function()
-  return vim.fn["vimtex#syntax#in_mathzone"]() == 1
+  -- return vim.fn["vimtex#syntax#in_mathzone"]() == 1
 end
 
 M.clean = function()
