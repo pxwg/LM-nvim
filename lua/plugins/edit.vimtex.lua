@@ -1,6 +1,6 @@
 return {
   {
-    "mathjiajia/latex.nvim",
+    "pxwg/latex.nvim",
     enabled = false,
     opts = {
       conceals = {
@@ -39,6 +39,7 @@ let g:tex_flavor='latex'
 "let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_zathura_use_synctex = 0
 " let g:vimtex_view_enabled = 0
+"let g:vimtex_syntax_enabled = 0
 let g:vimtex_quickfix_mode=0
 let g:vimtex_fold_enabled=1
 "set conceallevel=2
@@ -47,7 +48,7 @@ let g:vimtex_fold_enabled=1
 "set concealcursor=nc
 let g:vimtex_view_method = 'zathura'
 "let g:vimtex_view_general_options = '--synctex-forward @line:@col:@pdf @tex'
-
+let g:vimtex_syntax_conceal_disable = 1
 let g:vimtex_syntax_custom_cmds = [
       \ {'name': 'exp', 'cmdre': 'exp>', 'mathmode': 1, 'argstyle': 'bold', 'concealchar': 'E'},
       \ {'name': 'R', 'cmdre': 'R>', 'mathmode': 1, 'concealchar': 'ℝ'},
@@ -77,8 +78,8 @@ let g:vimtex_syntax_conceal = {
           \ 'fancy': 1,
           \ 'spacing': 1,
           \ 'greek': 1,
-          \ 'math_bounds': 1,
-          \ 'math_delimiters': 1,
+          \ 'math_bounds': 0,
+          \ 'math_delimiters': 0,
           \ 'math_fracs': 1,
           \ 'math_super_sub': 1,
           \ 'math_symbols': 1,

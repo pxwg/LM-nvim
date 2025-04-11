@@ -1,4 +1,4 @@
-local md_hl = require("util.markdown_highlight").markdown_latex
+local md_hl = require("util.markdown_highlight")
 local autocmd = vim.api.nvim_create_autocmd
 
 -- set up rime_ls lsp when enter tex
@@ -383,28 +383,4 @@ end
 -- end
 --
 -- process_highlights()
-
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "markdown",
-  callback = function()
-    -- Enable LaTeX concealment for Markdown files
-    vim.g.markdown_latex_conceal = 1
-
-    -- Use plenary's async to load the treesitter query asynchronously
-    local async = require("plenary.async")
-    -- async.run(function()
-    vim.api.nvim_create_autocmd("BufEnter", {
-      buffer = 0, -- current buffer
-      once = true,
-      callback = function()
-        local query = require("vim.treesitter.query")
-        query.set("latex", "highlights", md_hl)
-      end,
-      -- callback = async.void(function()
-      --   local query = require("vim.treesitter.query")
-      --   query.set("latex", "highlights", md_hl)
-      -- end),
-    })
-    -- end)
-  end,
-})
+md_hl.get_md_hl()

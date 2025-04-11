@@ -908,4 +908,7 @@
   (#eq? @_cmd "\\wedge")
   (#set! conceal "∧"))
 
-
+; Conceal the command part
+((command_name) @_cmd
+ (#any-of? @_cmd "\\displaystyle") 
+ (#set! conceal ""))

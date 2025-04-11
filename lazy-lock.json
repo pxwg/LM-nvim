@@ -1,5 +1,5 @@
 {
-  "CopilotChat.nvim": { "branch": "main", "commit": "23162ada224e858d0d60bbbf2a35f9b6c98427ce" },
+  "CopilotChat.nvim": { "branch": "main", "commit": "16f041ecc954975416b1e33f8ca2e1df2b86a625" },
   "LuaSnip": { "branch": "master", "commit": "c9b9a22904c97d0eb69ccb9bab76037838326817" },
   "avante.nvim": { "branch": "main", "commit": "cdbfe79097fa2c72578b5560559b88e680f137c8" },
   "better-escape.nvim": { "branch": "master", "commit": "199dcc2643dec5d8dbdab4ec672cf405224dcb3b" },
@@ -24,6 +24,7 @@
   "jieba-lua": { "branch": "master", "commit": "20e0b9e0eeb2ce92819e1335f6e2357d87ee78ca" },
   "jieba.nvim": { "branch": "master", "commit": "ead79c7f83b27c80fe62bf15e99827e1e7f89866" },
   "kiwi.nvim": { "branch": "master", "commit": "40f32ad364b5c432b1b6102bf771051b2cb2ffcc" },
+  "latex.nvim": { "branch": "main", "commit": "bb480bdb8842789778f41786438607f550d540e5" },
   "lazy.nvim": { "branch": "main", "commit": "6c3bda4aca61a13a9c63f1c1d1b16b9d3be90d7a" },
   "lazydev.nvim": { "branch": "main", "commit": "8620f82ee3f59ff2187647167b6b47387a13a018" },
   "lazygit.nvim": { "branch": "main", "commit": "b9eae3badab982e71abab96d3ee1d258f0c07961" },

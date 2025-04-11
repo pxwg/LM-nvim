@@ -16,7 +16,7 @@ return {
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2f
             --- Math in md
             Conceal = { fg = "#89b4fa", bg = "" },
-            ["@conceal"] = { fg = "#9399b3" },
+            ["@conceal"] = { fg = "#89b4fa" },
             -- ["@markup.math"] = { fg = "" },
             -- ["@text.math"] = { fg = "" },
             -- ["@markup.link.label.markdown_inline"] = { fg = "#7dc4e4" },
