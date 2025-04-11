@@ -57,6 +57,7 @@ function M.get_md_hl()
       M.load_queries({
         enabled = { "font", "math", "greek", "script" },
       })
+      vim.cmd("e")
     end,
   })
 end
@@ -196,11 +197,30 @@ local function setpairs(match, _, source, predicate, metadata)
   end
 end
 
+local function lua_func(match, _, source, predicate, metadata)
+  -- (#lua_func! @capture key value)
+  local capture_id = predicate[2]
+  local node = match[capture_id]
+  -- Exit early if node is nil
+  if not node then
+    return
+  end
+  -- Get the node text (for possible future use)
+  local node_text = vim.treesitter.get_node_text(node, source)
+  local key = predicate[3] or "conceal"
+  local value = predicate[4] or "font"
+  if type(metadata[capture_id]) ~= "table" then
+    metadata[capture_id] = {}
+  end
+  metadata[capture_id][key] = M.get_mathfont_conceal(node_text)
+end
+
 --- @class QueryArgs
 --- @field enabled string[] List of query names to load
 local function load_queries(args)
   vim.treesitter.query.add_predicate("has-grandparent?", hasgrandparent, { force = true })
   vim.treesitter.query.add_directive("set-pairs!", setpairs, { force = true })
+  vim.treesitter.query.add_directive("lua_func!", lua_func, { force = true })
   local out = vim.treesitter.query.get_files("latex", "highlights")
   for _, name in ipairs(args.enabled) do
     local files = vim.api.nvim_get_runtime_file("queries_config/latex/conceal_" .. name .. ".scm", true)
@@ -213,5 +233,11 @@ local function load_queries(args)
 end
 
 M.load_queries = load_queries
+
+local font_tab = require("conceal.font_tables").math_font_table
+
+function M.get_mathfont_conceal(text)
+  return font_tab[text] or ""
+end
 
 return M
