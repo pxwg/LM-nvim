@@ -41,7 +41,7 @@ return {
             -- Include = { fg = "" },
             -- Label = { fg = "" },
             -- texMathDelimZoneTD = { fg = "" },
-            -- -- Special = { fg = "" },
+            Special = { fg = "" },
             -- ["@function.macro"] = { fg = "" },
             -- ["@variable.parameter"] = { fg = "" },
             -- ["@string.special.path.latex"] = { fg = "" },
