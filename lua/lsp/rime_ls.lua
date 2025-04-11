@@ -14,6 +14,17 @@ function M.setup_rime()
     configs.rime_ls = {
       default_config = {
         name = "rime_ls",
+        handlers = {
+          ["window/logMessage"] = function(_, result, ctx, config)
+            -- Filter out ALL messages from rime_ls regardless of level
+            return
+          end,
+          ["window/showMessage"] = function(_, result, ctx, config)
+            -- Also filter out showMessage notifications
+            return
+          end,
+        },
+
         -- cmd = { vim.fn.expand("/usr/local/bin/rime_ls") }, -- your path to rime-ls
         cmd = vim.lsp.rpc.connect("127.0.0.1", 9257),
         filetypes = rime_ls_filetypes,
