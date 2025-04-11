@@ -62,89 +62,6 @@ function M.get_md_hl()
   })
 end
 
--- 映射表：\mathbb{X} 到 Unicode 字符
-local mathbb_map = {
-  A = "𝔸",
-  B = "𝔹",
-  C = "ℂ",
-  D = "𝔻",
-  E = "𝔼",
-  F = "𝔽",
-  G = "𝔾",
-  H = "ℍ",
-  I = "𝕀",
-  J = "𝕁",
-  K = "𝕂",
-  L = "𝕃",
-  M = "𝕄",
-  N = "ℕ",
-  O = "𝕆",
-  P = "ℙ",
-  Q = "ℚ",
-  R = "ℝ",
-  S = "𝕊",
-  T = "𝕋",
-  U = "𝕌",
-  V = "𝕍",
-  W = "𝕎",
-  X = "𝕏",
-  Y = "𝕐",
-  Z = "ℤ",
-}
-
--- 注册 conceal callback
-function M.set_bb()
-  vim.treesitter.query.set(
-    "latex",
-    "highlights",
-    [[
-  ((generic_command) @mathbb_symbol
-   (#match? @mathbb_symbol "\\\\mathbb\\{([A-Z])\\}"))
-  ]]
-  )
-
-  -- 动态设置 conceal
-  vim.api.nvim_set_hl(0, "Conceal", { default = true })
-  -- Create a namespace for markdown math concealing
-  local markdown_math_ns = vim.api.nvim_create_namespace("markdown_math_conceal")
-
-  vim.api.nvim_create_autocmd("CursorMoved", {
-    pattern = "*.md",
-    callback = function()
-      local bufnr = vim.api.nvim_get_current_buf()
-      local parser = vim.treesitter.get_parser(bufnr, "latex")
-      if not parser then
-        return
-      end
-
-      local trees = parser:parse()
-      if not trees or #trees == 0 then
-        return
-      end
-
-      local root = trees[1]:root()
-      if not root then
-        return
-      end
-
-      -- Iterate through children properly using the iterator function
-      for node in root:iter_children() do
-        if node then
-          local text = vim.treesitter.get_node_text(node, bufnr)
-          if text then
-            local match = text:match("\\mathbb%{([A-Z])%}")
-            if match and mathbb_map[match] then
-              vim.api.nvim_buf_set_extmark(bufnr, markdown_math_ns, node:start(), node:end_(), {
-                conceal = mathbb_map[match],
-              })
-            end
-          end
-        end
-      end
-    end,
-  })
-end
-
 local function read_query_files(filenames)
   local contents = ""
 
@@ -219,7 +136,7 @@ end
 --- @field enabled string[] List of query names to load
 local function load_queries(args)
   vim.treesitter.query.add_predicate("has-grandparent?", hasgrandparent, { force = true })
-  vim.treesitter.query.add_directive("set-pairs!", setpairs, { force = true })
+  -- vim.treesitter.query.add_directive("set-pairs!", setpairs, { force = true })
   vim.treesitter.query.add_directive("lua_func!", lua_func, { force = true })
   local out = vim.treesitter.query.get_files("latex", "highlights")
   for _, name in ipairs(args.enabled) do
@@ -237,7 +154,7 @@ M.load_queries = load_queries
 local font_tab = require("conceal.font_tables").math_font_table
 
 function M.get_mathfont_conceal(text)
-  return font_tab[text] or ""
+  return font_tab[text] or text
 end
 
 return M
