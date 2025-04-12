@@ -76,6 +76,7 @@ M.in_table = function()
 end
 -- -- For markdown
 M.in_latex = function()
+  return M.in_mathzone()
   -- return vim.fn["vimtex#syntax#in_mathzone"]() == 1
 end
 

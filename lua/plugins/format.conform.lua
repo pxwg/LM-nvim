@@ -49,8 +49,8 @@ return {
       }, -- HACK: a hacky way to avoid trailing blank lines
       ["tex-fmt"] = {
         command = "tex-fmt",
-        -- args = { "--nowrap", "--stdin" },
-        args = { "--stdin" },
+        args = { "--nowrap", "--stdin" },
+        -- args = { "--stdin" },
         stdin = true,
       },
     },

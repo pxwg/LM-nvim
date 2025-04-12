@@ -55,7 +55,7 @@ function M.get_md_hl()
     once = true,
     callback = function()
       M.load_queries({
-        enabled = { "font", "math", "greek", "script" },
+        enabled = { "font", "math", "greek", "script", "delim" },
       })
       vim.cmd("e")
     end,
@@ -80,20 +80,28 @@ local function read_query_files(filenames)
 end
 
 local function hasgrandparent(match, _, _, predicate)
-  local node = match[predicate[2]]
-  for _ = 1, 2 do
-    if not node then
-      return false
-    end
-    node = node:parent()
-  end
-  if not node then
+  local nodes = match[predicate[2]]
+  if not nodes or #nodes == 0 then
     return false
   end
-  local ancestor_types = { unpack(predicate, 3) }
-  if vim.tbl_contains(ancestor_types, node:type()) then
-    return true
+  for _, node in ipairs(nodes) do
+    local current = node
+    local valid = true
+    for _ = 1, 2 do
+      current = current and current:parent()
+      if not current then
+        valid = false
+        break
+      end
+    end
+    if valid then
+      local ancestor_types = { unpack(predicate, 3) }
+      if vim.tbl_contains(ancestor_types, current:type()) then
+        return true
+      end
+    end
   end
+
   return false
 end
 
@@ -136,9 +144,10 @@ end
 --- @field enabled string[] List of query names to load
 local function load_queries(args)
   vim.treesitter.query.add_predicate("has-grandparent?", hasgrandparent, { force = true })
-  -- vim.treesitter.query.add_directive("set-pairs!", setpairs, { force = true })
+  vim.treesitter.query.add_directive("set-pairs!", setpairs, { force = true })
   vim.treesitter.query.add_directive("lua_func!", lua_func, { force = true })
   local out = vim.treesitter.query.get_files("latex", "highlights")
+  -- local out = {}
   for _, name in ipairs(args.enabled) do
     local files = vim.api.nvim_get_runtime_file("queries_config/latex/conceal_" .. name .. ".scm", true)
     for _, file in ipairs(files) do
@@ -154,7 +163,8 @@ M.load_queries = load_queries
 local font_tab = require("conceal.font_tables").math_font_table
 
 function M.get_mathfont_conceal(text)
-  return font_tab[text] or text
+  local out = require("utils.latex_conceal").lookup_math_symbol(text)
+  return out or text
 end
 
 return M

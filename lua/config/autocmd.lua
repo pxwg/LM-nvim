@@ -1,4 +1,4 @@
-local md_hl = require("util.markdown_highlight")
+local md_hl = require("util.latex_highlight")
 local autocmd = vim.api.nvim_create_autocmd
 
 -- set up rime_ls lsp when enter tex

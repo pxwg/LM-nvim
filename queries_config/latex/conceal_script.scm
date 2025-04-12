@@ -15,9 +15,9 @@
   (#has-ancestor? @conceal subscript)
   (#has-ancestor? @conceal math_environment inline_formula displayed_equation)
   (#not-has-ancestor? @conceal text_mode label_definition)
-  (#any-of? @conceal 
-   "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"
-   "a" "e" "h" "i" "j" "k" "l" "m" "n" "o" "p" "r" "s" "t" "u" "v" "x" "\\.")
+  (#any-of? @conceal
+  "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "a" "b" "c" "d" "e" "f" "g" "h" "i" 
+  "j" "k" "l" "m" "n" "o" "p" "r" "s" "t" "u" "v" "w" "x" "y" "z")
   (#lua_func! @conceal "conceal"))
 
 (text
@@ -32,7 +32,7 @@
   (#has-ancestor? @conceal subscript)
   (#has-ancestor? @conceal math_environment inline_formula displayed_equation)
   (#not-has-ancestor? @conceal label_definition text_mode)
-  (#any-of? @conceal "+" "-" "/")
+  (#any-of? @conceal "+" "-")
   (#lua_func! @conceal "conceal"))
 
 (text
@@ -48,16 +48,16 @@
   "^T" "^U" "^V" "^W")
   (#lua_func! @conceal "conceal"))
 
-(text
-  word: (word) @conceal
-  (#has-ancestor? @conceal superscript)
-  (#has-ancestor? @conceal math_environment inline_formula displayed_equation)
-  (#not-has-ancestor? @conceal label_definition text_mode)
-  (#any-of? @conceal
-  "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "a" "b" "c" "d" "e" "f" "g" "h" "i" 
-  "j" "k" "l" "m" "n" "o" "p" "r" "s" "t" "u" "v" "w" "x" "y" "z" 
-  "A" "B" "D" "E" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "R" "T" "U" "V" "W")
-  (#lua_func! @conceal "conceal"))
+; (text
+;   word: (word) @conceal
+;   (#has-ancestor? @conceal superscript)
+;   (#has-ancestor? @conceal math_environment inline_formula displayed_equation)
+;   (#not-has-ancestor? @conceal label_definition text_mode)
+  ; (#any-of? @conceal
+  ; "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "a" "b" "c" "d" "e" "f" "g" "h" "i" 
+  ; "j" "k" "l" "m" "n" "o" "p" "r" "s" "t" "u" "v" "w" "x" "y" "z" 
+  ; "A" "B" "D" "E" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "R" "T" "U" "V" "W")
+;   (#lua_func! @conceal "conceal"))
 
 (text
   word: (superscript) @conceal
