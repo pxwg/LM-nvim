@@ -278,13 +278,13 @@ function M.new_line_below()
 
     -- Normal return if in the middle of a line, or there is no bullet
     if column < #line or not bullet then
-      key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
+      local key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
       vim.api.nvim_feedkeys(key, "n", true)
       return
     end
   else
-    if vim.fn.foldclosed(".") > 0 then
-      insert_line = vim.fn.foldclosedend(".")
+    if vim.fn.foldclosed(vim.fn.line(".")) > 0 then
+      insert_line = vim.fn.foldclosedend(vim.fn.line("."))
       folded = true
     elseif not bullet then
       vim.api.nvim_feedkeys("o", "n", true)
@@ -292,7 +292,9 @@ function M.new_line_below()
     end
   end
 
-  newline(insert_line, folded)
+  vim.schedule(function()
+    newline(insert_line, folded)
+  end)
 end
 
 function M.new_line_above()
@@ -307,13 +309,13 @@ function M.new_line_above()
 
     -- Normal return if in the middle of a line, or there is no bullet
     if column < #line or not bullet then
-      key = vim.api.nvim_replace_termcodes("<CR><Up>", true, false, true)
+      local key = vim.api.nvim_replace_termcodes("<CR><Up>", true, false, true)
       vim.api.nvim_feedkeys(key, "n", true)
       return
     end
   else
-    if vim.fn.foldclosed(".") > 0 then
-      insert_line = vim.fn.foldclosed(".")
+    if vim.fn.foldclosed(vim.fn.line(".")) > 0 then
+      insert_line = vim.fn.foldclosed(vim.fn.line("."))
       folded = true
     elseif not bullet then
       vim.api.nvim_feedkeys("O", "n", true)
@@ -321,7 +323,9 @@ function M.new_line_above()
     end
   end
 
-  newline(insert_line - 1, folded)
+  vim.schedule(function()
+    newline(insert_line - 1, folded)
+  end)
 end
 
 return M
