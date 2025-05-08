@@ -48,7 +48,7 @@ local function get_git_branch()
 end
 
 local branch = get_git_branch()
-vim.api.nvim_set_hl(0, "Statusline", { fg = "#cdd6f4", bg = "#1e1e2f" })
+vim.api.nvim_set_hl(0, "Statusline", { fg = "", bg = "" })
 
 local home = _G.HOMEPARH
 local filename = vim.fn.expand("%:f"):gsub(home, "")
@@ -66,7 +66,7 @@ vim.o.statusline = table.concat({
 
 function M.update_hl()
   filename = vim.fn.expand("%:f"):gsub(home, "")
-  vim.api.nvim_set_hl(0, "Statusline", { fg = "#cdd6f4", bg = "#1e1e2f" })
+  vim.api.nvim_set_hl(0, "Statusline", { fg = "", bg = "" })
   vim.o.statusline = table.concat({
     "%#StatusLineFile#" .. filename, -- 文件名
     "%#StatusLineModified#%m", -- 修改标志
