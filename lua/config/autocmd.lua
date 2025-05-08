@@ -383,4 +383,11 @@ end
 -- end
 --
 -- process_highlights()
-md_hl.get_md_hl()
+-- md_hl.get_md_hl()
+
+autocmd("FileType", {
+  pattern = "qf",
+  callback = function()
+    vim.api.nvim_buf_set_keymap(0, "n", "q", "<cmd>q<cr>", { noremap = true, silent = true })
+  end,
+})

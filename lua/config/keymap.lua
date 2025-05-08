@@ -242,74 +242,194 @@ end, { noremap = true, silent = true })
 
 -- jieba_nvim
 map({ "x", "n" }, "B", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("B", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_B()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("B", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("B", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "b", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("b", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_b()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("b", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("b", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "w", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("w", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_w()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("w", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("w", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "W", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("W", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_W()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("W", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("W", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "E", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("E", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_E()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("E", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("E", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "e", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("e", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_e()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("e", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("e", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "ge", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("ge", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_ge()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("ge", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("ge", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
 map({ "x", "n" }, "gE", function()
+  local timer = vim.loop.new_timer()
+  local timed_out = false
+
+  timer:start(vim.o.timeoutlen, 0, function()
+    timed_out = true
+    timer:close()
+    vim.schedule(function()
+      vim.api.nvim_feedkeys("gE", "n", true)
+    end)
+  end)
+
   local success = pcall(function()
     require("jieba_nvim").wordmotion_gE()
   end)
-  if not success then
-    vim.api.nvim_feedkeys("gE", "n", true)
+
+  if timer:is_active() then
+    timer:close()
+    if not success and not timed_out then
+      vim.api.nvim_feedkeys("gE", "n", true)
+    end
   end
 end, { noremap = false, silent = true })
 
@@ -431,35 +551,39 @@ map("n", "<S-Tab>", function()
 end, { noremap = true, silent = true })
 
 map("n", "<CR>", function()
-  local line = vim.fn.getline(".")
-  local col = vim.fn.col(".")
-  local link_pattern = "%[.-%]%((.-)%)"
+  if vim.bo.filetype == "markdown" then
+    local line = vim.fn.getline(".")
+    local col = vim.fn.col(".")
+    local link_pattern = "%[.-%]%((.-)%)"
 
-  -- Find markdown link in current line
-  local start_idx = 1
-  while true do
-    local link_start, link_end, link_target = string.find(line, link_pattern, start_idx)
-    if not link_start then
-      break
-    end
-
-    -- Check if cursor is positioned on this link
-    if link_start <= col and col <= link_end then
-      -- Open URL
-      if link_target:match("^https?://") then
-        vim.fn.jobstart("open " .. vim.fn.shellescape(link_target))
-      else
-        local file_path = link_target
-        -- Related Path
-        if not file_path:match("^[/~]") then
-          local current_dir = vim.fn.expand("%:p:h")
-          file_path = current_dir .. "/" .. file_path
-        end
-        vim.cmd("edit " .. vim.fn.fnameescape(file_path))
+    -- Find markdown link in current line
+    local start_idx = 1
+    while true do
+      local link_start, link_end, link_target = string.find(line, link_pattern, start_idx)
+      if not link_start then
+        break
       end
-      break
+
+      -- Check if cursor is positioned on this link
+      if link_start <= col and col <= link_end then
+        -- Open URL
+        if link_target:match("^https?://") then
+          vim.fn.jobstart("open " .. vim.fn.shellescape(link_target))
+        else
+          local file_path = link_target
+          -- Related Path
+          if not file_path:match("^[/~]") then
+            local current_dir = vim.fn.expand("%:p:h")
+            file_path = current_dir .. "/" .. file_path
+          end
+          vim.cmd("edit " .. vim.fn.fnameescape(file_path))
+        end
+        break
+      end
+      start_idx = link_end + 1
     end
-    start_idx = link_end + 1
+  else
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
   end
 end, { desc = "Open markdown links (file or URL)" })
 
@@ -487,9 +611,9 @@ map("i", "<Tab>", function()
 end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
 
 map("i", "<CR>", function()
-  -- if vim.bo.filetype == "markdown" then
-  -- return nt_file.new_line_below()
-  if vim.bo.filetype == "tex" then
+  if vim.bo.filetype == "markdown" then
+    return nt_file.new_line_below()
+  elseif vim.bo.filetype == "tex" then
     return require("util.tex_item").insert_item()
   else
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
