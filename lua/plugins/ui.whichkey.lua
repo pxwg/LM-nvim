@@ -6,7 +6,7 @@ return {
     local wk = require("which-key")
     wk.setup({
       preset = "helix",
-      triggers = { "\\" }, -- no default triggers
+      -- triggers = { "\\" }, -- no default triggers
     })
     wk.add({
       { "<leader>f", group = "[F]ind", icon = { icon = "", color = "blue" } }, -- group

@@ -15,6 +15,7 @@ return {
     "dmitmel/cmp-digraphs",
     "hrsh7th/cmp-nvim-lsp",
     "giuxtaposition/blink-cmp-copilot",
+    -- "jalvesaq/cmp-zotcite",
     {
       "saghen/blink.compat",
       opts = { impersonate_nvim_cmp = true, enable_events = true },

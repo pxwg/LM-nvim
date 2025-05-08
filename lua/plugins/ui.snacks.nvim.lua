@@ -4,12 +4,17 @@ return {
   opts = {
     ---@class snacks.image.Config
     image = {
-      enabled = true,
+      -- enabled = false,
       math = {
         enabled = false,
         latex = {
           font_size = "Large",
         },
+      },
+      bigfiles = {
+        enabled = true,
+        max_size = 1024 * 1024 * 10, -- 10MB
+        line_length = 1000,
       },
       doc = {
         -- Personally I set this to false, I don't want to render all the

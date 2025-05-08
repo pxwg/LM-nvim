@@ -56,6 +56,7 @@ return {
     },
     formatters_by_ft = {
       lua = { "stylua", "injected" },
+      html = { "htmlbeautifier" },
       plaintex = {
         "autocorrect",
         -- "latexindent",

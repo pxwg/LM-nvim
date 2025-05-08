@@ -171,7 +171,7 @@ return {
       },
     },
     opts = function()
-      if vim.g.started_by_firenvim or vim.g.neovide then
+      if vim.g.started_by_firenvim or vim.g.neovide or vim.fn.has("gui") ~= 0 then
         return
       end
       local actions = require("telescope.actions")
