@@ -121,12 +121,12 @@ function M.toggle_rime()
 end
 
 function M.start_rime_ls()
-  local job_id = vim.fn.jobstart("rime_ls --listen", {
+  local job_id = vim.fn.jobstart(vim.fn.expand("~/rime-ls/target/release/rime_ls") .. " --listen", {
     on_stdout = function() end,
     on_stderr = function() end,
     on_exit = function(_, code)
       if code ~= 0 then
-        vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
+        -- vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
       end
     end,
   })

@@ -14,8 +14,7 @@ function M.dictionary_setup()
         autostart = true,
         single_file_support = true,
         root_dir = function(fname)
-          local startpath = fname
-          return vim.fs.dirname(vim.fs.find(".git", { path = startpath, upward = true })[1]) or vim.fn.getcwd()
+          return vim.fs.dirname(fname) or vim.fn.getcwd()
         end,
       },
     }
@@ -27,6 +26,7 @@ function M.dictionary_setup()
 
   -- Then set it up
   lspconfig.dictionary.setup({
+    single_file_support = true,
     capabilities = capabilities,
   })
 end
