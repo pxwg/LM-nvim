@@ -38,3 +38,7 @@ vim.diagnostic.config({
   },
 })
 vim.opt.foldmethod = "marker"
+-- set WinSeparator to " "
+vim.cmd([[highlight WinSeparator guifg=#181825]])
+-- vim.opt.fillchars:append({ vert = "", eob = "" })
+-- vim.opt.virtualedit = "all"
