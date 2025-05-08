@@ -45,11 +45,12 @@ return {
       opts = {
         code = {
           enabled = true,
-          sign = true,
+          sign = false,
           width = "block",
           right_pad = 1,
         },
         heading = {
+          enabled = false,
           sign = false,
           icons = { "", "", "", "", "", "" },
         },

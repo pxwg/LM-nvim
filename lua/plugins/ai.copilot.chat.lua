@@ -205,7 +205,7 @@ return {
       },
       question_header = "󰩃  Doggie  ",
       answer_header = "⚡ Copilot ",
-      model = "claude-3.7-sonnet-thought", -- Set Claude model as default
+      model = "gemini-2.5-pro", -- Set gemini model as default
       window = {
         layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
         width = 0.3, -- fractional width of parent, or absolute width in columns when > 1
