@@ -60,11 +60,11 @@
 ; (fenced_code_block (fenced_code_block_delimiter) @conceal (#set! conceal ""))
 ; (fenced_code_block (info_string (language) @conceal (#set! conceal "")))
 
-; block quotes
-(block_quote [(block_quote_marker)] @conceal (#set! conceal "▋") (#offset! @conceal 0 0 0 -1))
-(block_quote (block_quote_marker) (paragraph (inline (block_continuation) @conceal (#set! conceal "▋") (#offset! @conceal 0 0 0 -1))))
-
-; horizontal rule
-((thematic_break) @markup.link.label.markdown_inline (#set! conceal "―"))
+; ; block quotes
+; (block_quote [(block_quote_marker)] @conceal (#set! conceal "▋") (#offset! @conceal 0 0 0 -1))
+; (block_quote (block_quote_marker) (paragraph (inline (block_continuation) @conceal (#set! conceal "▋") (#offset! @conceal 0 0 0 -1))))
+;
+; ; horizontal rule
+; ((thematic_break) @markup.link.label.markdown_inline (#set! conceal "―"))
 
 
