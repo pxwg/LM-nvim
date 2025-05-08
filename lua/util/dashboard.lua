@@ -61,7 +61,8 @@ local function set_buffer_lines(lines)
         target_line = i
         target_col = start_col
       end
-      vim.cmd("highlight DashboardHL guifg=#cba6f7")
+      --- neovim style highlight
+      vim.cmd("highlight DashboardHL guifg=#ddd guibg=NONE gui=bold")
       vim.highlight.range(0, ns_id, "DashboardHL", { i - 1, start_col - 1 }, { i - 1, end_col })
     end
   end
