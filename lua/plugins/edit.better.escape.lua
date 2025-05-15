@@ -49,8 +49,8 @@ return {
         -- },
       },
       c = {
-        d = { e = "<cmd>:lua require'jieba_nvim'.delete_w()<CR>" },
-        c = { e = "<cmd>:lua require'jieba_nvim'.change_w()<CR>" },
+        -- d = { e = "<cmd>:lua require'jieba_nvim'.delete_w()<CR>" },
+        -- c = { e = "<cmd>:lua require'jieba_nvim'.change_w()<CR>" },
         j = {
           j = "<Esc>",
         },
