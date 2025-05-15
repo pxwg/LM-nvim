@@ -57,6 +57,13 @@ return {
     wordTrig = false,
   }, fmta("\\mathrm{<>}<>", { i(1), i(0) }), { condition = tex.in_latex }),
 
+  s(
+    { trig = "xx", wordTrig = true, snippetType = "autosnippet" },
+    fmta([[\times <>]], {
+      i(1),
+    }),
+    { condition = tex.in_latex }
+  ),
   s({
     trig = [[...]],
     snippetType = "autosnippet",

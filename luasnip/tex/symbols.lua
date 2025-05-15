@@ -75,6 +75,13 @@ return {
     wordTrig = false,
   }, t("\\pm "), { condition = tex.in_mathzone }),
 
+  s(
+    { trig = "xx", wordTrig = true, snippetType = "autosnippet" },
+    fmta([[\\times <>]], {
+      i(1),
+    }),
+    { condition = tex.in_latex }
+  ),
   s({
     trig = [[->]],
     snippetType = "autosnippet",
@@ -86,7 +93,6 @@ return {
     snippetType = "autosnippet",
     wordTrig = false,
   }, t("\\leftarrow "), { condition = tex.in_mathzone }),
-
   s({
     trig = [[|->]],
     snippetType = "autosnippet",
