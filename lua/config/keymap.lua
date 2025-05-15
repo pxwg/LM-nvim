@@ -587,7 +587,7 @@ map("n", "<CR>", function()
   end
 end, { desc = "Open markdown links (file or URL)" })
 
-map("n", "<C-x>", function()
+map("n", "<C-T>", function()
   require("util.note_todo").toggle()
 end)
 
