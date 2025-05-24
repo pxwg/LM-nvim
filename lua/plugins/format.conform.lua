@@ -63,6 +63,7 @@ return {
         "tex-fmt",
         "trimlines",
       },
+      -- mma = { "wolfram-lsp" },
       tex = {
         "autocorrect",
         -- "latexindent",

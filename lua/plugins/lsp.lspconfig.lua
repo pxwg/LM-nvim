@@ -66,6 +66,7 @@ return {
       })
       require("lsp.rime_ls").setup_rime()
       require("lsp.dictionary").dictionary_setup()
+      require("lsp.mma").setup_mma_lsp()
 
       lspconfig.texlab.setup({
         filetypes = { "tex", "bib" },
