@@ -391,3 +391,39 @@ autocmd("FileType", {
     vim.api.nvim_buf_set_keymap(0, "n", "q", "<cmd>q<cr>", { noremap = true, silent = true })
   end,
 })
+
+-- 函数：折叠 \title 之上的所有内容
+local function fold_above_title()
+  -- 保存当前光标位置
+  local save_cursor = vim.fn.getcurpos()
+
+  -- 移动到文件开头
+  vim.api.nvim_win_set_cursor(0, { 1, 0 }) -- {row, col}, 1-indexed for row, 0-indexed for col
+
+  -- 搜索 \title，不回绕 ('W')
+  -- vim.fn.search returns the line number if found, or 0 if not found
+  local title_line = vim.fn.search("\\\\title", "W")
+
+  if title_line > 0 then
+    -- 如果 \title 不在第一行
+    if title_line > 1 then
+      -- 要折叠的最后一行是 \title 上一行
+      local target_fold_line = title_line - 1
+      -- 执行折叠命令：从第1行到 target_fold_line
+      -- 使用 vim.cmd 来执行 Ex 命令
+      vim.cmd("1," .. target_fold_line .. "fold")
+    end
+  else
+    -- 如果未找到 \title，则发出通知
+    vim.notify("未找到 \\title", vim.log.levels.WARN)
+  end
+
+  -- 恢复光标位置
+  vim.fn.setpos(".", save_cursor)
+end
+
+-- 创建一个用户命令 :FoldAboveTitle 来调用这个 Lua 函数
+vim.api.nvim_create_user_command("FoldAboveTitle", fold_above_title, {
+  nargs = 0, -- 命令不接受参数
+  desc = "折叠 \\title 之前的所有内容",
+})

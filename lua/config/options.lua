@@ -2,6 +2,8 @@
 vim.g.picker = "telescope"
 vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"
+vim.opt.spell = true
+-- vim.opt.spelllang = "en_us"
 vim.opt.spelllang = "cjk"
 vim.opt.showmode = false
 vim.opt.tabstop = 2

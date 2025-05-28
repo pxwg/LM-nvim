@@ -241,211 +241,211 @@ map("n", "/", function()
 end, { noremap = true, silent = true })
 
 -- jieba_nvim
-map({ "x", "n" }, "B", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("B", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_B()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("B", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "b", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("b", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_b()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("b", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "w", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("w", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_w()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("w", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "W", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("W", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_W()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("W", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "E", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("E", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_E()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("E", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "e", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("e", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_e()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("e", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "ge", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("ge", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_ge()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("ge", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-map({ "x", "n" }, "gE", function()
-  local timer = vim.loop.new_timer()
-  local timed_out = false
-
-  timer:start(vim.o.timeoutlen, 0, function()
-    timed_out = true
-    timer:close()
-    vim.schedule(function()
-      vim.api.nvim_feedkeys("gE", "n", true)
-    end)
-  end)
-
-  local success = pcall(function()
-    require("jieba_nvim").wordmotion_gE()
-  end)
-
-  if timer:is_active() then
-    timer:close()
-    if not success and not timed_out then
-      vim.api.nvim_feedkeys("gE", "n", true)
-    end
-  end
-end, { noremap = false, silent = true })
-
-local function jump_forward()
-  local current_position = vim.fn.line(".")
-  local jump_list = vim.fn.getjumplist()[1]
-  local jump_index = vim.fn.getjumplist()[2]
-
-  if jump_index < #jump_list then
-    local next_jump = jump_list[jump_index + 1]
-    if next_jump.lnum ~= current_position then
-      vim.api.nvim_win_set_cursor(0, { next_jump.lnum, next_jump.col })
-      vim.fn.setjumplist(jump_index + 1)
-    end
-  end
-end
+-- map({ "x", "n" }, "B", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("B", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_B()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("B", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "b", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("b", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_b()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("b", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "w", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("w", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_w()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("w", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "W", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("W", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_W()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("W", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "E", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("E", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_E()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("E", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "e", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("e", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_e()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("e", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "ge", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("ge", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_ge()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("ge", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- map({ "x", "n" }, "gE", function()
+--   local timer = vim.loop.new_timer()
+--   local timed_out = false
+--
+--   timer:start(vim.o.timeoutlen, 0, function()
+--     timed_out = true
+--     timer:close()
+--     vim.schedule(function()
+--       vim.api.nvim_feedkeys("gE", "n", true)
+--     end)
+--   end)
+--
+--   local success = pcall(function()
+--     require("jieba_nvim").wordmotion_gE()
+--   end)
+--
+--   if timer:is_active() then
+--     timer:close()
+--     if not success and not timed_out then
+--       vim.api.nvim_feedkeys("gE", "n", true)
+--     end
+--   end
+-- end, { noremap = false, silent = true })
+--
+-- local function jump_forward()
+--   local current_position = vim.fn.line(".")
+--   local jump_list = vim.fn.getjumplist()[1]
+--   local jump_index = vim.fn.getjumplist()[2]
+--
+--   if jump_index < #jump_list then
+--     local next_jump = jump_list[jump_index + 1]
+--     if next_jump.lnum ~= current_position then
+--       vim.api.nvim_win_set_cursor(0, { next_jump.lnum, next_jump.col })
+--       vim.fn.setjumplist(jump_index + 1)
+--     end
+--   end
+-- end
 
 map("n", "<C-I>", function()
   jump_forward()
