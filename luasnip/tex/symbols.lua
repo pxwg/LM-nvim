@@ -77,7 +77,7 @@ return {
 
   s(
     { trig = "xx", wordTrig = true, snippetType = "autosnippet" },
-    fmta([[\\times <>]], {
+    fmta([[\times <>]], {
       i(1),
     }),
     { condition = tex.in_latex }
@@ -206,4 +206,20 @@ return {
     snippetType = "autosnippet",
     wordTrig = true,
   }, t("\\iff "), { condition = tex.in_mathzone }),
+
+  -- 下面是一些环境符号
+  s({ trig = [[oo]], snippetType = "autosnippet", wordTrig = false }, t("\\item "), { condition = tex.in_item }),
+
+  -- section
+  s({
+    trig = [[secs]],
+    snippetType = "autosnippet",
+    wordTrig = true,
+  }, fmta("\\section{<>}", { i(0) }), { condition = tex.in_text }),
+  s({
+    trig = [[ssecs]],
+    snippetType = "autosnippet",
+    wordTrig = true,
+    priority = 2000,
+  }, fmta("\\subsection{<>}", { i(0) }), { condition = tex.in_text }),
 }

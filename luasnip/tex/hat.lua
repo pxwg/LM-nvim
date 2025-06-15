@@ -56,7 +56,12 @@ return {
   ),
 
   s(
-    { trig = [[(\\?[a-zA-Z]w*({?w*})?)(dot)]], wordTrig = true, snippetType = "autosnippet", trigEngine = "ecma" },
+    {
+      trig = [[(\\?[a-zA-Z]w*({?w*})?)(dot)]],
+      snippetType = "autosnippet",
+      trigEngine = "ecma",
+      regTrig = true,
+    },
     fmta("\\dot{<>}", {
       f(function(_, snip)
         return snip.captures[1]
@@ -65,7 +70,7 @@ return {
     { condition = tex.in_mathzone }
   ),
   s(
-    { trig = "(%\\%a+)dot", regTrig = true, wordTrig = false, snippetType = "autosnippet", priority = 2000 },
+    { trig = "(%a+)dot", regTrig = true, wordTrig = false, snippetType = "autosnippet", priority = 2000 },
     f(function(_, snip)
       return snip.captures[1] ~= "\\c" and "\\dot{" .. snip.captures[1] .. "}" or snip.captures[1] .. "dot"
     end),

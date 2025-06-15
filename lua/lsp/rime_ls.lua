@@ -120,6 +120,17 @@ function M.toggle_rime()
   end
 end
 
+function M.sync_settings()
+  local client = vim.lsp.get_clients({ name = "rime_ls" })[1]
+  if client then
+    client.request("workspace/executeCommand", { command = "rime-ls.sync-user-data" }, function(_, result, ctx, _)
+      if ctx.client_id == client.id then
+        vim.g.rime_enabled = result
+      end
+    end)
+  end
+end
+
 function M.start_rime_ls()
   local job_id = vim.fn.jobstart(vim.fn.expand("~/rime-ls/target/release/rime_ls") .. " --listen", {
     on_stdout = function() end,

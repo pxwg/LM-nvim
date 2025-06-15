@@ -40,6 +40,7 @@ vim.diagnostic.config({
   },
 })
 vim.opt.foldmethod = "marker"
+vim.opt.relativenumber = false
 -- set WinSeparator to " "
 vim.cmd([[highlight WinSeparator guifg=#181825]])
 -- vim.opt.fillchars:append({ vert = "", eob = "" })

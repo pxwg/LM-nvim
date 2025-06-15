@@ -591,7 +591,7 @@ map("n", "<C-T>", function()
   require("util.note_todo").toggle()
 end)
 
--- smart tab for copilot, insertion and completion via luasnip
+-- smart tab for copilot, inserting and completion via luasnip
 map("i", "<Tab>", function()
   if vim.fn.pumvisible() == 1 then
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)

@@ -36,7 +36,7 @@ return {
     fmta(
       [[
 % !TeX program = xelatex
-\documentclass[14pt]{<>}
+\documentclass[10pt]{<>}
 \input{../preamble.tex}
 \fancyhf{}
 \fancypagestyle{plain}{
@@ -65,7 +65,7 @@ return {
 \end{document}
     ]],
       {
-        i(1, "extarticle"),
+        i(1, "article"),
         i(2, "year"),
         i(3, "tietle"),
         rep(3),
@@ -131,15 +131,14 @@ return {
     { trig = "beg", snippetType = "autosnippet" },
     fmta(
       [[
-      <>\begin{<>}
+      \begin{<>}
         <>
       \end{<>}<>]],
       {
-        i(0),
         i(1),
         i(2),
         rep(1),
-        i(3),
+        i(0),
       }
     ),
     { condition = line_begin }
@@ -169,6 +168,21 @@ return {
         \end{equation*}<>]],
       {
         i(1),
+        i(0),
+      }
+    ),
+    { condition = line_begin }
+  ),
+  s(
+    { trig = "defs", snippetType = "autosnippet" },
+    fmta(
+      [[
+        \begin{definition}[<>]
+          <>
+        \end{definition}<>]],
+      {
+        i(1),
+        i(2),
         i(0),
       }
     ),

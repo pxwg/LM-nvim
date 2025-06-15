@@ -45,6 +45,13 @@ return {
     priority = 1500,
   }, { t("\\text{"), f(get_visual), i(1), t("}"), i(0) }, { condition = tex.in_mathzone }),
 
+  s({
+    trig = "tbf",
+    snippetType = "autosnippet",
+    wordTrig = true,
+    trigEngine = "pattern",
+    priority = 1500,
+  }, { t("\\textbf{"), f(get_visual), i(1), t("}"), i(0) }, { condition = not tex.in_mathzone }),
   s(
     {
       trig = "(%a+)cal",

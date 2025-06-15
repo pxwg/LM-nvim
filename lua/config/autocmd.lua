@@ -67,7 +67,7 @@ autocmd("VimLeavePre", {
 local statusline_update_timer = vim.loop.new_timer()
 autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
   callback = function()
-    if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" then
+    if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" or not vim.g.vscode then
       require("util.statusline").update_hl()
       -- Debounce cursor movement events
       if statusline_update_timer then
@@ -427,3 +427,7 @@ vim.api.nvim_create_user_command("FoldAboveTitle", fold_above_title, {
   nargs = 0, -- 命令不接受参数
   desc = "折叠 \\title 之前的所有内容",
 })
+
+vim.api.nvim_buf_create_user_command(0, "RimeSync", function()
+  require("lsp.rime_ls").sync_settings()
+end, { desc = "Sync Rime settings" })
