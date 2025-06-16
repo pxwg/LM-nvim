@@ -1,0 +1,136 @@
+local M = {}
+
+local Source = {}
+Source.__index = Source
+
+--- WIP, I don't know how to check if the CopilotChat plugin is ready. Expectation: If the model and agent are not ready, it should return false and make sure to retry initialization.
+function Source:is_copilot_ready()
+  local success, chat = pcall(require, "CopilotChat")
+  if not success then
+    return false
+  end
+
+  local has_config = chat.config and chat.config.contexts
+  local has_client = pcall(function()
+    return chat.complete_info() ~= nil
+  end)
+
+  if not has_config or not has_client then
+    pcall(chat.setup)
+  end
+  return has_config and has_client
+end
+
+function Source:get_trigger_characters()
+  local success, chat = pcall(require, "CopilotChat")
+  if not success then
+    return {}
+  end
+
+  local info_success, info = pcall(chat.complete_info)
+  if not info_success or not info then
+    return {}
+  end
+
+  return info.triggers
+end
+
+function Source:get_completions(ctx, callback)
+  if not self:is_copilot_ready() then
+    -- Retry initialization and check again
+    if not self:is_copilot_ready() then
+      callback({ items = {} })
+      return
+    end
+  end
+
+  local chat = require("CopilotChat")
+
+  local line = ctx.line
+  local cursor_col = ctx.cursor[2]
+  local before_cursor = line:sub(1, cursor_col)
+
+  local success, info = pcall(chat.complete_info)
+  if not success or not info then
+    callback({ items = {} })
+    return
+  end
+
+  local prefix, _ = unpack(vim.fn.matchstrpos(before_cursor, info.pattern))
+
+  if not prefix or prefix == "" then
+    callback({ items = {} })
+    return
+  end
+
+  vim.schedule(function()
+    local co = coroutine.create(function()
+      local success, items = pcall(chat.complete_items)
+      if not success then
+        vim.schedule(function()
+          callback({ items = {} })
+        end)
+        return
+      end
+
+      if not items or type(items) ~= "table" then
+        vim.schedule(function()
+          callback({ items = {} })
+        end)
+        return
+      end
+
+      local filtered_items = {}
+      for _, item in ipairs(items) do
+        if item and item.word and vim.startswith(item.word:lower(), prefix:lower()) then
+          local converted_item = {
+            label = item.word,
+            kind = self:convert_kind(item.kind),
+            detail = item.menu or "",
+            documentation = item.info or "",
+            data = item,
+          }
+          table.insert(filtered_items, converted_item)
+        end
+      end
+
+      vim.schedule(function()
+        callback({
+          items = filtered_items,
+          is_incomplete_forward = false,
+          is_incomplete_backward = false,
+        })
+      end)
+    end)
+
+    local success, err = coroutine.resume(co)
+    if not success then
+      vim.notify("[blink-copilot] Error getting completions: " .. tostring(err), vim.log.levels.WARN)
+      callback({ items = {} })
+    end
+  end)
+end
+
+function Source:convert_kind(kind_str)
+  local kind_map = {
+    ["user"] = require("blink.cmp.types").CompletionItemKind.Keyword,
+    ["system"] = require("blink.cmp.types").CompletionItemKind.Keyword,
+    ["context"] = require("blink.cmp.types").CompletionItemKind.Reference,
+  }
+
+  if kind_map[kind_str] then
+    return kind_map[kind_str]
+  end
+
+  return require("blink.cmp.types").CompletionItemKind.Variable
+end
+
+function Source:should_show_completion_item(item, ctx)
+  return true
+end
+
+function M.new()
+  return setmetatable({}, Source)
+end
+
+return M

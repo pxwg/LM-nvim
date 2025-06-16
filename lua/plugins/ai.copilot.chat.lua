@@ -8,104 +8,14 @@ local function resolve_lsp(init_func, input, source)
   return alsp.resolve_lsp(init_func, input, source)
 end
 
--- print(vim.inspect(resolve_lsp(nil, "resolve_lsp", { bufnr = 0 })))
-
-local USER_SYSTEM_PROMPT = [[When asked for your name, you must respond with "GitHub Copilot".
-Follow the user's requirements carefully & to the letter.
-Keep your answers short and impersonal.
-The user works in an IDE called Neovim which has a concept for editors with open files, integrated unit test support, an output pane that shows the output of running the code as well as an integrated terminal.
-The user is working on a darwin (MacOS) machine. Please respond with system specific commands if applicable.
-You will receive code snippets that include line number prefixes - use these to maintain correct position references but remove them when generating output.
-
-When presenting code changes:
-
-1. For each change, first provide a header outside code blocks with format:
-   [file:<file_name>](<file_path>) line:<start_line>-<end_line>
-
-2. Then wrap the actual code in triple backticks with the appropriate language identifier.
-
-3. Keep changes minimal and focused to produce short diffs.
-
-4. Include complete replacement code for the specified line range with:
-   - Proper indentation matching the source
-   - All necessary lines (no eliding with comments)
-   - No line number prefixes in the code
-
-5. Address any diagnostics issues when fixing code.
-
-When you need additional context, request it using this format:
-
-> #<command>:`<input>`
-
-struc Command:
-file, files, filenames,buffer, buffers, git, system, nvim
-
-Examples:
-> #file:`path/to/file.js`        (loads specific file)
-> #buffers:`visible`             (loads all visible buffers)
-> #git:`staged`                  (loads git staged changes)
-> #system:`uname -a`             (loads system information)
-> #nvim:`echo "Hello"`           (executes command in nvim and returns output)
-
-Guidelines:
-- Always request context when needed rather than guessing about files or code
-- Use the > format on a new line when requesting context
-- Output context commands directly - never ask if the user wants to provide information
-- Assume the user will provide requested context in their next response
-- Always try to provide a complete solution
-- Don't avoid to ask for context if you need it, even you need to ask for it multiple times and run multiple commands (both system commands and neovim commands). All the commands would be run savely.
-
-Abilities:
-- You can generate code snippets, refactor code, and provide explanations from the context the USER provides.
-- USER would ask you to write whole files, functions, or classes without USER's help, 
-  but you can also ask USER to provide context if you need it. 
-- In order to generate bugfree, working, production-ready, optimized, clean, robust, and maintainable code, you need to run system commands and Neovim commands to gather context and refactor your code.
-- Neovim commands include: basic vim commands, LSP (diagnostics, definition and completion are included), DAP.
-
-Example:
-- User: "Can you write a function to calculate the factorial of a number?"
-- You: <write the first version> --> need to test --> request to run system command/neovim command to test it
----------------command output---------------
-- User: <comamnd outputs>
-if (get the error) --> ask to get diagnostics/run unit test/get DAP test etc.
-if (not get the error) --> generate the test cases and run the test case.
-
-Norm:
-- You:
-  > Current file: `path/to/file.lua`
-  > Code You Wrote
-  [file:<file_name>](<file_path>) line:<start_line>-<end_line>
-  ```lua
-  function factorial(n)
-    if n == 0 then
-      return 1
-    else
-      return n * factorial(n - 1)
-    end
-  end
-  ```
-  > Request to run the results/test/debug/diagnostics
-  > #nvim:lua require('dap').continue()
-  > #nvim: %lua
-  
-- Command Output
-- User: ^Output: 
-        <command outputs1>;
-        <command outputs2>; ...
-
-(The process above would be repeated until the code is correct and working)
-#End of this Example
-
-Available context providers and their usage:
-
-]]
-
 return {
   "CopilotC-Nvim/CopilotChat.nvim",
   branch = "main",
+  enabled = vim.g.copilot_chat_enabled or false,
   dependencies = {
     { "zbirenbaum/copilot.lua" }, -- or github/copilot.vim
     { "nvim-lua/plenary.nvim" }, -- for curl, log wrapper
+    { "ravitemer/mcphub.nvim" },
   },
   build = "make tiktoken", -- Only on MacOS or Linux
 
@@ -133,6 +43,7 @@ return {
   opts = function()
     local utils = require("CopilotChat.utils")
     return {
+      chat_autocomplete = false,
       contexts = {
         neovim = {
           description = "Executes Neovim command and returns the output. Format: <command>",
@@ -194,11 +105,11 @@ return {
         normal = "<C-b>",
         insert = "<C-b>",
       },
-      prompts = {
-        nvim_runner = {
-          system_prompt = USER_SYSTEM_PROMPT,
-        },
-      },
+      -- prompts = {
+      --   nvim_runner = {
+      --     system_prompt = USER_SYSTEM_PROMPT,
+      --   },
+      -- },
       complete = {
         detail = "Use @<localleader>s or /<localleader>s for options.",
         insert = "<localleader>s",
@@ -215,6 +126,125 @@ return {
   cmd = "CopilotChat",
   config = function(_, opts)
     local chat = require("CopilotChat")
+    -- Setup MCP integration
+    local mcp = require("mcphub")
+    mcp.setup()
+    mcp.on({ "servers_updated", "tool_list_changed", "resource_list_changed" }, function()
+      local hub = mcp.get_hub_instance()
+      if not hub then
+        return
+      end
+
+      local async = require("plenary.async")
+      local call_tool = async.wrap(function(server, tool, input, callback)
+        hub:call_tool(server, tool, input, {
+          callback = function(res, err)
+            callback(res, err)
+          end,
+        })
+      end, 4)
+
+      local access_resource = async.wrap(function(server, uri, callback)
+        hub:access_resource(server, uri, {
+          callback = function(res, err)
+            callback(res, err)
+          end,
+        })
+      end, 3)
+
+      -- Register MCP resources
+      local resources = hub:get_resources()
+      for _, resource in ipairs(resources) do
+        local name = resource.name:lower():gsub(" ", "_"):gsub(":", "")
+        chat.config.contexts[name] = {
+          uri = resource.uri,
+          description = type(resource.description) == "string" and resource.description or "",
+          resolve = function()
+            local res, err = access_resource(resource.server_name, resource.uri)
+            if err then
+              error(err)
+            end
+
+            res = res or {}
+            local result = res.result or {}
+            local content = result.contents or {}
+            local out = {}
+
+            for _, message in ipairs(content) do
+              if message.text then
+                table.insert(out, {
+                  content = message.text,
+                  filename = message.uri or name,
+                  filetype = message.mimeType and message.mimeType:match("text/(%w+)") or "text",
+                  score = 1.0,
+                })
+              end
+            end
+
+            return out
+          end,
+        }
+      end
+
+      -- Register MCP tools
+      local tools = hub:get_tools()
+      for _, tool in ipairs(tools) do
+        chat.config.contexts[tool.name] = {
+          description = tool.description,
+          input = function(callback, source)
+            local schema = tool.inputSchema
+            local properties = schema and schema.properties or {}
+
+            -- Simple input for now, can be enhanced based on schema
+            vim.ui.input({
+              prompt = tool.name .. " input: ",
+            }, callback)
+          end,
+          resolve = function(input, source)
+            local parsed_input = {}
+            if input and input ~= "" then
+              -- Try to parse as JSON, fallback to simple string
+              local success, json_input = pcall(vim.fn.json_decode, input)
+              if success then
+                parsed_input = json_input
+              else
+                parsed_input = { input = input }
+              end
+            end
+
+            local res, err = call_tool(tool.server_name, tool.name, parsed_input)
+            if err then
+              error(err)
+            end
+
+            res = res or {}
+            local result = res.result or {}
+            local content = result.content or {}
+            local out = {}
+
+            for _, message in ipairs(content) do
+              if message.type == "text" and message.text then
+                table.insert(out, {
+                  content = message.text,
+                  filename = tool.name .. "_output",
+                  filetype = "text",
+                  score = 1.0,
+                })
+              elseif message.type == "resource" and message.resource and message.resource.text then
+                table.insert(out, {
+                  content = message.resource.text,
+                  filename = message.resource.uri or (tool.name .. "_resource"),
+                  filetype = message.resource.mimeType and message.resource.mimeType:match("text/(%w+)") or "text",
+                  score = 1.0,
+                })
+              end
+            end
+
+            return out
+          end,
+        }
+      end
+    end)
 
     vim.api.nvim_create_autocmd("BufEnter", {
       pattern = "copilot-chat",

@@ -181,9 +181,17 @@ return {
       },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
       sources = {
-        -- default = { "lsp", "path", "buffer", "copilot", "lazydev" },
         default = { "lsp", "path", "buffer", "copilot" },
+        per_filetype = {
+          codecompanion = { "codecompanion" },
+          ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
+        },
         providers = {
+          copilot_c = {
+            name = "CopilotC",
+            module = "util.blink_copilot",
+            score_offset = 100,
+          },
           lsp = {
             min_keyword_length = 0,
             fallbacks = { "ripgrep", "buffer" },
