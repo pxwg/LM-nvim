@@ -183,7 +183,7 @@ return {
       sources = {
         default = { "lsp", "path", "buffer", "copilot" },
         per_filetype = {
-          codecompanion = { "codecompanion" },
+          codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
         },
         providers = {

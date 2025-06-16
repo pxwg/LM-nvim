@@ -1,1 +1,7 @@
-return { "ravitemer/mcphub.nvim", event = "VeryLazy", build = "bundled_build.lua", opts = { use_bundled_binary = true } }
+return {
+  "ravitemer/mcphub.nvim",
+  build = "bundled_build.lua",
+  config = function()
+    require("mcphub").setup({ use_bundled_binary = true })
+  end,
+}
