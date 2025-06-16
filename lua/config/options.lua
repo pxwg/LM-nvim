@@ -43,5 +43,7 @@ vim.opt.foldmethod = "marker"
 vim.opt.relativenumber = false
 -- set WinSeparator to " "
 vim.cmd([[highlight WinSeparator guifg=#181825]])
+-- vim.g.codecompanion_enabled = true
+vim.g.copilot_chat_enabled = true
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
 -- vim.opt.virtualedit = "all"

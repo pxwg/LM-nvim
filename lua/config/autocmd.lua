@@ -137,7 +137,7 @@ autocmd("FileType", {
 autocmd("FileType", {
   pattern = { "Avante", "copilot-chat" },
   callback = function()
-    vim.cmd("set filetype=markdown")
+    -- vim.cmd("set filetype=markdown")
     -- vim.cmd("RenderMarkdown")
     -- vim.cmd("TSBufEnable highlight")
   end,
