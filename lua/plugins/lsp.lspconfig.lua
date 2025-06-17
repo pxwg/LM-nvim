@@ -39,31 +39,96 @@ return {
       capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
       capabilities.general.positionEncodings = { "utf-8", "utf-16" }
 
-      -- Load mason_lspconfig
-      require("mason-lspconfig").setup_handlers({
-        function(server_name)
-          require("lspconfig")[server_name].setup({
-            capabilities = capabilities,
-            root_dir = function(fname)
-              local dir = require("util.cwd_attach").get_cwd(fname)
-              return dir
-            end,
-            settings = {
-              Lua = {
-                workspace = {
-                  library = vim.api.nvim_get_runtime_file("", true),
-                },
-                runtime = {
-                  version = "LuaJIT",
-                },
-                diagnostics = {
-                  globals = { "hs" },
+      -- Load mason_lspconfig safely
+      local mason_lspconfig = require("mason-lspconfig")
+      if mason_lspconfig.setup_handlers then
+        mason_lspconfig.setup_handlers({
+          function(server_name)
+            require("lspconfig")[server_name].setup({
+              capabilities = capabilities,
+              root_dir = function(fname)
+                local dir = require("util.cwd_attach").get_cwd(fname)
+                return dir
+              end,
+              settings = {
+                Lua = {
+                  workspace = {
+                    library = vim.api.nvim_get_runtime_file("", true),
+                    maxPreload = 2000,
+                    preloadFileSize = 50000,
+                    checkThirdParty = false,
+                  },
+                  runtime = {
+                    version = "LuaJIT",
+                    path = vim.list_extend(vim.split(package.path, ";"), {
+                      "lua/?.lua",
+                      "lua/?/init.lua",
+                    }),
+                  },
+                  diagnostics = {
+                    globals = { "hs", "vim" },
+                    disable = { "missing-fields" },
+                  },
+                  completion = {
+                    callSnippet = "Replace",
+                  },
+                  hint = {
+                    enable = true,
+                  },
+                  telemetry = {
+                    enable = false,
+                  },
+                  semantic = {
+                    enable = false,
+                  },
                 },
               },
+            })
+          end,
+        })
+      else
+        -- Fallback: setup lua_ls manually if setup_handlers is not available
+        lspconfig.lua_ls.setup({
+          capabilities = capabilities,
+          root_dir = function(fname)
+            local dir = require("util.cwd_attach").get_cwd(fname)
+            return dir
+          end,
+          settings = {
+            Lua = {
+              workspace = {
+                library = vim.api.nvim_get_runtime_file("", true),
+                maxPreload = 2000,
+                preloadFileSize = 50000,
+                checkThirdParty = false,
+              },
+              runtime = {
+                version = "LuaJIT",
+                path = vim.list_extend(vim.split(package.path, ";"), {
+                  "lua/?.lua",
+                  "lua/?/init.lua",
+                }),
+              },
+              diagnostics = {
+                globals = { "hs", "vim" },
+                disable = { "missing-fields" },
+              },
+              completion = {
+                callSnippet = "Replace",
+              },
+              hint = {
+                enable = true,
+              },
+              telemetry = {
+                enable = false,
+              },
+              semantic = {
+                enable = false,
+              },
             },
-          })
-        end,
-      })
+          },
+        })
+      end
       require("lsp.rime_ls").setup_rime()
       require("lsp.dictionary").dictionary_setup()
       require("lsp.mma").setup_mma_lsp()
