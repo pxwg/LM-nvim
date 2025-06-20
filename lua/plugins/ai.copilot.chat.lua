@@ -9,8 +9,9 @@ local function resolve_lsp(init_func, input, source)
 end
 
 return {
-  "CopilotC-Nvim/CopilotChat.nvim",
-  branch = "main",
+  -- "CopilotC-Nvim/CopilotChat.nvim",
+  "deathbeam/CopilotChat.nvim",
+  branch = "tools",
   enabled = vim.g.copilot_chat_enabled or false,
   dependencies = {
     { "zbirenbaum/copilot.lua" }, -- or github/copilot.vim
@@ -20,15 +21,15 @@ return {
   build = "make tiktoken", -- Only on MacOS or Linux
 
   keys = {
-    {
-      "<leader>aa",
-      function()
-        vim.cmd("CopilotChatToggle")
-        vim.cmd("LspStart rime_ls")
-        -- vim.cmd(":vert wincmd L")
-      end,
-      desc = "CopilotChat",
-    },
+    -- {
+    --   "<leader>aa",
+    --   function()
+    --     vim.cmd("CopilotChatToggle")
+    --     vim.cmd("LspStart rime_ls")
+    --     -- vim.cmd(":vert wincmd L")
+    --   end,
+    --   desc = "CopilotChat",
+    -- },
     {
       "<C-c>",
       function()
@@ -44,6 +45,11 @@ return {
     local utils = require("CopilotChat.utils")
     return {
       chat_autocomplete = false,
+      mappings = {
+        show_diff = {
+          full_diff = true,
+        },
+      },
       contexts = {
         neovim = {
           description = "Executes Neovim command and returns the output. Format: <command>",
@@ -126,7 +132,6 @@ return {
   cmd = "CopilotChat",
   config = function(_, opts)
     local chat = require("CopilotChat")
-    -- Setup MCP integration
     local mcp = require("mcphub")
     mcp.setup()
     mcp.on({ "servers_updated", "tool_list_changed", "resource_list_changed" }, function()
@@ -152,11 +157,10 @@ return {
         })
       end, 3)
 
-      -- Register MCP resources
       local resources = hub:get_resources()
       for _, resource in ipairs(resources) do
         local name = resource.name:lower():gsub(" ", "_"):gsub(":", "")
-        chat.config.contexts[name] = {
+        chat.config.functions[name] = {
           uri = resource.uri,
           description = type(resource.description) == "string" and resource.description or "",
           resolve = function()
@@ -173,10 +177,9 @@ return {
             for _, message in ipairs(content) do
               if message.text then
                 table.insert(out, {
-                  content = message.text,
-                  filename = message.uri or name,
-                  filetype = message.mimeType and message.mimeType:match("text/(%w+)") or "text",
-                  score = 1.0,
+                  uri = message.uri,
+                  data = message.text,
+                  mimetype = message.mimeType,
                 })
               end
             end
@@ -186,33 +189,14 @@ return {
         }
       end
 
-      -- Register MCP tools
       local tools = hub:get_tools()
       for _, tool in ipairs(tools) do
-        chat.config.contexts[tool.name] = {
+        chat.config.functions[tool.name] = {
+          group = tool.server_name,
           description = tool.description,
-          input = function(callback, source)
-            local schema = tool.inputSchema
-            local properties = schema and schema.properties or {}
-
-            -- Simple input for now, can be enhanced based on schema
-            vim.ui.input({
-              prompt = tool.name .. " input: ",
-            }, callback)
-          end,
-          resolve = function(input, source)
-            local parsed_input = {}
-            if input and input ~= "" then
-              -- Try to parse as JSON, fallback to simple string
-              local success, json_input = pcall(vim.fn.json_decode, input)
-              if success then
-                parsed_input = json_input
-              else
-                parsed_input = { input = input }
-              end
-            end
-
-            local res, err = call_tool(tool.server_name, tool.name, parsed_input)
+          schema = tool.inputSchema,
+          resolve = function(input)
+            local res, err = call_tool(tool.server_name, tool.name, input)
             if err then
               error(err)
             end
@@ -223,19 +207,15 @@ return {
             local out = {}
 
             for _, message in ipairs(content) do
-              if message.type == "text" and message.text then
+              if message.type == "text" then
                 table.insert(out, {
-                  content = message.text,
-                  filename = tool.name .. "_output",
-                  filetype = "text",
-                  score = 1.0,
+                  data = message.text,
                 })
               elseif message.type == "resource" and message.resource and message.resource.text then
                 table.insert(out, {
-                  content = message.resource.text,
-                  filename = message.resource.uri or (tool.name .. "_resource"),
-                  filetype = message.resource.mimeType and message.resource.mimeType:match("text/(%w+)") or "text",
-                  score = 1.0,
+                  uri = message.resource.uri,
+                  data = message.resource.text,
+                  mimetype = message.resource.mimeType,
                 })
               end
             end
@@ -245,7 +225,6 @@ return {
         }
       end
     end)
-
     vim.api.nvim_create_autocmd("BufEnter", {
       pattern = "copilot-chat",
       callback = function()

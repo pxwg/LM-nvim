@@ -1,4 +1,60 @@
 require("util.rime_blinks")
+
+local function mention_get_items()
+  vim.notify("hello from mention_get_items", vim.log.levels.INFO)
+  local items = require("avante.utils").get_mentions()
+  local side_bar, _, _ = require("avante").get()
+
+  local timeout_ms = 5000
+
+  local function with_timeout(callback, name)
+    return function()
+      local completed = false
+
+      vim.schedule(function()
+        local success, err = pcall(callback)
+        completed = true
+        if not success then
+          vim.notify(string.format("%s failed: %s", name, err), vim.log.levels.ERROR)
+        end
+      end)
+
+      vim.defer_fn(function()
+        if not completed then
+          vim.notify(string.format("%s timed out after %dms", name, timeout_ms), vim.log.levels.WARN)
+        end
+      end, timeout_ms)
+    end
+  end
+
+  table.insert(items, {
+    description = "file",
+    command = "file",
+    details = "add files...",
+    callback = with_timeout(function()
+      vim.notify("Opening file selector...", vim.log.levels.INFO)
+      side_bar.file_selector:open()
+    end, "File selector"),
+  })
+  table.insert(items, {
+    description = "quickfix",
+    command = "quickfix",
+    details = "add files in quickfix list to chat context",
+    callback = with_timeout(function()
+      side_bar.file_selector:add_quickfix_files()
+    end, "Quickfix operation"),
+  })
+  table.insert(items, {
+    description = "buffers",
+    command = "buffers",
+    details = "add open buffers to the chat context",
+    callback = with_timeout(function()
+      side_bar.file_selector:add_buffer_files()
+    end, "Buffer operation"),
+  })
+  return items
+end
+
 return {
   "saghen/blink.cmp",
   event = "InsertEnter",
@@ -10,6 +66,7 @@ return {
   build = "cargo build --release",
   dependencies = {
     -- add source
+    "Kaiser-Yang/blink-cmp-avante",
     "zbirenbaum/copilot-cmp",
     "zbirenbaum/copilot.lua",
     "dmitmel/cmp-digraphs",
@@ -48,7 +105,7 @@ return {
       vim.api.nvim_set_hl(0, hl_group, opts)
     end
     for _, kind in ipairs(require("blink.cmp.types").CompletionItemKind) do
-      set_hl("BlinkCmpKind" .. kind, { link = "CmpItemKind" .. kind or "BlinkCmpKind" })
+      set_hl("BlinkCmpKind" .. kind, { link = ("CmpItemKind" .. kind) or "BlinkCmpKind" })
     end
 
     vim.api.nvim_create_autocmd("User", {
@@ -185,12 +242,61 @@ return {
         per_filetype = {
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
+          AvanteInput = {
+            "avante",
+            "lsp",
+            "buffer",
+            "path",
+            "copilot",
+          },
         },
         providers = {
+          avante_commands = {
+            name = "avante_commands",
+            module = "blink.compat.source",
+            score_offset = 90, -- show at a higher priority than lsp
+            opts = {},
+          },
+          avante_files = {
+            name = "avante_files",
+            module = "blink.compat.source",
+            score_offset = 100, -- show at a higher priority than lsp
+            opts = {},
+          },
+          avante_mentions = {
+            name = "avante_mentions",
+            module = "blink.compat.source",
+            score_offset = 1000, -- show at a higher priority than lsp
+            opts = {},
+          },
+          avante = {
+            module = "blink-cmp-avante",
+            name = "Avante",
+            opts = {
+              avante = {
+                mention = {
+                  triggers = { "@" },
+                  get_items = mention_get_items,
+                },
+              },
+            },
+          },
           copilot_c = {
             name = "CopilotC",
             module = "util.blink_copilot",
-            score_offset = 100,
+            score_offset = 1000000,
+            transform_items = function(_, items)
+              -- demote snippets
+              for _, item in ipairs(items) do
+                -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
+                --   item.score_offset = item.score_offset - 3
+                -- end
+                if item.kind == require("blink.cmp.types").CompletionItemKind.Avante then
+                  item.score_offset = item.score_offset + 10
+                end
+              end
+              return items
+            end,
           },
           lsp = {
             min_keyword_length = 0,
@@ -198,7 +304,7 @@ return {
             --- @param items blink.cmp.CompletionItem[]
             transform_items = function(_, items)
               -- demote snippets
-              for index, item in ipairs(items) do
+              for _, item in ipairs(items) do
                 -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
                 --   item.score_offset = item.score_offset - 3
                 -- end

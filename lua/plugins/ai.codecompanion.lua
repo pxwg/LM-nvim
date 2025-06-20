@@ -17,15 +17,15 @@ return {
       end,
       desc = "CodeCompanionChat",
     },
-    {
-      "<C-c>",
-      function()
-        vim.cmd("CodeCompanionChat")
-        vim.cmd("LspStart rime_ls")
-        -- vim.cmd(":vert wincmd L")
-      end,
-      desc = "CodeCompanionChat",
-    },
+    -- {
+    --   "<C-c>",
+    --   function()
+    --     vim.cmd("CodeCompanionChat")
+    --     vim.cmd("LspStart rime_ls")
+    --     -- vim.cmd(":vert wincmd L")
+    --   end,
+    --   desc = "CodeCompanionChat",
+    -- },
   },
   opts = {
     extensions = {

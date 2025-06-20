@@ -44,16 +44,23 @@ return {
       if mason_lspconfig.setup_handlers then
         mason_lspconfig.setup_handlers({
           function(server_name)
-            require("lspconfig")[server_name].setup({
+            local server_config = {
               capabilities = capabilities,
               root_dir = function(fname)
                 local dir = require("util.cwd_attach").get_cwd(fname)
                 return dir
               end,
-              settings = {
+            }
+
+            -- Special configuration for lua_ls
+            if server_name == "lua_ls" then
+              server_config.settings = {
                 Lua = {
                   workspace = {
-                    library = vim.api.nvim_get_runtime_file("", true),
+                    library = vim.list_extend(vim.api.nvim_get_runtime_file("", true), {
+                      vim.fn.stdpath("config") .. "/lua",
+                      "${3rd}/luv/library",
+                    }),
                     maxPreload = 2000,
                     preloadFileSize = 50000,
                     checkThirdParty = false,
@@ -63,6 +70,8 @@ return {
                     path = vim.list_extend(vim.split(package.path, ";"), {
                       "lua/?.lua",
                       "lua/?/init.lua",
+                      vim.fn.stdpath("config") .. "/lua/?.lua",
+                      vim.fn.stdpath("config") .. "/lua/?/init.lua",
                     }),
                   },
                   diagnostics = {
@@ -72,18 +81,11 @@ return {
                   completion = {
                     callSnippet = "Replace",
                   },
-                  hint = {
-                    enable = true,
-                  },
-                  telemetry = {
-                    enable = false,
-                  },
-                  semantic = {
-                    enable = false,
-                  },
                 },
-              },
-            })
+              }
+            end
+
+            require("lspconfig")[server_name].setup(server_config)
           end,
         })
       else
@@ -97,33 +99,23 @@ return {
           settings = {
             Lua = {
               workspace = {
-                library = vim.api.nvim_get_runtime_file("", true),
-                maxPreload = 2000,
-                preloadFileSize = 50000,
-                checkThirdParty = false,
+                library = vim.list_extend(vim.api.nvim_get_runtime_file("", true), {
+                  vim.fn.stdpath("config") .. "/lua",
+                  "${3rd}/luv/library",
+                }),
               },
               runtime = {
                 version = "LuaJIT",
                 path = vim.list_extend(vim.split(package.path, ";"), {
                   "lua/?.lua",
                   "lua/?/init.lua",
+                  vim.fn.stdpath("config") .. "/lua/?.lua",
+                  vim.fn.stdpath("config") .. "/lua/?/init.lua",
                 }),
               },
               diagnostics = {
                 globals = { "hs", "vim" },
                 disable = { "missing-fields" },
-              },
-              completion = {
-                callSnippet = "Replace",
-              },
-              hint = {
-                enable = true,
-              },
-              telemetry = {
-                enable = false,
-              },
-              semantic = {
-                enable = false,
               },
             },
           },

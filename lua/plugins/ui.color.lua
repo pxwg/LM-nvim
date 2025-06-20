@@ -13,6 +13,10 @@ return {
           mocha = {
             WinSeparator = { fg = "#1e1e2f" },
             Statusline = { fg = "#cdd6f4", bg = "#1e1e2f" },
+            AvanteSidebarNormal = { fg = "#cdd6f4", bg = "#1e1e2f" },
+            AvantePromptInputBorder = { fg = "#cdd6f4", bg = "#1e1e2f" },
+            AvanteSidebarWinHorizontalSeparator = { fg = "#1e1e2f", bg = "#1e1e2f" },
+            AvanteSidebarWinSeparator = { fg = "#1e1e2f", bg = "#1e1e2f" },
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2f
             --- Math in md
             Conceal = { fg = "#89b4fa", bg = "" },

@@ -122,6 +122,10 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
+local map = vim.keymap.set
+map({ "n", "v" }, "j", "gj", { silent = true })
+map({ "n", "v" }, "k", "gk", { silent = true })
+
 -- The LSP completion handler is now managed through completion plugins like nvim-cmp
 -- If you're using nvim-cmp, this manual handler configuration is not needed
 -- require("util.current_function")

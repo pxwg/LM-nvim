@@ -130,7 +130,7 @@ autocmd("FileType", {
   callback = function()
     vim.cmd("LspStart rime_ls")
     vim.cmd("RenderMarkdown")
-    vim.api.nvim_buf_set_keymap(0, "n", "q", ":q<CR>", { noremap = true, silent = true })
+    -- vim.api.nvim_buf_set_keymap(0, "n", "q", ":q<CR>", { noremap = true, silent = true })
   end,
 })
 
@@ -431,3 +431,10 @@ vim.api.nvim_create_user_command("FoldAboveTitle", fold_above_title, {
 vim.api.nvim_buf_create_user_command(0, "RimeSync", function()
   require("lsp.rime_ls").sync_settings()
 end, { desc = "Sync Rime settings" })
+
+vim.api.nvim_create_user_command("AvanteOpenFileSelector", function()
+  local FileSelector = require("avante.file_selector")
+  local tabpage_id = vim.api.nvim_get_current_tabpage()
+  local file_selector = FileSelector:new(tabpage_id)
+  file_selector:open()
+end, {})
