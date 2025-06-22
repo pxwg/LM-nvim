@@ -15,6 +15,7 @@ return {
   {
     "nvim-telescope/telescope.nvim",
     cmd = "Telescope",
+    dependencies = { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
     enabled = function()
       return vim.g.picker == "telescope"
     end,
@@ -170,6 +171,12 @@ return {
         desc = "[C]olorscheme with Preview",
       },
     },
+    configs = function()
+      -- require("telescope").setup(require("plugins.fuzzy.telescope").opts())
+      require("telescope").load_extension("fzf")
+      -- require("telescope").load_extension("file_browser")
+      -- require("telescope").load_extension("all_recent")
+    end,
     opts = function()
       if vim.g.started_by_firenvim or vim.g.neovide or vim.fn.has("gui") ~= 0 then
         return
@@ -194,6 +201,13 @@ return {
       return {
         extensions = {
           file_browser = { hijack_netrw = true },
+          fzf = {
+            fuzzy = true, -- false will only do exact matching
+            override_generic_sorter = true, -- override the generic sorter
+            override_file_sorter = true, -- override the file sorter
+            case_mode = "smart_case", -- or "ignore_case" or "respect_case"
+            -- the default case_mode is "smart_case"
+          },
         },
         defaults = {
           preview = {
