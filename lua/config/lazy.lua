@@ -98,10 +98,10 @@ require("util.dashboard")
 --   end,
 -- })
 
-require("util.statusline")
 vim.api.nvim_create_autocmd("User", {
   pattern = "VeryLazy",
   callback = function()
+    require("util.statusline")
     require("config.keymap")
     require("config.autocmd")
     require("util.history_search")
