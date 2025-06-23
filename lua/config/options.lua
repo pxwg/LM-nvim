@@ -2,9 +2,19 @@
 vim.g.picker = "telescope"
 vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"
-vim.opt.spell = true
+-- Disable global spell checking, will be enabled per filetype
+vim.opt.spell = false
 -- vim.opt.spelllang = "en_us"
-vim.opt.spelllang = "cjk"
+-- vim.opt.spelllang = "cjk"
+
+-- Set up spell checking only for tex and markdown files with English checking but ignoring CJK
+vim.api.nvim_create_autocmd({ "FileType" }, {
+  pattern = { "tex", "markdown" },
+  callback = function()
+    vim.opt_local.spell = true
+    vim.opt_local.spelllang = "en_us,cjk"
+  end,
+})
 vim.opt.showmode = false
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2

@@ -68,6 +68,7 @@ return {
     -- add source
     "Kaiser-Yang/blink-cmp-avante",
     "L3MON4D3/LuaSnip",
+    "ribru17/blink-cmp-spell",
     "zbirenbaum/copilot-cmp",
     "zbirenbaum/copilot.lua",
     "dmitmel/cmp-digraphs",
@@ -236,10 +237,22 @@ return {
           show_on_insert_on_trigger_character = false,
         },
       },
-      -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
+      fuzzy = {
+        sorts = {
+          function(a, b)
+            local sort = require("blink.cmp.fuzzy.sort")
+            if a.source_id == "spell" and b.source_id == "spell" then
+              return sort.label(a, b)
+            end
+          end,
+          "score",
+          "kind",
+          "label",
+        },
+      },
       snippets = { preset = "luasnip" },
       sources = {
-        default = { "lsp", "path", "buffer", "copilot", "snippets" },
+        default = { "lsp", "path", "buffer", "copilot", "snippets", "spell" },
         per_filetype = {
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
@@ -257,6 +270,25 @@ return {
             module = "blink.compat.source",
             score_offset = 90, -- show at a higher priority than lsp
             opts = {},
+          },
+          spell = {
+            name = "Spell",
+            module = "blink-cmp-spell",
+            opts = {
+              enable_in_context = function()
+                local curpos = vim.api.nvim_win_get_cursor(0)
+                local captures = vim.treesitter.get_captures_at_pos(0, curpos[1] - 1, curpos[2] - 1)
+                local in_spell_capture = false
+                for _, cap in ipairs(captures) do
+                  if cap.capture == "spell" then
+                    in_spell_capture = true
+                  elseif cap.capture == "nospell" then
+                    return false
+                  end
+                end
+                return in_spell_capture
+              end,
+            },
           },
           avante_files = {
             name = "avante_files",

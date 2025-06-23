@@ -6,6 +6,7 @@
   "blink-cmp-avante": { "branch": "master", "commit": "ddefb8de3cb1286ab39e0ccec0f32a45d03391f2" },
   "blink-cmp-copilot": { "branch": "main", "commit": "439cff78780c033aa23cf061d7315314b347e3c1" },
   "blink-cmp-dictionary": { "branch": "master", "commit": "43e0fbe8d273f92a87c58aa958c51c95557d20c4" },
+  "blink-cmp-spell": { "branch": "master", "commit": "2bd0e0d5e7735c047e72b6918a0458f3e8fadaba" },
   "blink.cmp": { "branch": "main", "commit": "9c5d82370cf2e5f28c27437f4a88d315ace1844f" },
   "blink.compat": { "branch": "main", "commit": "1454f14a8d855a578ceeba77c62538fa1459a67c" },
   "bookmarks.nvim": { "branch": "main", "commit": "a447706f8440cf473f042b9f468359b1486c9799" },
