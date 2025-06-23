@@ -1,7 +1,7 @@
 local M = {}
 
-local last_file_dir = nil
-local last_git_dir = nil
+local last_file_dir = ""
+local last_git_dir = ""
 
 local function cwd(ignore_home)
   local file_dir = vim.fn.expand("%:p:h")

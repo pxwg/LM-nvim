@@ -56,11 +56,12 @@ local function open_terminal(layout)
   local win = vim.api.nvim_open_win(buf, true, win_config)
 
   -- Open terminal
-  vim.fn.termopen(vim.o.shell, {
+  vim.fn.jobstart(vim.o.shell, {
+    term = true,
     cwd = vim.fn.expand("%:p:h"),
     on_exit = function(_, exit_code, _)
       if exit_code ~= 0 then
-        vim.api.nvim_err_writeln("Terminal exited with code " .. exit_code)
+        vim.api.nvim_echo({ { "Terminal exited with code " .. exit_code, "ErrorMsg" } }, true, {})
       end
     end,
   })
@@ -75,10 +76,18 @@ local terminal_buf = nil
 local function open_terminal_split(key)
   -- Split the window vertically to the right
   key = key or "L"
-  vim.cmd("vsplit")
-  vim.cmd("wincmd " .. key)
-  -- Resize the new split to 40% of the screen width
-  vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.3))
+  if key ~= "L" and key ~= "R" and key ~= "K" and key ~= "J" then
+    key = "L" -- Default to right split if invalid key
+  end
+  if key == "L" or key == "H" then
+    vim.cmd("vsplit")
+    vim.cmd("wincmd " .. key)
+    vim.cmd("vertical resize " .. math.floor(vim.o.columns * 0.3))
+  elseif key == "J" or key == "K" then
+    vim.cmd("split")
+    vim.cmd("wincmd " .. key)
+    vim.cmd("vertical resize " .. math.floor(vim.o.lines * 0.2))
+  end
 
   local current_file_path = vim.fn.expand(require("util.cwd_attach").cwd())
   local terminal_path = vim.fn.getcwd()
