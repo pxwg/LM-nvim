@@ -62,93 +62,93 @@ return {
     custom_tools = function()
       return {
         require("mcphub.extensions.avante").mcp_tool(),
-        {
-          name = "fetch_url",
-          description = "Fetch content from a web URL and provide it as context to the model",
-          param = {
-            type = "table",
-            fields = {
-              {
-                name = "url",
-                description = "URL to fetch content from (will auto-prepend https:// if protocol is missing)",
-                type = "string",
-                optional = false,
-              },
-              {
-                name = "timeout",
-                description = "Request timeout in seconds (default: 10)",
-                type = "number",
-                optional = true,
-              },
-            },
-          },
-          returns = {
-            {
-              name = "content",
-              description = "The fetched web content",
-              type = "string",
-            },
-            {
-              name = "url",
-              description = "The actual URL that was fetched",
-              type = "string",
-            },
-            {
-              name = "mimetype",
-              description = "MIME type of the fetched content",
-              type = "string",
-              optional = true,
-            },
-            {
-              name = "error",
-              description = "Error message if the fetch was not successful",
-              type = "string",
-              optional = true,
-            },
-          },
-          func = function(params, on_log, on_complete)
-            local url = params.url
-            local timeout = params.timeout or 10
-            -- Auto-prepend https:// if no protocol specified
-            if not url:match("^https?://") then
-              url = "https://" .. url
-            end
-            on_log("Fetching content from: " .. url)
-            local curl_cmd = string.format(
-              "curl -s -L --max-time %d --user-agent 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' -w '\\n%%{content_type}' '%s'",
-              timeout,
-              url:gsub("'", "'\"'\"'") -- Escape single quotes for shell
-            )
-
-            local output = vim.fn.system(curl_cmd)
-            local exit_code = vim.v.shell_error
-
-            if exit_code ~= 0 then
-              return {
-                error = "Failed to fetch URL: " .. url .. " (exit code: " .. exit_code .. ")",
-              }
-            end
-
-            local lines = vim.split(output, "\n")
-            local content_type = lines[#lines] -- Last line is content-type
-            table.remove(lines) -- Remove content-type line
-            local content = table.concat(lines, "\n")
-
-            if content == "" then
-              return {
-                error = "No content received from URL: " .. url,
-              }
-            end
-
-            on_log("Successfully fetched " .. #content .. " characters")
-
-            return {
-              content = content,
-              url = url,
-              mimetype = content_type ~= "" and content_type or nil,
-            }
-          end,
-        },
+        -- {
+        --   name = "fetch_url",
+        --   description = "Fetch content from a web URL and provide it as context to the model",
+        --   param = {
+        --     type = "table",
+        --     fields = {
+        --       {
+        --         name = "url",
+        --         description = "URL to fetch content from (will auto-prepend https:// if protocol is missing)",
+        --         type = "string",
+        --         optional = false,
+        --       },
+        --       {
+        --         name = "timeout",
+        --         description = "Request timeout in seconds (default: 10)",
+        --         type = "number",
+        --         optional = true,
+        --       },
+        --     },
+        --   },
+        --   returns = {
+        --     {
+        --       name = "content",
+        --       description = "The fetched web content",
+        --       type = "string",
+        --     },
+        --     {
+        --       name = "url",
+        --       description = "The actual URL that was fetched",
+        --       type = "string",
+        --     },
+        --     {
+        --       name = "mimetype",
+        --       description = "MIME type of the fetched content",
+        --       type = "string",
+        --       optional = true,
+        --     },
+        --     {
+        --       name = "error",
+        --       description = "Error message if the fetch was not successful",
+        --       type = "string",
+        --       optional = true,
+        --     },
+        --   },
+        --   func = function(params, on_log, on_complete)
+        --     local url = params.url
+        --     local timeout = params.timeout or 10
+        --     -- Auto-prepend https:// if no protocol specified
+        --     if not url:match("^https?://") then
+        --       url = "https://" .. url
+        --     end
+        --     on_log("Fetching content from: " .. url)
+        --     local curl_cmd = string.format(
+        --       "curl -s -L --max-time %d --user-agent 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' -w '\\n%%{content_type}' '%s'",
+        --       timeout,
+        --       url:gsub("'", "'\"'\"'") -- Escape single quotes for shell
+        --     )
+        --
+        --     local output = vim.fn.system(curl_cmd)
+        --     local exit_code = vim.v.shell_error
+        --
+        --     if exit_code ~= 0 then
+        --       return {
+        --         error = "Failed to fetch URL: " .. url .. " (exit code: " .. exit_code .. ")",
+        --       }
+        --     end
+        --
+        --     local lines = vim.split(output, "\n")
+        --     local content_type = lines[#lines] -- Last line is content-type
+        --     table.remove(lines) -- Remove content-type line
+        --     local content = table.concat(lines, "\n")
+        --
+        --     if content == "" then
+        --       return {
+        --         error = "No content received from URL: " .. url,
+        --       }
+        --     end
+        --
+        --     on_log("Successfully fetched " .. #content .. " characters")
+        --
+        --     return {
+        --       content = content,
+        --       url = url,
+        --       mimetype = content_type ~= "" and content_type or nil,
+        --     }
+        --   end,
+        -- },
       }
     end,
   },
