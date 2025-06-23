@@ -67,6 +67,7 @@ return {
   dependencies = {
     -- add source
     "Kaiser-Yang/blink-cmp-avante",
+    "L3MON4D3/LuaSnip",
     "zbirenbaum/copilot-cmp",
     "zbirenbaum/copilot.lua",
     "dmitmel/cmp-digraphs",
@@ -227,7 +228,6 @@ return {
           winhighlight = "CursorLine:BlinkCmpMenuSelection",
         },
       },
-      snippets = { preset = "luasnip" },
       signature = {
         enabled = false,
         trigger = {
@@ -237,8 +237,9 @@ return {
         },
       },
       -- fuzzy = { use_typo_resistance = true, use_proximity = false, use_frecency = false, use_unsafe_no_lock = true },
+      snippets = { preset = "luasnip" },
       sources = {
-        default = { "lsp", "path", "buffer", "copilot" },
+        default = { "lsp", "path", "buffer", "copilot", "snippets" },
         per_filetype = {
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },

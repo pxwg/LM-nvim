@@ -17,12 +17,19 @@ return {
   version = "*", -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
-  -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   opts = {
-    provider = "copilot",
+    -- provider = "copilot",
+    provider = "deepseek",
+    -- cursor_applying_provider = "depseek",
     providers = {
       copilot = {
         model = "claude-sonnet-4",
+      },
+      deepseek = {
+        __inherited_from = "openai",
+        api_key_name = "DEEPSEEK_API_KEY",
+        endpoint = "https://api.deepseek.com",
+        model = "deepseek-chat",
       },
     },
     rag_service = {
