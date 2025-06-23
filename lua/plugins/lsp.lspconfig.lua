@@ -92,6 +92,38 @@ return {
       require("lsp.dictionary").dictionary_setup()
       require("lsp.mma").setup_mma_lsp()
 
+      -- Harper_ls - explicitly limited to markdown and tex files only
+      lspconfig.harper_ls.setup({
+        filetypes = { "markdown", "tex" },
+        capabilities = capabilities,
+        -- Only attach to markdown and tex files
+        on_attach = function(client, bufnr)
+          local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
+          if filetype ~= "markdown" and filetype ~= "tex" then
+            vim.schedule(function()
+              vim.lsp.buf_detach_client(bufnr, client.id)
+            end)
+            return false
+          end
+          return true
+        end,
+        init_options = {
+          allowedFileTypes = { "markdown", "tex" },
+        },
+        settings = {
+          markdown = {
+            IgnoreLinkTitle = true,
+          },
+          ["harper-ls"] = {
+            linters = {
+              -- Disable spell checking
+              SpellCheck = false,
+              Dashes = false,
+            },
+          },
+        },
+      })
+
       lspconfig.texlab.setup({
         filetypes = { "tex", "bib" },
         -- offset_encoding = "utf-8", -- wtf? if not set, it shows warning
