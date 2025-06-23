@@ -323,6 +323,11 @@
 (curly_group "{" @punctuation.bracket)
 (curly_group "}" @punctuation.bracket)
 
+; Disable spell checking in math environments
+(inline_formula) @nospell
+(displayed_equation) @nospell
+(math_delimiter) @nospell
+
 (math_delimiter
   left_command: _ @punctuation.delimiter)
 (math_delimiter
