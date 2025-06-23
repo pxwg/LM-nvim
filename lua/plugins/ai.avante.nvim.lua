@@ -14,13 +14,14 @@ return {
     },
   },
   -- lazy = false,
-  version = "*", -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
+  version = false,
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
   opts = {
     -- provider = "copilot",
-    provider = "deepseek",
-    -- cursor_applying_provider = "depseek",
+    -- provider = "deepseek",
+    provider = "claude",
+    cursor_applying_provider = "deepseek",
     providers = {
       copilot = {
         model = "claude-sonnet-4",
@@ -31,6 +32,14 @@ return {
         endpoint = "https://api.deepseek.com",
         model = "deepseek-chat",
       },
+      claude = {
+        endpoint = "https://api.gptsapi.net",
+        model = "claude-3-7-sonnet-20250219",
+        api_key_name = "CLAUDE_API_KEY",
+        extra_request_body = {
+          temperature = 0.75,
+        },
+      },
     },
     rag_service = {
       enabled = false, -- Enables the rag service, requires OPENAI_API_KEY to be set
@@ -40,7 +49,10 @@ return {
         enabled = false,
       },
     },
-    behaviour = { enable_token_counting = false },
+    behaviour = {
+      enable_token_counting = false,
+      enable_cursor_planning_mode = true,
+    },
     system_prompt = function()
       local hub = require("mcphub").get_hub_instance()
       -- print("Avante system prompt: ", hub and hub:get_active_servers_prompt() or "")

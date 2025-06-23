@@ -1,7 +1,7 @@
 {
   "CopilotChat.nvim": { "branch": "tools", "commit": "38e583c14d197ff7410c81a5c28a2331625ee3fa" },
   "LuaSnip": { "branch": "master", "commit": "fb525166ccc30296fb3457441eb979113de46b00" },
-  "avante.nvim": { "branch": "main", "commit": "ad05a802f98af1d9c5bae60966d1ee7b302dbc18" },
+  "avante.nvim": { "branch": "main", "commit": "6830f2d8b9986d5406f75fa14e725a9237456cd8" },
   "better-escape.nvim": { "branch": "master", "commit": "19a38aab94961016430905ebec30d272a01e9742" },
   "blink-cmp-avante": { "branch": "master", "commit": "ddefb8de3cb1286ab39e0ccec0f32a45d03391f2" },
   "blink-cmp-copilot": { "branch": "main", "commit": "439cff78780c033aa23cf061d7315314b347e3c1" },
