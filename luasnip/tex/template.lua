@@ -48,6 +48,14 @@ return {
 \rfoot{}}
 \pagestyle{plain}
 
+%-------------------fonts-------------------
+\usepackage[sc]{mathpazo}
+\usepackage{courier}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\RequirePackage[font=small,format=plain,labelfont=bf,textfont=it]{caption}
+
 %-------------------basic info-------------------
 
 \title{\textbf{<>}}

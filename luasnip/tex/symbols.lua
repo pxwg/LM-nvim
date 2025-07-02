@@ -206,6 +206,11 @@ return {
     snippetType = "autosnippet",
     wordTrig = true,
   }, t("\\iff "), { condition = tex.in_mathzone }),
+  s({
+    trig = [[wg]],
+    snippetType = "autosnippet",
+    wordTrig = true,
+  }, t("\\wedge "), { condition = tex.in_mathzone }),
 
   -- 下面是一些环境符号
   s({ trig = [[oo]], snippetType = "autosnippet", wordTrig = false }, t("\\item "), { condition = tex.in_item }),

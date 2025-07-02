@@ -134,11 +134,11 @@ return {
       d(1, get_visual),
     })
   ),
-  s(
-    { trig = "km", snippetType = "autosnippet", priority = 3000 },
-    fmta("$<>$ <>", {
-      d(1, get_visual),
-      i(0),
-    })
-  ),
+  -- s(
+  --   { trig = "km", snippetType = "autosnippet", priority = 3000 },
+  --   fmta("$<>$ <>", {
+  --     d(1, get_visual),
+  --     i(0),
+  --   })
+  -- ),
 }
