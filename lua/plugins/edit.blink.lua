@@ -252,7 +252,7 @@ return {
       },
       snippets = { preset = "luasnip" },
       sources = {
-        default = { "lsp", "path", "buffer", "copilot", "snippets", "spell" },
+        default = { "lsp", "path", "buffer", "copilot", "spell" },
         per_filetype = {
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
