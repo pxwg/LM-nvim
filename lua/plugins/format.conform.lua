@@ -71,6 +71,7 @@ return {
         "trimlines",
       },
       yml = { "yq" },
+      typst = { "typstyle", "trimlines" },
       json = { "fixjson" },
       markdown = {
         -- { "/Users/pxwg-dogggie/trim_blank_fmt/target/release/trim_blank_fmt" },

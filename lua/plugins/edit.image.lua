@@ -1,7 +1,8 @@
 return {
   {
     "3rd/image.nvim",
-    enabled = not vim.g.started_by_firenvim,
+    -- enabled = not vim.g.started_by_firenvim,
+    enabled = true,
     config = function()
       if not vim.g.started_by_firenvim then
         require("image").setup({
@@ -9,6 +10,7 @@ return {
           kitty_method = "normal",
           integrations = {
             -- Notice these are the settings for markdown files
+            typst = { enabled = true, filetypes = { "typst" } },
             markdown = {
               enabled = false,
               clear_in_insert_mode = false,

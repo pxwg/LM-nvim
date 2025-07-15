@@ -7,11 +7,12 @@ return {
     priority = 1000000,
     opts = {},
     config = function()
+      -- local mocha = require("catppuccin.palettes").get_palette("mocha")
       require("catppuccin").setup({
         integrations = { blink_cmp = true },
         highlight_overrides = {
           mocha = {
-            WinSeparator = { fg = "#1e1e2f" },
+            WinSeparator = { fg = "#BAC2DE" },
             Statusline = { fg = "#cdd6f4", bg = "#1e1e2f" },
             AvanteSidebarNormal = { fg = "#cdd6f4", bg = "#1e1e2f" },
             AvantePromptInputBorder = { fg = "#cdd6f4", bg = "#1e1e2f" },
@@ -20,10 +21,7 @@ return {
             -- Normal         xxx guifg=#cdd6f4 guibg=#1e1e2f
             --- Math in md
             Conceal = { fg = "#89b4fa", bg = "" },
-            -- ["@conceal"] = { fg = "#89b4fa" },
-            -- ["@markup.math"] = { fg = "" },
-            -- ["@text.math"] = { fg = "" },
-            -- ["@markup.link.label.markdown_inline"] = { fg = "#7dc4e4" },
+            ["@conceal"] = { fg = "#89b4fa", bg = "" },
             -- SnacksImageMath = { fg = "#eba0ac" },
             -- --- Math in tex
             texEnvArgName = { fg = "#9399b3" },
@@ -66,6 +64,33 @@ return {
             -- CmpItemAbbrMatchFuzzy = { fg = "#b4befe" },
             -- CmpItemAbbrDefault = { fg = "#b4befe" },
             -- CmpItemAbbr = { fg = "#bac2de" },
+            -- ["@_cmd"] = { fg = "#b4beff", style = "bold" }, -- lavender: 命令
+            -- ["@cmd"] = { fg = "#b4beff", style = "bold" }, -- lavender: 命令
+            -- ["@func"] = { fg = "#89b4fb", style = "italic" }, -- blue: 函数
+            -- ["@letter"] = { fg = "#cdd6f5" }, -- text: 普通字母
+            -- ["@sub"] = { fg = "#94e2d6" }, -- teal: 下标
+            -- ["@sub_ident"] = { fg = "#94e2d6" }, -- teal: 下标标识符
+            -- ["@sub_letter"] = { fg = "#94e2d6" }, -- teal: 下标字母
+            -- ["@sub_number"] = { fg = "#94e2d6" }, -- teal: 下标数字
+            -- ["@sup"] = { fg = "#fab388" }, -- peach: 上标
+            -- ["@sup_ident"] = { fg = "#fab388" }, -- peach: 上标标识符
+            -- ["@sup_letter"] = { fg = "#fab388" }, -- peach: 上标字母
+            -- ["@sup_number"] = { fg = "#fab388" }, -- peach: 上标数字
+            -- ["@symbol"] = { fg = "#74c7ed" }, -- sapphire: 符号
+            -- ["@typ_font_name"] = { fg = "#cba6f8", style = "italic" }, -- mauve: 字体名
+            -- ["@typ_greek_symbol"] = { fg = "#f5c2e8" }, -- pink: 希腊符号
+            -- ["@typ_inline_dollar"] = { fg = "#f9e2b0" }, -- yellow: 内联美元符号
+            -- ["@typ_math_delim"] = { fg = "#9399b3" }, -- overlay2: 数学分隔符
+            -- ["@typ_math_font"] = { fg = "#eba0ad" }, -- maroon: 数学字体
+            -- ["@typ_math_symbol"] = { fg = "#74c7ed" }, -- sapphire: 数学符号
+            -- ["@typ_phy_symbol"] = { fg = "#a6e3a2" }, -- green: 物理符号
+            -- ["@open1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            -- ["@open2"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            -- ["@close1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            -- ["@close2"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            -- ["@punctuation"] = { fg = "#9399b3" }, -- overlay2: 标点
+            -- ["@left_paren"] = { fg = "#7f849d" }, -- overlay1: 左括号
+            -- ["@right_paren"] = { fg = "#7f849d" }, -- overlay1: 右括号
           },
           lattie = {
             -- Normal         xxx guifg=#4c4f69 guibg=#ffffff

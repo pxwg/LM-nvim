@@ -1,12 +1,17 @@
 local tex = require("util.latex")
+local typst = require("util.typst")
 _G.rime_toggled = true
 _G.rime_ls_active = true
 _G.rime_math = false
 
+local function in_math()
+  return tex.in_mathzone() or typst.in_math()
+end
+
 local function switch_rime_math()
-  if vim.bo.filetype == "tex" then
+  if vim.bo.filetype == "tex" or vim.bo.filetype == "typ" then
     -- in the mathzone or table or tikz and rime is active, disable rime
-    if (tex.in_mathzone() == true or tex.in_tikz() == true) and rime_ls_active == true then
+    if (in_math() == true or tex.in_tikz() == true) and rime_ls_active == true then
       if _G.rime_toggled == true then
         require("lsp.rime_ls").toggle_rime()
         _G.rime_toggled = false
@@ -65,14 +70,14 @@ end
 -- })
 
 vim.api.nvim_create_autocmd("CursorMovedI", {
-  pattern = "*.tex",
+  pattern = { "*.tex", "*.typ" },
   callback = switch_rime_math,
 })
 
 local function switch_rime_math_md()
   if vim.bo.filetype == "markdown" then
     -- in the mathzone or table or tikz and rime is active, disable rime
-    if tex.in_latex() and rime_ls_active == true then
+    if in_math() and rime_ls_active == true then
       if _G.rime_toggled == true then
         require("lsp.rime_ls").toggle_rime()
         _G.rime_toggled = false
@@ -92,6 +97,6 @@ local function switch_rime_math_md()
 end
 
 vim.api.nvim_create_autocmd("CursorMovedI", {
-  pattern = "*",
+  pattern = "*.md",
   callback = switch_rime_math_md,
 })

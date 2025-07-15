@@ -53,7 +53,7 @@ vim.api.nvim_set_hl(0, "Statusline", { fg = "", bg = "" })
 local home = _G.HOMEPARH
 local filename = vim.fn.expand("%:f"):gsub(home, "")
 vim.o.statusline = table.concat({
-  "%#StatusLineFile#" .. filename, -- 文件名
+  -- "%#StatusLineFile#" .. filename, -- 文件名
   "%#StatusLineModified#%m", -- 修改标志
   "%=",
   symbols.get(),
@@ -68,7 +68,7 @@ function M.update_hl()
   filename = vim.fn.expand("%:f"):gsub(home, "")
   vim.api.nvim_set_hl(0, "Statusline", { fg = "", bg = "" })
   vim.o.statusline = table.concat({
-    "%#StatusLineFile#" .. filename, -- 文件名
+    -- "%#StatusLineFile#" .. filename, -- 文件名
     "%#StatusLineModified#%m", -- 修改标志
     "%=",
     symbols.get(),

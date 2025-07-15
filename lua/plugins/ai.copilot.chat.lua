@@ -122,7 +122,7 @@ return {
       },
       question_header = "󰩃  Doggie  ",
       answer_header = "⚡ Copilot ",
-      model = "claude-sonnet-4", -- Set claude model as default
+      -- model = "claude-sonnet-4", -- Set claude model as default
       window = {
         layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
         width = 0.3, -- fractional width of parent, or absolute width in columns when > 1

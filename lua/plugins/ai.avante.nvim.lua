@@ -18,13 +18,13 @@ return {
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
   opts = {
-    -- provider = "copilot",
+    provider = "copilot",
     -- provider = "deepseek",
-    provider = "claude",
+    -- provider = "claude",
     cursor_applying_provider = "deepseek",
     providers = {
       copilot = {
-        model = "claude-sonnet-4",
+        -- model = "claude-sonnet-4",
       },
       deepseek = {
         __inherited_from = "openai",

@@ -15,7 +15,7 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    -- event = { "VeryLazy", "BufEnter", "BufReadPost", "BufWritePost", "BufNewFile" },
+    event = { "VeryLazy", "BufEnter", "BufReadPost", "BufWritePost", "BufNewFile" },
     version = "^1.0.0",
     event = { "LazyFile" },
     cmd = "LspStart",
@@ -60,10 +60,8 @@ return {
                   library = vim.list_extend(vim.api.nvim_get_runtime_file("", true), {
                     vim.fn.stdpath("config") .. "/lua",
                     "${3rd}/luv/library",
+                    vim.fn.expand("HOME") .. "/.hammerspoon/Spoons/EmmyLua.spoon/annotations",
                   }),
-                  maxPreload = 2000,
-                  preloadFileSize = 50000,
-                  checkThirdParty = false,
                 },
                 runtime = {
                   version = "LuaJIT",
@@ -72,11 +70,12 @@ return {
                     "lua/?/init.lua",
                     vim.fn.stdpath("config") .. "/lua/?.lua",
                     vim.fn.stdpath("config") .. "/lua/?/init.lua",
+                    "${3rd}/luv/library/?.lua",
                   }),
                 },
                 diagnostics = {
-                  globals = { "hs", "vim" },
-                  disable = { "missing-fields" },
+                  -- globals = { "hs", "vim" },
+                  -- disable = { "missing-fields" },
                 },
                 completion = {
                   callSnippet = "Replace",
@@ -91,15 +90,30 @@ return {
       require("lsp.rime_ls").setup_rime()
       require("lsp.dictionary").dictionary_setup()
       require("lsp.mma").setup_mma_lsp()
+      require("lsp.tslsp").setup_ts_query_lsp()
 
-      -- Harper_ls - explicitly limited to markdown and tex files only
-      lspconfig.harper_ls.setup({
-        filetypes = { "markdown", "tex" },
+      local path_spelling = vim.fn.stdpath("config") .. "/spell/en.utf-8.add"
+      local spell_de = {}
+      for word in io.open(path_spelling, "r"):lines() do
+        table.insert(spell_de, word)
+      end
+      lspconfig.ltex.setup({
         capabilities = capabilities,
+        settings = {
+          ltex = {
+            language = "en-US",
+            dictionary = {
+              ["en-US"] = spell_de,
+            },
+          },
+        },
+      })
+
+      lspconfig.harper_ls.setup({
         -- Only attach to markdown and tex files
         on_attach = function(client, bufnr)
           local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
-          if filetype ~= "markdown" and filetype ~= "tex" then
+          if filetype ~= "markdown" and filetype ~= "tex" and filetype ~= "typst" then
             vim.schedule(function()
               vim.lsp.buf_detach_client(bufnr, client.id)
             end)
@@ -108,18 +122,17 @@ return {
           return true
         end,
         init_options = {
-          allowedFileTypes = { "markdown", "tex" },
+          allowedFileTypes = { "markdown", "tex", "typst" },
         },
         settings = {
           markdown = {
             IgnoreLinkTitle = true,
+            SpellCheck = false,
+            Dashes = false,
           },
           ["harper-ls"] = {
-            linters = {
-              -- Disable spell checking
-              SpellCheck = false,
-              Dashes = false,
-            },
+            fileDictPath = require("util.cwd_attach").get_cwd() .. "/.harper_dict_local",
+            linters = { LongSentences = false },
           },
         },
       })

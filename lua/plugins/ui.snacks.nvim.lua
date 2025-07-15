@@ -2,19 +2,25 @@ return {
   "folke/snacks.nvim",
   event = "VeryLazy",
   opts = {
+    bigfiles = {
+      enabled = true,
+      max_size = 1024 * 1024 * 10, -- 10MB
+      line_length = 1000,
+    },
     ---@class snacks.image.Config
     image = {
       -- enabled = false,
       math = {
         enabled = false,
-        latex = {
-          font_size = "Large",
+        -- enabled = true,
+        typst = {
+          tpl = [[
+        #set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))
+        #show math.equation.where(block: false): set text(top-edge: "bounds", bottom-edge: "bounds")
+        #set text(size: 10pt, fill: rgb("${color}"))
+        ${header}
+        ${content}]],
         },
-      },
-      bigfiles = {
-        enabled = true,
-        max_size = 1024 * 1024 * 10, -- 10MB
-        line_length = 1000,
       },
       doc = {
         -- Personally I set this to false, I don't want to render all the
@@ -27,10 +33,11 @@ return {
         -- render the image in a floating window
         -- only used if `opts.inline` is disabled
         float = false,
+        inline = true,
         -- Sets the size of the image
         -- max_width = 60,
-        max_width = vim.g.neovim_mode == "skitty" and 20 or 50,
-        max_height = vim.g.neovim_mode == "skitty" and 10 or 40,
+        -- max_width = vim.g.neovim_mode == "skitty" and 20 or 50,
+        -- max_height = vim.g.neovim_mode == "skitty" and 10 or 40,
         -- max_height = 30,
         -- Apparently, all the images that you preview in neovim are converted
         -- to .png and they're cached, original image remains the same, but

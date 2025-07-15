@@ -39,6 +39,7 @@ return {
 \documentclass[10pt]{<>}
 \input{../preamble.tex}
 \fancyhf{}
+% ltex: enabled=false
 \fancypagestyle{plain}{
 \lhead{<>}
 \chead{\centering{<>}}
@@ -47,7 +48,7 @@ return {
 \cfoot{}
 \rfoot{}}
 \pagestyle{plain}
-
+% ltex: enabled=true
 %-------------------fonts-------------------
 \usepackage[sc]{mathpazo}
 \usepackage{courier}

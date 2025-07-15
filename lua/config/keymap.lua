@@ -80,18 +80,18 @@ local function DeleteLastCommandHistory()
 end
 
 function ChNeovim()
-  if is_leftmost_window() then
+  if is_leftmost_window() and vim.bo.filetype == "tex" then
     vim.fn.system("hs -c 'focusPreviousWindow()'")
   else
-    vim.cmd("wincmd h")
+    vim.cmd("KittyNavigateLeft")
   end
 end
 
 function ClNeovim()
-  if is_rightmost_window() then
+  if is_rightmost_window() and vim.bo.filetype == "tex" then
     vim.fn.system("hs -c 'focusPreviousWindow()'")
   else
-    vim.cmd("wincmd l")
+    vim.cmd("KittyNavigateRight")
   end
 end
 
@@ -655,3 +655,29 @@ end, { noremap = true, silent = true, desc = "[P]hono [U]pdate" })
 map("n", "<leader>pr", function()
   vim.cmd("PhonographReview")
 end, { noremap = true, silent = true, desc = "[P]hono [R]estore" })
+
+vim.api.nvim_set_keymap("n", "<leader>gz", "", {
+  noremap = true,
+  silent = true,
+  callback = function()
+    local context = { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
+    vim.lsp.buf_request(0, "textDocument/codeAction", {
+      textDocument = vim.lsp.util.make_text_document_params(),
+      range = vim.lsp.util.make_range_params().range,
+      context = context,
+    }, function(err, actions)
+      if err then
+        vim.notify("Error fetching code actions: " .. err.message, vim.log.levels.ERROR)
+        return
+      end
+      for _, action in ipairs(actions) do
+        if action.title:match("add .* to the file dictionary") then
+          vim.lsp.buf.execute_command(action.command)
+          return
+        end
+      end
+      vim.notify("No matching code action found.", vim.log.levels.INFO)
+    end)
+  end,
+  desc = "Harper LS CodeAction Add to File Dictionary",
+})
