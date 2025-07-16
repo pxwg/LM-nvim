@@ -1,6 +1,11 @@
 require("util.lazyfile").lazy_file()
 return {
   "nvim-treesitter/nvim-treesitter",
+  dependencies = {
+    {
+      "nvim-treesitter/nvim-treesitter-textobjects",
+    },
+  },
   -- enabled = false,
   lazy = vim.fn.argc(-1) == 0,
   event = { "LazyFile", "VeryLazy" },
@@ -57,6 +62,13 @@ return {
       },
       incremental_selection = {
         enable = true,
+      },
+      textobjects = {
+        select = {
+          enable = true,
+          lookahead = true,
+          keymaps = { ["a$"] = "@math.outer", ["i$"] = "@math.inner" },
+        },
       },
     })
   end,
