@@ -1,6 +1,6 @@
-; ((latex_block) 
+; ((latex_block)
 ;   @conceal (#set! conceal_lines "") (#set! injection.language "latex"))
-; ((latex_span_delimiter) 
+; ((latex_span_delimiter)
 ;   @conceal (#set! conceal_lines "") (#set! injection.language "latex"))
 ; ((latex_span_delimiter) @_delimiter
 ;  (#set! conceal "")
