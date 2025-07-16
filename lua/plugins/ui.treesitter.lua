@@ -67,7 +67,26 @@ return {
         select = {
           enable = true,
           lookahead = true,
-          keymaps = { ["a$"] = "@math.outer", ["i$"] = "@math.inner" },
+          keymaps = {
+            ["a$"] = "@math.outer",
+            ["i$"] = "@math.inner",
+            ["ae"] = "@math.outer",
+            ["ie"] = "@math.inner",
+            ["as"] = "@section.outer",
+            ["is"] = "@section.inner",
+          },
+        },
+        move = {
+          enable = true,
+          set_jumps = true,
+          goto_next = {
+            ["]e"] = "@math.outer",
+          },
+          goto_next_start = { ["]s"] = "@section.outer" },
+          goto_previous = {
+            ["[e"] = "math.outer",
+          },
+          goto_previous_start = { ["[s"] = "@section.outer" },
         },
       },
     })
