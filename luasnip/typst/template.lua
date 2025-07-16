@@ -17,7 +17,6 @@ return {
   color_flavors, color_scheme, conf, definition, example, proof, proposition,
   remark, theorem,
 )
-#import "../preamble.typ": *
 #show: color_scheme
 
 //----------------------basic info ----------------------//
