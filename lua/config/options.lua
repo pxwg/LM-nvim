@@ -58,3 +58,12 @@ vim.g.avante_enabled = true
 vim.g.copilot_chat_enabled = true
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
 -- vim.opt.virtualedit = "all"
+function Get_git_branch()
+  local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD 2>/dev/null")
+  if vim.v.shell_error ~= 0 then
+    return ""
+  end
+  return " " .. branch:gsub("\n", "")
+end
+
+vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
