@@ -55,6 +55,11 @@ return {
     { condition = in_math }
   ),
   s(
+    { trig = "hbar", snippetType = "autosnippet", wordTrig = true, priority = 1005 },
+    t("planck.reduce "),
+    { condition = in_math }
+  ),
+  s(
     { trig = "bar", snippetType = "autosnippet", wordTrig = false },
     fmta("overline(<>)<>", { i(1), i(0) }),
     { condition = in_math }
