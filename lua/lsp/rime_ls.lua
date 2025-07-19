@@ -137,7 +137,7 @@ function M.start_rime_ls()
     on_stderr = function() end,
     on_exit = function(_, code)
       if code ~= 0 then
-        -- vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
+        vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
       end
     end,
   })
