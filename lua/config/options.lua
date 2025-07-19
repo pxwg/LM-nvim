@@ -9,10 +9,12 @@ vim.opt.spell = false
 
 -- Set up spell checking only for tex and markdown files with English checking but ignoring CJK
 vim.api.nvim_create_autocmd({ "FileType" }, {
-  pattern = { "tex", "markdown" },
+  pattern = { "tex", "markdown", "typst" },
   callback = function()
-    vim.opt_local.spell = true
-    vim.opt_local.spelllang = "en_us,cjk"
+    if vim.bo.buftype ~= "nofile" then
+      vim.opt_local.spell = true
+      vim.opt_local.spelllang = "en_us,cjk"
+    end
   end,
 })
 vim.opt.showmode = false
@@ -67,3 +69,15 @@ function Get_git_branch()
 end
 
 vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
+
+vim.lsp.enable({
+  "dictionary",
+  "harper_ls",
+  "ltex",
+  "lua_ls",
+  "pyright",
+  "rime_ls",
+  "texlab",
+  "ts_query_ls",
+  "wolfram_lsp",
+})

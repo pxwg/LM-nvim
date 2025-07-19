@@ -58,6 +58,51 @@ local function change_cursor_color()
   end
 end
 
+function M.attach_rime_to_buffer(bufnr)
+  local active_clients = vim.lsp.get_clients()
+
+  local rime_client_id = nil
+  local dictionary_client_id = nil
+  for _, client in ipairs(active_clients) do
+    if client.name == "rime_ls" then
+      rime_client_id = client.id
+    elseif client.name == "dictionary" then
+      dictionary_client_id = client.id
+    end
+  end
+
+  if rime_client_id then
+    vim.lsp.buf_attach_client(bufnr, rime_client_id)
+  else
+    vim.notify("rime_ls client not found", vim.log.levels.ERROR)
+  end
+
+  if dictionary_client_id then
+    vim.lsp.buf_attach_client(bufnr, dictionary_client_id)
+  else
+    vim.notify("dictionary client not found", vim.log.levels.ERROR)
+  end
+end
+
+function M.start_rime_ls()
+  local job_id = vim.fn.jobstart(vim.fn.expand("~/rime-ls/target/release/rime_ls") .. " --listen", {
+    on_stdout = function() end,
+    on_stderr = function() end,
+    on_exit = function(_, code)
+      if code ~= 0 then
+        vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
+      end
+    end,
+  })
+
+  -- Create an autocommand to stop the job when Neovim exits
+  vim.api.nvim_create_autocmd("VimLeavePre", {
+    callback = function()
+      vim.fn.jobstop(job_id)
+    end,
+  })
+end
+
 M.change_cursor_color = change_cursor_color
 
 M.rime_toggle_color = rime_toggle_color
