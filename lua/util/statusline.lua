@@ -56,7 +56,7 @@ vim.o.statusline = table.concat({
   -- "%#StatusLineFile#" .. filename, -- 文件名
   "%#StatusLineModified#%m", -- 修改标志
   "%=",
-  symbols.get(),
+  -- symbols.get(),
   "%=",
   "%#StatusLineGit#" .. get_git_branch() .. " ",
   "%#StatusLineLang#[" .. "en" .. "] ",

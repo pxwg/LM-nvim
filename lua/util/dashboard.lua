@@ -11,11 +11,13 @@ end
 
 local function create_empty_buffer()
   vim.cmd("enew")
-  vim.cmd("wincmd J") -- 将窗口移动到最底部
-  vim.cmd("resize") -- 调整窗口大小以覆盖所有其他窗口
-  vim.bo.buftype = "nofile"
-  vim.bo.bufhidden = "wipe"
+  vim.cmd("wincmd J")
+  vim.cmd("resize")
   vim.bo.swapfile = false
+
+  -- -- 创建 /tmp/nvim/dashboard 文件夹
+  -- local dashboard_dir = "/tmp/nvim/dashboard"
+  -- vim.fn.mkdir(dashboard_dir, "p")
 end
 
 local function set_keymaps(picker)
@@ -44,6 +46,16 @@ local function set_buffer_lines(lines)
   vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
   vim.bo.modifiable = false
   vim.bo.readonly = true
+
+  -- -- 将 buffer 内容写入文件
+  -- local dashboard_file = "/tmp/nvim/dashboard/buffer_content.txt"
+  -- local file = io.open(dashboard_file, "w")
+  -- if file then
+  --   for _, line in ipairs(lines) do
+  --     file:write(line .. "\n")
+  --   end
+  --   file:close()
+  -- end
 
   local start_line, end_line, target_line, target_col
   local start_cols, end_cols = {}, {}
