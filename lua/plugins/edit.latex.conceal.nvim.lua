@@ -1,6 +1,20 @@
 return {
-  "pxwg/latex-conceal.nvim",
+  "pxwg/math-conceal.nvim",
   event = "VeryLazy",
+  dev = true,
   build = "make lua51",
-  -- dev = true,
+  main = "math-conceal",
+  --- @type LaTeXConcealOptions
+  opts = {
+    enabled = true,
+    conceal = {
+      "greek",
+      "script",
+      "math",
+      "font",
+      "delim",
+      "phy",
+    },
+    ft = { "*.tex", "*.md", "*.typ" },
+  },
 }
