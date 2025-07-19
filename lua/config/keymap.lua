@@ -681,3 +681,13 @@ vim.api.nvim_set_keymap("n", "<leader>gz", "", {
   end,
   desc = "Harper LS CodeAction Add to File Dictionary",
 })
+
+-- HACK: Attach rime and dictionary manually
+map("n", "<leader>aa", function()
+  vim.cmd("AvanteAsk")
+  local rime = require("util.rime_ls")
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.bo[bufnr].filetype == "AvanteInput" then
+    rime.attach_rime_to_buffer(bufnr)
+  end
+end, { desc = "AvanteAsk" })
