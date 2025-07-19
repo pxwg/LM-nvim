@@ -2,17 +2,6 @@ return {
   "yetone/avante.nvim",
   event = "VeryLazy",
   enabled = vim.g.avante_enabled or false,
-  keys = {
-    {
-      "<leader>aa",
-      function()
-        vim.cmd("AvanteAsk")
-        vim.cmd("LspStart rime_ls")
-        -- vim.cmd(":vert wincmd L")
-      end,
-      desc = "CopilotChat",
-    },
-  },
   -- lazy = false,
   version = false,
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`

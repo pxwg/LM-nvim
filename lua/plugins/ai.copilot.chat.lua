@@ -1,4 +1,5 @@
 local alsp = require("agents.lsp")
+local rime = require("util.rime_ls")
 
 local function input_lsp(callback, source)
   return alsp.input_lsp(callback, source)
@@ -33,8 +34,12 @@ return {
     {
       "<C-c>",
       function()
+        -- HACK: Attach rime and dictionary manually
         vim.cmd("CopilotChatToggle")
-        vim.cmd("LspStart rime_ls")
+        local bufnr = vim.api.nvim_get_current_buf()
+        if vim.bo[bufnr].filetype == "copilot-chat" then
+          rime.attach_rime_to_buffer(bufnr)
+        end
         -- vim.cmd(":vert wincmd L")
       end,
       desc = "CopilotChat",

@@ -68,7 +68,7 @@ local statusline_update_timer = vim.loop.new_timer()
 autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
   callback = function()
     if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" or not vim.g.vscode then
-      require("util.statusline").update_hl()
+      -- require("util.statusline").update_hl()
       -- Debounce cursor movement events
       if statusline_update_timer then
         statusline_update_timer:stop()
@@ -87,7 +87,7 @@ autocmd({ "CursorMovedI", "CursorMoved" }, {
           300,
           0,
           vim.schedule_wrap(function()
-            require("util.statusline").update_hl()
+            -- require("util.statusline").update_hl()
           end)
         )
       end
@@ -428,7 +428,7 @@ vim.api.nvim_create_user_command("FoldAboveTitle", fold_above_title, {
   desc = "折叠 \\title 之前的所有内容",
 })
 
-vim.api.nvim_buf_create_user_command(0, "RimeSync", function()
+vim.api.nvim_create_user_command("RimeSync", function()
   require("lsp.rime_ls").sync_settings()
 end, { desc = "Sync Rime settings" })
 
@@ -438,3 +438,29 @@ vim.api.nvim_create_user_command("AvanteOpenFileSelector", function()
   local file_selector = FileSelector:new(tabpage_id)
   file_selector:open()
 end, {})
+
+-- HACK: Create a scratch buffer, to avoid attachment failure of LSP for `set buftype=nofile`
+local function fake_scratch_buffer(set_buffer_name_to)
+  local already_set_name = vim.api.nvim_buf_get_name(0)
+  if already_set_name ~= "" then
+    return
+    -- error(string.format("Cannot make %s a scratch buffer", vim.inspect(already_set_name)))
+  end
+  if not set_buffer_name_to then
+    set_buffer_name_to = "Moonicipal:scratch:" .. vim.loop.hrtime()
+  end
+  vim.cmd.file(set_buffer_name_to)
+  vim.o.bufhidden = "wipe"
+  vim.api.nvim_create_autocmd("BufWriteCmd", {
+    buffer = 0,
+    callback = function() end,
+  })
+  vim.api.nvim_create_autocmd("BufModifiedSet", {
+    buffer = 0,
+    callback = function()
+      vim.o.modified = false
+    end,
+  })
+end
+
+fake_scratch_buffer("hello")

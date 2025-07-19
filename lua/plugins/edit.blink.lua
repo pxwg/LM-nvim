@@ -1,4 +1,5 @@
 require("util.rime_blinks")
+local rime_ls = require("util.rime_ls")
 
 local function mention_get_items()
   vim.notify("hello from mention_get_items", vim.log.levels.INFO)
@@ -237,20 +238,20 @@ return {
           show_on_insert_on_trigger_character = false,
         },
       },
+      snippets = { preset = "luasnip" },
       fuzzy = {
         sorts = {
+          "score",
           function(a, b)
             local sort = require("blink.cmp.fuzzy.sort")
             if a.source_id == "spell" and b.source_id == "spell" then
               return sort.label(a, b)
             end
           end,
-          "score",
           "kind",
           "label",
         },
       },
-      snippets = { preset = "luasnip" },
       sources = {
         default = { "lsp", "path", "buffer", "copilot", "spell" },
         per_filetype = {
@@ -280,9 +281,9 @@ return {
                 local captures = vim.treesitter.get_captures_at_pos(0, curpos[1] - 1, curpos[2] - 1)
                 local in_spell_capture = false
                 for _, cap in ipairs(captures) do
-                  if cap.capture == "spell" then
+                  if cap.capture == "spell" and rime_ls.rime_toggle_word() ~= "cn" then
                     in_spell_capture = true
-                  elseif cap.capture == "nospell" then
+                  elseif cap.capture == "nospell" or rime_ls.rime_toggle_word() == "cn" then
                     return false
                   end
                 end
@@ -341,7 +342,7 @@ return {
                 -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
                 --   item.score_offset = item.score_offset - 3
                 -- end
-                if item.kind == require("blink.cmp.types").CompletionItemKind.Text then
+                if item.kind == require("blink.cmp.types").CompletionItemKind.Text and is_rime_item(item) then
                   item.score_offset = item.score_offset + 2
                 end
               end

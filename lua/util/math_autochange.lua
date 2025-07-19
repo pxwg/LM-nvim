@@ -9,7 +9,7 @@ local function in_math()
 end
 
 local function switch_rime_math()
-  if vim.bo.filetype == "tex" or vim.bo.filetype == "typ" then
+  if vim.bo.filetype == "tex" or vim.bo.filetype == "typst" then
     -- in the mathzone or table or tikz and rime is active, disable rime
     if (in_math() == true or tex.in_tikz() == true) and rime_ls_active == true then
       if _G.rime_toggled == true then
