@@ -1,3 +1,26 @@
+local function create_empty_buffer()
+  vim.cmd("enew")
+  vim.cmd("wincmd J")
+  vim.cmd("resize")
+  vim.bo.swapfile = false
+
+  -- HACK: Create a scratch buffer, to avoid attachment failure of LSP for `set buftype=nofile`
+  local buffer_name = "Dashboard"
+  vim.cmd.file(buffer_name)
+  vim.o.bufhidden = "wipe"
+
+  vim.api.nvim_create_autocmd("BufWriteCmd", {
+    buffer = 0,
+    callback = function() end,
+  })
+  vim.api.nvim_create_autocmd("BufModifiedSet", {
+    buffer = 0,
+    callback = function()
+      vim.o.modified = false
+    end,
+  })
+end
+
 local function greet_based_on_time()
   local hour = tonumber(os.date("%H"))
   if hour < 12 then
@@ -7,17 +30,6 @@ local function greet_based_on_time()
   else
     return "Evening"
   end
-end
-
-local function create_empty_buffer()
-  vim.cmd("enew")
-  vim.cmd("wincmd J")
-  vim.cmd("resize")
-  vim.bo.swapfile = false
-
-  -- -- 创建 /tmp/nvim/dashboard 文件夹
-  -- local dashboard_dir = "/tmp/nvim/dashboard"
-  -- vim.fn.mkdir(dashboard_dir, "p")
 end
 
 local function set_keymaps(picker)

@@ -246,37 +246,37 @@ if vim.g.started_by_firenvim then
 end
 
 --- diagnostic
-local og_virt_text
-local og_virt_line
-vim.api.nvim_create_autocmd({ "CursorMoved", "DiagnosticChanged" }, {
-  group = vim.api.nvim_create_augroup("diagnostic_only_virtlines", {}),
-  callback = function()
-    if og_virt_line == nil then
-      og_virt_line = vim.diagnostic.config().virtual_lines
-    end
-
-    -- ignore if virtual_lines.current_line is disabled
-    if not (og_virt_line and og_virt_line.current_line) then
-      if og_virt_text then
-        vim.diagnostic.config({ virtual_text = og_virt_text })
-        og_virt_text = nil
-      end
-      return
-    end
-
-    if og_virt_text == nil then
-      og_virt_text = vim.diagnostic.config().virtual_text
-    end
-
-    local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
-
-    if vim.tbl_isempty(vim.diagnostic.get(0, { lnum = lnum })) then
-      vim.diagnostic.config({ virtual_text = og_virt_text })
-    else
-      vim.diagnostic.config({ virtual_text = false })
-    end
-  end,
-})
+-- local og_virt_text
+-- local og_virt_line
+-- vim.api.nvim_create_autocmd({ "CursorMoved", "DiagnosticChanged" }, {
+--   group = vim.api.nvim_create_augroup("diagnostic_only_virtlines", {}),
+--   callback = function()
+--     if og_virt_line == nil then
+--       og_virt_line = vim.diagnostic.config().virtual_lines
+--     end
+--
+--     -- ignore if virtual_lines.current_line is disabled
+--     if not (og_virt_line and og_virt_line.current_line) then
+--       if og_virt_text then
+--         vim.diagnostic.config({ virtual_text = og_virt_text })
+--         og_virt_text = nil
+--       end
+--       return
+--     end
+--
+--     if og_virt_text == nil then
+--       og_virt_text = vim.diagnostic.config().virtual_text
+--     end
+--
+--     local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+--
+--     if vim.tbl_isempty(vim.diagnostic.get(0, { lnum = lnum })) then
+--       vim.diagnostic.config({ virtual_text = og_virt_text })
+--     else
+--       vim.diagnostic.config({ virtual_text = false })
+--     end
+--   end,
+-- })
 
 -- Create a namespace for the math delimiter concealer
 local ns_id = vim.api.nvim_create_namespace("math_delimiter_concealer")
@@ -438,29 +438,3 @@ vim.api.nvim_create_user_command("AvanteOpenFileSelector", function()
   local file_selector = FileSelector:new(tabpage_id)
   file_selector:open()
 end, {})
-
--- HACK: Create a scratch buffer, to avoid attachment failure of LSP for `set buftype=nofile`
-local function fake_scratch_buffer(set_buffer_name_to)
-  local already_set_name = vim.api.nvim_buf_get_name(0)
-  if already_set_name ~= "" then
-    return
-    -- error(string.format("Cannot make %s a scratch buffer", vim.inspect(already_set_name)))
-  end
-  if not set_buffer_name_to then
-    set_buffer_name_to = "Moonicipal:scratch:" .. vim.loop.hrtime()
-  end
-  vim.cmd.file(set_buffer_name_to)
-  vim.o.bufhidden = "wipe"
-  vim.api.nvim_create_autocmd("BufWriteCmd", {
-    buffer = 0,
-    callback = function() end,
-  })
-  vim.api.nvim_create_autocmd("BufModifiedSet", {
-    buffer = 0,
-    callback = function()
-      vim.o.modified = false
-    end,
-  })
-end
-
-fake_scratch_buffer("hello")
