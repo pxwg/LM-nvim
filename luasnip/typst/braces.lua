@@ -18,9 +18,9 @@ return {
     wordTrig = false,
     trigEngine = "ecma",
   }, {
-    t("lr(| "),
+    t("| "),
     i(1),
-    t(" |) "),
+    t(" | "),
     i(0),
   }, { condition = typst.in_math }),
 
@@ -30,9 +30,9 @@ return {
     wordTrig = false,
     trigEngine = "ecma",
   }, {
-    t("lr(angle.l"),
+    t("angle.l "),
     i(1),
-    t("angle.r) "),
+    t(" angle.r "),
     i(0),
   }, { condition = typst.in_math }),
 
@@ -52,9 +52,9 @@ return {
     snippetType = "autosnippet",
     wordTrig = false,
   }, {
-    t("\\bra{"),
+    t("bra("),
     i(1),
-    t("}"),
+    t(")"),
     i(0),
   }, { condition = typst.in_math }),
 
@@ -63,9 +63,9 @@ return {
     snippetType = "autosnippet",
     wordTrig = false,
   }, {
-    t("\\ket{"),
+    t("ket("),
     i(1),
-    t("}"),
+    t(")"),
     i(0),
   }, { condition = typst.in_math }),
 }

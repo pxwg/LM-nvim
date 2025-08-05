@@ -26,22 +26,22 @@ return {
   -- Brackets and parentheses shortcuts
   s(
     { trig = "@(", snippetType = "autosnippet", wordTrig = false },
-    fmta("lr((<>))<>", { i(1), i(0) }),
+    fmta("(<>)<>", { i(1), i(0) }),
     { condition = in_math }
   ),
   s(
     { trig = "@[", snippetType = "autosnippet", wordTrig = false },
-    fmta("lr([<>])<>", { i(1), i(0) }),
+    fmta("[<>]<>", { i(1), i(0) }),
     { condition = in_math }
   ),
   s(
     { trig = "@{", snippetType = "autosnippet", wordTrig = false },
-    fmta("lr({{<>}})<>", { i(1), i(0) }),
+    fmta("{{<>}}<>", { i(1), i(0) }),
     { condition = in_math }
   ),
   s(
     { trig = "@|", snippetType = "autosnippet", wordTrig = false },
-    fmta("lr(|<>|)<>", { i(1), i(0) }),
+    fmta("|<>|<>", { i(1), i(0) }),
     { condition = in_math }
   ),
 
