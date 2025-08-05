@@ -2,9 +2,6 @@ return {
   name = "harper_ls",
   cmd = { "harper-ls" },
   filetypes = { "markdown", "tex", "typst" },
-  -- Only attach to markdown and tex files
-  -- init_options = {
-  -- },
   settings = {
     allowedFileTypes = { "markdown", "tex", "typst" },
     markdown = {

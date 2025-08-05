@@ -17,6 +17,7 @@ return {
           vim.fn.stdpath("config") .. "/lua",
           "${3rd}/luv/library",
           vim.fn.expand("HOME") .. "/.hammerspoon/Spoons/EmmyLua.spoon/annotations",
+          vim.fn.glob(vim.fn.stdpath("data") .. "/lazy/*/lua", true, true),
         },
       },
       codeLens = {

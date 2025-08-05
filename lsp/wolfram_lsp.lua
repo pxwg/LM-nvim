@@ -2,7 +2,7 @@ local root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1])
 
 return {
   name = "wolfram-lsp",
-  filetypes = "mma",
+  filetypes = { "mma" },
   cmd = {
     "/Applications/Wolfram.app/Contents/MacOS/WolframKernel",
     "kernel",

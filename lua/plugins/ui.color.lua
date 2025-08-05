@@ -14,7 +14,7 @@ return {
         } },
         highlight_overrides = {
           mocha = {
-            WinSeparator = { fg = "#BAC2DE" },
+            WinSeparator = { fg = "#BAC2DE", bg = "" },
             Statusline = { fg = "#cdd6f4", bg = "#1e1e2f" },
             AvanteSidebarNormal = { fg = "#cdd6f4", bg = "#1e1e2f" },
             AvantePromptInputBorder = { fg = "#cdd6f4", bg = "#1e1e2f" },
