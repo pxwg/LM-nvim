@@ -24,7 +24,8 @@ return {
             --- Math in md
             Conceal = { fg = "#89b4fa", bg = "" },
             ["@conceal"] = { fg = "#89b4fa", bg = "" },
-            -- SnacksImageMath = { fg = "#eba0ac" },
+            ["@conceal_dollar"] = { fg = "#7f849d", bg = "" },
+            SnacksImageMath = { fg = "#eba0ac", bg = "" },
             -- --- Math in tex
             texEnvArgName = { fg = "#9399b3" },
             texOptEqual = { fg = "#7dc4e4" },
@@ -46,7 +47,7 @@ return {
             -- Include = { fg = "" },
             -- Label = { fg = "" },
             -- texMathDelimZoneTD = { fg = "" },
-            Special = { fg = "" },
+            -- Special = { fg = "" },
             -- ["@function.macro"] = { fg = "" },
             -- ["@variable.parameter"] = { fg = "" },
             -- ["@string.special.path.latex"] = { fg = "" },
@@ -67,14 +68,18 @@ return {
             ["@sup"] = { fg = "#fab388" }, -- peach: 上标
             ["@sup_ident"] = { fg = "#fab388" }, -- peach: 上标标识符
             ["@sup_letter"] = { fg = "#fab388" }, -- peach: 上标字母
+            ["@sup_object"] = { fg = "#fab387" },
+            ["@sup_object.typst"] = { fg = "#fab387" }, -- peach: 上标对象
             ["@sup_number"] = { fg = "#fab388" }, -- peach: 上标数字
+            ["@font_letter.typst"] = { fg = "#fab388" },
+
             ["@symbol"] = { fg = "#74c7ed" }, -- sapphire: 符号
-            ["@typ_greek_symbol"] = { fg = "#f5c2e8" }, -- pink: 希腊符号
-            ["@typ_inline_dollar"] = { fg = "#f9e2b0" }, -- yellow: 内联美元符号
-            ["@typ_math_delim"] = { fg = "#9399b3" }, -- overlay2: 数学分隔符
-            ["@typ_math_font"] = { fg = "#eba0ad" }, -- maroon: 数学字体
-            ["@typ_math_symbol"] = { fg = "#74c7ed" }, -- sapphire: 数学符号
-            ["@typ_phy_symbol"] = { fg = "#a6e3a2" }, -- green: 物理符号
+            ["@typ_greek_symbol.typst"] = { fg = "#f5c2e8" }, -- pink: 希腊符号
+            ["@typ_inline_dollar.typst"] = { fg = "#9399b3" }, -- yellow: 内联美元符号
+            ["@typ_math_delim.typst"] = { fg = "#9399b3" }, -- overlay2: 数学分隔符
+            ["@typ_math_font.typst"] = { fg = "#eba0ad" }, -- maroon: 数学字体
+            ["@typ_math_symbol.typst"] = { fg = "#74c7ed" }, -- sapphire: 数学符号
+            ["@typ_phy_symbol.typst"] = { fg = "#a6e3a2" }, -- green: 物理符号
             ["@open1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
             ["@open2"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
             ["@close1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符

@@ -2,9 +2,7 @@ return {
   "folke/snacks.nvim",
   event = "VeryLazy",
   opts = {
-    profiler = {
-      globals = LUA_FUNC,
-    },
+    profiler = { enabled = true },
     bigfiles = {
       enabled = true,
       max_size = 1024 * 1024 * 10, -- 10MB
@@ -19,6 +17,7 @@ return {
         typst = {
           tpl = [[
         #set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))
+        #let sym = "Sym"
         #show math.equation.where(block: false): set text(top-edge: "bounds", bottom-edge: "bounds")
         #set text(size: 10pt, fill: rgb("${color}"))
         ${header}
@@ -35,8 +34,8 @@ return {
         -- only_render_image_at_cursor = vim.g.neovim_mode == "skitty" and false or true,
         -- render the image in a floating window
         -- only used if `opts.inline` is disabled
-        float = false,
-        inline = true,
+        float = true,
+        inline = false,
         -- Sets the size of the image
         -- max_width = 60,
         -- max_width = vim.g.neovim_mode == "skitty" and 20 or 50,

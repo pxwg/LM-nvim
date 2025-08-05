@@ -6,6 +6,7 @@ return {
     priority = 1000,
     enabled = false,
     opts = {
+      -- diagnostics = { globals = { "vim" } },
       library = {
         -- See the configuration section for more details
         -- Load luvit types when the `vim.uv` word is found

@@ -1,3 +1,4 @@
+local autocmd = vim.api.nvim_create_autocmd
 -- @type "telescope" | "fzf"
 vim.g.picker = "telescope"
 vim.g.hammerspoon = true
@@ -18,9 +19,10 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
   end,
 })
 vim.opt.showmode = false
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.expandtab = true
+vim.o.tabstop = 4
+vim.o.shiftwidth = 4
+vim.o.expandtab = true
+
 _G.mode = "error"
 -- Enable break indent
 vim.o.breakindent = true
@@ -69,15 +71,40 @@ function Get_git_branch()
 end
 
 vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
+vim.opt.matchpairs:append("$:$")
 
 vim.lsp.enable({
   "dictionary",
   "harper_ls",
+  "html_lsp",
   "ltex",
   "lua_ls",
   "pyright",
   "rime_ls",
+  "rust_analyzer",
   "texlab",
+  "tinymist",
   "ts_query_ls",
+  "vtsls",
   "wolfram_lsp",
+})
+
+autocmd("FileType", {
+  pattern = { "markdown" },
+  callback = function()
+    if vim.bo.buftype == "nofile" then
+      vim.opt_local.conceallevel = 2
+      vim.opt_local.concealcursor = "nc"
+    end
+  end,
+})
+
+autocmd("BufWritePre", { pattern = { "*.md", "*.html" }, command = "set nowritebackup" })
+autocmd("BufWritePost", { pattern = { "*.md", "*.html" }, command = "set writebackup" })
+
+autocmd("OptionSet", {
+  pattern = "diff",
+  callback = function()
+    vim.wo.wrap = true
+  end,
 })

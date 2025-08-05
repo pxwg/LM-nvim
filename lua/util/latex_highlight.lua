@@ -162,8 +162,8 @@ M.load_queries = load_queries
 
 local font_tab = require("conceal.font_tables").math_font_table
 
-function M.get_mathfont_conceal(text)
-  local out = require("utils.latex_conceal").lookup_math_symbol(text)
+function M.get_mathfont_conceal(param)
+  local out = require("utils.latex_conceal").lookup_math_symbol(param)
   return out or text
 end
 

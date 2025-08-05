@@ -87,6 +87,7 @@ return {
   },
   config = function()
     -- if last char is number, and the only completion item is provided by rime-ls, accept it
+    local types = require("blink.cmp.types")
     require("blink.cmp.completion.list").show_emitter:on(function(event)
       if #event.items ~= 1 then
         return
@@ -342,8 +343,11 @@ return {
                 -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
                 --   item.score_offset = item.score_offset - 3
                 -- end
-                if item.kind == require("blink.cmp.types").CompletionItemKind.Text and is_rime_item(item) then
+                if item.kind == types.CompletionItemKind.Text and is_rime_item(item) then
                   item.score_offset = item.score_offset + 2
+                end
+                if vim.bo.filetype == "typst" and item.kind == types.CompletionItemKind.Field then
+                  item.score_offset = item.score_offset + 10
                 end
               end
               return items

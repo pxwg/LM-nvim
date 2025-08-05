@@ -149,11 +149,27 @@ map(
 map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
 -- Lsp-telescope
 if vim.g.picker == "telescope" then
-  map("n", "gd", "<cmd>Telescope lsp_definitions theme=cursor<cr>", { desc = "Goto [D]efinition" })
-  map("n", "gr", "<cmd>Telescope lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
-  map("n", "gi", "<cmd>Telescope lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
-  map("n", "gy", "<cmd>Telescope lsp_type_definitions theme=cursor<cr>", { desc = "Goto T[y]pe Definition" })
+  map("n", "gd", function()
+    local cwd = vim.fn.getcwd()
+    vim.cmd(string.format("Telescope lsp_definitions theme=cursor cwd=%s", cwd))
+  end, { desc = "Goto [D]efinition" })
+  map("n", "gr", function()
+    local cwd = vim.fn.getcwd()
+    vim.cmd(string.format("Telescope lsp_references theme=cursor cwd=%s", cwd))
+  end, { desc = "[R]eferences", nowait = true })
+  map("n", "gi", function()
+    local cwd = vim.fn.getcwd()
+    vim.cmd(string.format("Telescope lsp_implementations theme=cursor cwd=%s", cwd))
+  end, { desc = "Goto [I]mplementation" })
+  map("n", "gy", function()
+    local cwd = vim.fn.getcwd()
+    vim.cmd(string.format("Telescope lsp_type_definitions theme=cursor cwd=%s", cwd))
+  end, { desc = "Goto T[y]pe Definition" })
 end
+-- map("n", "gr", "<cmd>Trouble lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
+-- map("n", "gi", "<cmd>Trouble lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
+-- map("n", "gy", "<cmd>Trouble lsp_type_definitions theme=cursor<cr>", { desc = "Goto T[y]pe Definition" })
+-- map("n", "gt", "<cmd>Trouble toggle<cr>", { desc = "[T]oggle Trouble" })
 
 -- dim
 map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
@@ -600,7 +616,7 @@ map("i", "<Tab>", function()
   elseif success then
     require("copilot.suggestion").accept_line()
   elseif not success then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", true)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
   else
     require("copilot.suggestion").accept_line()
   end
