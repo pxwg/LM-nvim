@@ -47,7 +47,7 @@ local function set_keymaps(picker)
         and ':lua require("fzf-lua").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>'
       or ':lua require("telescope.builtin").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>',
     q = ":q<cr>",
-    p = ":cd ~/Desktop/physics/notes/<cr>",
+    p = [[:lua vim.loop.chdir(vim.fn.expand("~/Desktop/physics/notes"))<cr>]],
   }
   for key, cmd in pairs(mappings) do
     vim.api.nvim_buf_set_keymap(0, "n", key, cmd, opts)
