@@ -45,12 +45,12 @@ autocmd("BufReadPost", {
   end,
 })
 
-autocmd("BufEnter", {
-  pattern = "*.md",
-  callback = function()
-    require("otter").activate()
-  end,
-})
+-- autocmd("BufEnter", {
+--   pattern = "*.md",
+--   callback = function()
+--     require("otter").activate()
+--   end,
+-- })
 
 autocmd("VimLeavePre", {
   callback = function()

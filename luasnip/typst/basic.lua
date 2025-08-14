@@ -9,6 +9,7 @@ local d = ls.dynamic_node
 local fmta = require("luasnip.extras.fmt").fmta
 local rep = require("luasnip.extras").rep
 local line_begin = require("luasnip.extras.expand_conditions").line_begin
+local cn = require("util.math_autochange")
 local typst = require("util.typst")
 
 -- Helper function to check if we're in a Typst file
@@ -24,12 +25,12 @@ return {
   -- Inline math
   s(
     { trig = "km", wordTrig = true, snippetType = "autosnippet" },
-    { t("$"), i(1), t("$ "), i(0) },
+    { t("$ "), i(1), t("$"), i(0) },
     { condition = in_typst }
   ),
   s(
     { trig = "mk", wordTrig = true, snippetType = "autosnippet" },
-    { t("$"), i(1), t("$ "), i(0) },
+    { t("$ "), i(1), t("$"), i(0) },
     { condition = in_typst }
   ),
 

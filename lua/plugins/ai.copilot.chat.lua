@@ -12,7 +12,6 @@ end
 return {
   -- "CopilotC-Nvim/CopilotChat.nvim",
   "deathbeam/CopilotChat.nvim",
-  branch = "tools",
   enabled = vim.g.copilot_chat_enabled or false,
   dependencies = {
     { "zbirenbaum/copilot.lua" }, -- or github/copilot.vim

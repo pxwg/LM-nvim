@@ -55,6 +55,7 @@ let g:vimtex_compiler_latexmk = {
 ]])
     end,
   },
+  { "let-def/texpresso.vim" },
   {
     "ixru/nvim-markdown",
     -- event = "VeryLazy",

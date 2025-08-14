@@ -1,3 +1,4 @@
+local M = {}
 local tex = require("util.latex")
 local typst = require("util.typst")
 _G.rime_toggled = true
@@ -9,29 +10,42 @@ local function in_math()
 end
 
 local function switch_rime_math()
-  if vim.bo.filetype == "tex" or vim.bo.filetype == "typst" then
-    -- in the mathzone or table or tikz and rime is active, disable rime
-    if (in_math() == true or tex.in_tikz() == true) and rime_ls_active == true then
-      if _G.rime_toggled == true then
-        require("lsp.rime_ls").toggle_rime()
-        _G.rime_toggled = false
-        _G.rime_math = true
-      end
+  -- if vim.bo.filetype == "tex" or vim.bo.filetype == "typst" then
+  -- in the mathzone or table or tikz and rime is active, disable rime
+  if (in_math() == true or tex.in_tikz() == true) and rime_ls_active == true then
+    if _G.rime_toggled == true then
+      require("lsp.rime_ls").toggle_rime()
+      _G.rime_toggled = false
+      _G.rime_math = true
+    end
     -- in the text but rime is not active(by hand), do nothing
-    elseif _G.rime_ls_active == false then
-      -- in the text but rime is active(by hand ), thus the configuration is for mathzone or table or tikz
-    else
-      if (_G.rime_toggled == false and _G.changed_by_this == false) or (_G.rime_toggled == false and _G.rime_math) then
-        require("lsp.rime_ls").toggle_rime()
-        _G.rime_toggled = true
-      end
-      if (_G.rime_toggled == false and _G.changed_by_this) or (_G.rime_math == false and not _G.rime_toggled) then
-      end
-      if _G.rime_ls_active and _G.rime_toggled then
-      end
+  elseif _G.rime_ls_active == false then
+    -- in the text but rime is active(by hand ), thus the configuration is for mathzone or table or tikz
+  else
+    if (_G.rime_toggled == false and _G.changed_by_this == false) or (_G.rime_toggled == false and _G.rime_math) then
+      require("lsp.rime_ls").toggle_rime()
+      _G.rime_toggled = true
+    end
+    if (_G.rime_toggled == false and _G.changed_by_this) or (_G.rime_math == false and not _G.rime_toggled) then
+    end
+    if _G.rime_ls_active and _G.rime_toggled then
     end
   end
+  -- end
 end
+
+local function force_toggle_rime()
+  require("lsp.rime_ls").toggle_rime()
+
+  if _G.rime_toggled == true then
+    _G.rime_toggled = false
+  else
+    _G.rime_toggled = true
+  end
+end
+
+M.switch_rime_math = switch_rime_math
+M.force_toggle_rime = force_toggle_rime
 
 local function toggle_rime_if_in_brackets()
   local line = vim.api.nvim_get_current_line()
@@ -69,7 +83,7 @@ end
 --   callback = toggle_rime_if_in_brackets,
 -- })
 
-vim.api.nvim_create_autocmd("CursorMovedI", {
+vim.api.nvim_create_autocmd({ "CursorMovedI" }, {
   pattern = { "*.tex", "*.typ" },
   callback = switch_rime_math,
 })
@@ -100,3 +114,5 @@ vim.api.nvim_create_autocmd("CursorMovedI", {
   pattern = "*.md",
   callback = switch_rime_math_md,
 })
+
+return M

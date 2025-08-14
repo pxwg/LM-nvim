@@ -12,13 +12,12 @@ return {
     Lua = {
       diagnostics = { globals = { "vim" } },
       workspace = {
-        library = {
+        library = vim.tbl_extend("force", {
           vim.env.VIMRUNTIME .. "/lua/",
           vim.fn.stdpath("config") .. "/lua",
           "${3rd}/luv/library",
           vim.fn.expand("HOME") .. "/.hammerspoon/Spoons/EmmyLua.spoon/annotations",
-          vim.fn.glob(vim.fn.stdpath("data") .. "/lazy/*/lua", true, true),
-        },
+        }, vim.api.nvim_get_runtime_file("lua", true)),
       },
       codeLens = {
         enable = true,
@@ -42,6 +41,7 @@ return {
           vim.fn.stdpath("config") .. "/lua/?.lua",
           vim.fn.stdpath("config") .. "/lua/?/init.lua",
           "${3rd}/luv/library/?.lua",
+          vim.api.nvim_get_runtime_file("", true),
         },
       },
       completion = {

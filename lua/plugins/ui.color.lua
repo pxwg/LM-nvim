@@ -80,13 +80,37 @@ return {
             ["@typ_math_font.typst"] = { fg = "#eba0ad" }, -- maroon: 数学字体
             ["@typ_math_symbol.typst"] = { fg = "#74c7ed" }, -- sapphire: 数学符号
             ["@typ_phy_symbol.typst"] = { fg = "#a6e3a2" }, -- green: 物理符号
-            ["@open1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
-            ["@open2"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
-            ["@close1"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
-            ["@close2"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
-            ["@punctuation"] = { fg = "#9399b3" }, -- overlay2: 标点
-            ["@left_paren"] = { fg = "#7f849d" }, -- overlay1: 左括号
-            ["@right_paren"] = { fg = "#7f849d" }, -- overlay1: 右括号
+            ["@open1.latex"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            ["@open2.latex"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            ["@close1.latex"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            ["@close2.latex"] = { fg = "#7f849d" }, -- overlay1: 括号/分隔符
+            ["@punctuation.latex"] = { fg = "#9399b3" }, -- overlay2: 标点
+            ["@left_paren.latex"] = { fg = "#7f849d" }, -- overlay1: 左括号
+            ["@right_paren.latex"] = { fg = "#7f849d" }, -- overlay1: 右括号
+            ["@close_paren.latex"] = { fg = "#7f849d" }, -- overlay1: 右括号
+            ["@cmd.latex"] = { fg = "#f9e2af" }, -- yellow: 命令
+            ["@font_letter.latex"] = { fg = "#fab388" }, -- peach: 字体字母
+            ["@frac.latex"] = { fg = "#a6e3a2" }, -- green: 分数
+            ["@left_1.latex"] = { fg = "#7f849d" }, -- overlay1: 左括号1
+            ["@left_2.latex"] = { fg = "#7f849d" }, -- overlay1: 左括号2
+            ["@left_brace.latex"] = { fg = "#7f849d" }, -- overlay1: 左大括号
+            ["@open_paren.latex"] = { fg = "#7f849d" }, -- overlay1: 开括号
+            ["@right_1.latex"] = { fg = "#7f849d" }, -- overlay1: 右括号1
+            ["@right_2.latex"] = { fg = "#7f849d" }, -- overlay1: 右括号2
+            ["@right_brace.latex"] = { fg = "#7f849d" }, -- overlay1: 右大括号
+            ["@sub_object.latex"] = { fg = "#fab388" }, -- teal: 下标对象
+            ["@sub_symbol.latex"] = { fg = "#fab388" }, -- teal: 下标符号
+            ["@sup_symbol.latex"] = { fg = "#fab388" }, -- peach: 上标符号
+            ["@tex_font_name.latex"] = { fg = "#eba0ad" }, -- maroon: TeX 字体名
+            ["@tex_greek_symbol.latex"] = { fg = "#f5c2e8" }, -- pink: TeX 希腊字母
+            ["@conceal.latex"] = { fg = "#a6adc8" }, -- subtle conceal
+            ["@conceal_dollar.latex"] = { fg = "#a6adc8" }, -- subtle conceal for $
+            ["@sub_letter.latex"] = { fg = "#fab388" }, -- teal: subscript letter
+            ["@sup_letter.latex"] = { fg = "#fab388" }, -- peach: superscript letter
+            ["@sup_object.latex"] = { fg = "#fab388" }, -- peach: superscript object
+            ["@tex_greek.latex"] = { fg = "#f5c2e8" }, -- pink: TeX greek
+            ["@tex_math_command.latex"] = { fg = "#f9e2af" }, -- blue: TeX math command
+            ["@punctuation.delimiter.latex"] = { fg = "#f5c2e7" }, -- overlay2: TeX punctuation delimiter
           },
           lattie = {
             -- Normal         xxx guifg=#4c4f69 guibg=#ffffff

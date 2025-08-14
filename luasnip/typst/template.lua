@@ -14,7 +14,7 @@ return {
 #import "@preview/physica:0.9.5": *
 #import "@preview/commute:0.3.0": arr, commutative-diagram, node
 #import "../preamble.typ": (
-  color_flavors, color_scheme, conf, definition, example, proof, proposition,
+   color_scheme, conf, definition, example, proof, proposition,
   remark, theorem,
 )
 #show: color_scheme

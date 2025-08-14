@@ -5,6 +5,6 @@ return {
   name = "texlab",
   cmd = { "texlab" },
   filetypes = { "tex", "bib" },
-  offset_encoding = "utf-8",
-  capabilities = capabilities,
+  -- offset_encoding = "utf-8",
+  -- capabilities = capabilities,
 }

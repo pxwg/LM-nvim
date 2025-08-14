@@ -71,7 +71,7 @@ return {
         "trimlines",
       },
       yml = { "yq" },
-      typst = { "typstyle", "trimlines" },
+      typst = { "typstyle", "autocorrect", "trimlines" },
       json = { "fixjson" },
       javascript = { "prettier", "injected" },
       markdown = {
