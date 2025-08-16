@@ -253,31 +253,27 @@ local function tex_script(content)
   local title = get_tex_title(0) or content.title
   local path = write_content_to_tempfile_and_return_path(content_string, content.path, ".tex") or content.path
   local output = { title = title, content = "" }
+  local file_dir = vim.fn.fnamemodify(path, ":h")
+  local cmd = {
+    "pandoc",
+    path,
+    "-t",
+    "markdown",
+    "--lua-filter=" .. vim.fn.stdpath("config") .. "/tex_md.lua",
+  }
   local ok, result = pcall(function()
-    local cmd = {
-      "pandoc",
-      path,
-      "-t",
-      "markdown",
-      "--lua-filter=" .. vim.fn.stdpath("config") .. "/tex_md.lua",
-    }
-    local job = vim.fn.system(cmd)
-    local code = vim.v.shell_error
-    if code ~= 0 then
-      error("Pandoc failed: " .. job)
+    local job = vim.system(cmd, { cwd = file_dir }):wait()
+    if job.code ~= 0 then
+      error("Pandoc failed: " .. (job.stderr or ""))
     end
-    os.remove(path)
-    return job
+    return job.stdout
   end)
+  os.remove(path)
   if ok then
     output.content = result
-    os.remove(path)
-    -- print(result)
   else
-    os.remove(path)
     output.content = "Error: " .. result
   end
-  os.remove(path)
   print(output.content)
   return output
 end

@@ -87,6 +87,8 @@ vim.lsp.enable({
   "ts_query_ls",
   "vtsls",
   "wolfram_lsp",
+  "clangd",
+  "astro-ls",
 })
 
 autocmd("FileType", {

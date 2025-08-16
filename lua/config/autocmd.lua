@@ -439,18 +439,14 @@ vim.api.nvim_create_user_command("AvanteOpenFileSelector", function()
   file_selector:open()
 end, {})
 
--- Function to restart all LSP clients
-local function restart_lsp_clients()
-  for _, client in pairs(vim.lsp.get_clients()) do
-    if client.name == "tinymist" or client.name == "harper_ls" then
-      vim.cmd("LspRestart " .. client.name)
-    end
-  end
-end
-
 autocmd("DirChanged", {
-  group = vim.api.nvim_create_augroup("RestartLspOnDirChange", { clear = true }),
   callback = function()
-    restart_lsp_clients()
+    for _, client in pairs(vim.lsp.get_clients()) do
+      if client.name == "tinymist" or client.name == "harper_ls" then
+        -- Such a weird api logic
+        vim.lsp.enable(client.name, false)
+        vim.lsp.enable(client.name, true)
+      end
+    end
   end,
 })

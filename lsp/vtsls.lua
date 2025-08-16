@@ -9,6 +9,7 @@ return {
     "typescript",
     "typescriptreact",
     "typescript.tsx",
+    "astro",
   },
   settings = {
     complete_function_calls = true,

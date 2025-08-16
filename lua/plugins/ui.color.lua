@@ -111,6 +111,8 @@ return {
             ["@tex_greek.latex"] = { fg = "#f5c2e8" }, -- pink: TeX greek
             ["@tex_math_command.latex"] = { fg = "#f9e2af" }, -- blue: TeX math command
             ["@punctuation.delimiter.latex"] = { fg = "#f5c2e7" }, -- overlay2: TeX punctuation delimiter
+            ["@left_paren_cmd.latex"] = { fg = "#f9e2af" },
+            ["@right_paren_cmd.latex"] = { fg = "#f9e2af" },
           },
           lattie = {
             -- Normal         xxx guifg=#4c4f69 guibg=#ffffff
