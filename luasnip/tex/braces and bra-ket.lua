@@ -82,9 +82,9 @@ return {
     wordTrig = false,
     trigEngine = "ecma",
   }, {
-    t("\\left< "),
+    t("\\left\\langle "),
     i(1),
-    t(" \\right>"),
+    t(" \\right\\rangle"),
     i(0),
   }, { condition = tex.in_mathzone }),
 
