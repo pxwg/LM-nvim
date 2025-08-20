@@ -1,6 +1,7 @@
 local autocmd = vim.api.nvim_create_autocmd
 -- @type "telescope" | "fzf"
 vim.g.picker = "telescope"
+vim.g.mini_file_opened = false
 vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"
 -- Disable global spell checking, will be enabled per filetype
@@ -67,7 +68,7 @@ function Get_git_branch()
   if vim.v.shell_error ~= 0 then
     return ""
   end
-  return " " .. branch:gsub("\n", "")
+  return "[" .. branch:gsub("\n", "") .. "]"
 end
 
 vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
@@ -110,3 +111,6 @@ autocmd("OptionSet", {
     vim.wo.wrap = true
   end,
 })
+
+vim.o.scrolloff = 5
+vim.o.winborder = "none"

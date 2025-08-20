@@ -1,6 +1,7 @@
 return {
   "glacambre/firenvim",
   build = ":call firenvim#install(0)",
+  enabled = false,
   config = function()
     if vim.g.started_by_firenvim then
       vim.o.laststatus = 0

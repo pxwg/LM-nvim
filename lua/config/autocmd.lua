@@ -450,3 +450,11 @@ autocmd("DirChanged", {
     end
   end,
 })
+
+autocmd("BufLeave", {
+  callback = function()
+    if vim.bo.filetype == "minifiles" then
+      vim.g.mini_file_opened = false
+    end
+  end,
+})
