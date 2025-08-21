@@ -67,14 +67,14 @@ return {
         select = {
           enable = true,
           lookahead = true,
-          keymaps = {
-            ["a$"] = "@math.outer",
-            ["i$"] = "@math.inner",
-            ["ae"] = "@math.outer",
-            ["ie"] = "@math.inner",
-            ["as"] = "@section.outer",
-            ["is"] = "@section.inner",
-          },
+          -- keymaps = {
+          --   ["a$"] = "@math.outer",
+          --   ["i$"] = "@math.inner",
+          --   ["ae"] = "@math.outer",
+          --   ["ie"] = "@math.inner",
+          --   ["as"] = "@section.outer",
+          --   ["is"] = "@section.inner",
+          -- },
         },
         move = {
           enable = true,

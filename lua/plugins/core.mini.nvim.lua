@@ -1,15 +1,7 @@
 return {
-  "echasnovski/mini.files",
-  opts = {
-    windows = {
-      preview = true,
-      width_focus = 30,
-      width_preview = 30,
-    },
-    options = {
-      use_as_default_explorer = true,
-    },
-  },
+  "echasnovski/mini.nvim",
+  version = false,
+  event = "VeryLazy",
   keys = {
     {
       "<leader>e",
@@ -44,9 +36,64 @@ return {
       desc = "Open mini.files (cwd)",
     },
   },
-  config = function(_, opts)
-    require("mini.files").setup(opts)
+  config = function()
+    require("mini.icons").setup({})
 
+    require("mini.surround").setup({
+      custom_surroundings = {
+        ["l"] = { output = { left = "[", right = "]()" } },
+      },
+    })
+
+    local MiniAi = require("mini.ai")
+    MiniAi.setup({
+      n_lines = 500,
+      custom_textobjects = {
+        o = MiniAi.gen_spec.treesitter({ -- code block
+          a = { "@block.outer", "@conditional.outer", "@loop.outer" },
+          i = { "@block.inner", "@conditional.inner", "@loop.inner" },
+        }),
+        f = MiniAi.gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }), -- function
+        c = MiniAi.gen_spec.treesitter({ a = "@class.outer", i = "@class.inner" }), -- class
+        t = { "<([%p%w]-)%f[^<%w][^<>]->.-</%1>", "^<.->().*()</[^/]->$" }, -- tags
+        d = { "%f[%d]%d+" }, -- digits
+        w = { -- Word with case
+          { "%u[%l%d]+%f[^%l%d]", "%f[%S][%l%d]+%f[^%l%d]", "%f[%P][%l%d]+%f[^%l%d]", "^[%l%d]+%f[^%l%d]" },
+          "^().*()$",
+        },
+        u = MiniAi.gen_spec.function_call(), -- u for "Usage"
+        U = MiniAi.gen_spec.function_call({ name_pattern = "[%w_]" }), -- without dot in function name
+        e = MiniAi.gen_spec.treesitter({ a = "@math.outer", i = "@math.inner" }),
+      },
+    })
+
+    require("mini.pairs").setup({
+      modes = { insert = true, command = true, terminal = false },
+      mappings = {
+        ['"'] = false,
+        ["'"] = false,
+      },
+      -- skip autopair when next character is one of these
+      skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+      -- skip autopair when the cursor is inside these treesitter nodes
+      skip_ts = { "string" },
+      -- skip autopair when next character is closing pair
+      -- and there are more closing pairs than opening pairs
+      skip_unbalanced = true,
+      -- better deal with markdown code blocks
+      markdown = true,
+    })
+
+    require("mini.files").setup({
+      windows = {
+        preview = true,
+        width_focus = 30,
+        width_preview = 30,
+      },
+      options = {
+        use_as_default_explorer = true,
+      },
+    })
     local show_dotfiles = true
     local filter_show = function(fs_entry)
       return true
@@ -96,24 +143,14 @@ return {
       callback = function(args)
         local buf_id = args.data.buf_id
 
-        vim.keymap.set(
-          "n",
-          opts.mappings and opts.mappings.toggle_hidden or "g.",
-          toggle_dotfiles,
-          { buffer = buf_id, desc = "Toggle hidden files" }
-        )
+        vim.keymap.set("n", "g.", toggle_dotfiles, { buffer = buf_id, desc = "Toggle hidden files" })
 
-        vim.keymap.set(
-          "n",
-          opts.mappings and opts.mappings.change_cwd or "gc",
-          files_set_cwd,
-          { buffer = args.data.buf_id, desc = "Set cwd" }
-        )
+        vim.keymap.set("n", "gc", files_set_cwd, { buffer = args.data.buf_id, desc = "Set cwd" })
 
-        map_split(buf_id, opts.mappings and opts.mappings.go_in_horizontal or "<C-w>s", "horizontal", false)
-        map_split(buf_id, opts.mappings and opts.mappings.go_in_vertical or "<C-w>v", "vertical", false)
-        map_split(buf_id, opts.mappings and opts.mappings.go_in_horizontal_plus or "<C-w>S", "horizontal", true)
-        map_split(buf_id, opts.mappings and opts.mappings.go_in_vertical_plus or "<C-w>V", "vertical", true)
+        map_split(buf_id, "<C-w>s", "horizontal", false)
+        map_split(buf_id, "<C-w>v", "vertical", false)
+        map_split(buf_id, "<C-w>S", "horizontal", true)
+        map_split(buf_id, "<C-w>V", "vertical", true)
       end,
     })
   end,
