@@ -182,7 +182,7 @@ return {
         return
       end
       local actions = require("telescope.actions")
-      local image_preview = require("util.telescope-figure").telescope_image_preview()
+      -- local image_preview = require("util.telescope-figure").telescope_image_preview()
 
       local function find_command()
         if 1 == vim.fn.executable("rg") then
@@ -216,8 +216,8 @@ return {
             hilight_limit = false,
           },
           sorting_strategy = "ascending",
-          file_previewer = image_preview.file_previewer,
-          buffer_previewer_maker = image_preview.buffer_previewer_maker,
+          -- file_previewer = image_preview.file_previewer,
+          -- buffer_previewer_maker = image_preview.buffer_previewer_maker,
           layout_strategy = "flex",
           layout_config = { height = 0.3, width = 0.7 },
           borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },

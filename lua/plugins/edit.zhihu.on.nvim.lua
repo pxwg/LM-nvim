@@ -279,8 +279,9 @@ return {
   -- "pxwg/zhihu_neovim",
   dir = "~/zhihu_on_nvim/",
   build = "bash deploy.sh",
-  dev = true,
   ft = { "typst", "markdown", "tex" },
+  enabled = vim.fn.has("mac") == 1,
+  dev = true,
   main = "zhvim",
   ---@type ZhnvimConfigs
   opts = {

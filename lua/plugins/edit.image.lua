@@ -2,7 +2,7 @@ return {
   {
     "3rd/image.nvim",
     -- enabled = not vim.g.started_by_firenvim,
-    enabled = true,
+    enabled = vim.fn.has("mac") == 1,
     config = function()
       if not vim.g.started_by_firenvim then
         require("image").setup({

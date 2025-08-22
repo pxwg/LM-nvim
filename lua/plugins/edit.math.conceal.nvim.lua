@@ -8,9 +8,8 @@ return {
   },
   {
     "pxwg/math-conceal.nvim",
-    enabled = true,
     event = "VeryLazy",
-    dev = true,
+    dev = vim.fn.has("mac") == 1,
     build = "make lua51",
     main = "math-conceal",
     --- @type LaTeXConcealOptions

@@ -20,8 +20,9 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
   end,
 })
 vim.opt.showmode = false
-vim.o.tabstop = 4
-vim.o.shiftwidth = 4
+vim.o.tabstop = 2
+vim.opt.softtabstop = 2
+vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
 _G.mode = "error"
