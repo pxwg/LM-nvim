@@ -4,7 +4,9 @@ return {
   event = "VeryLazy",
   build = "./build.sh",
   init = function()
-    vim.g.python3_host_prog = "/home/pxwg-dogggie/pyenv-nvim/bin/python3"
+    if vim.fn.has("linux") == 1 then
+      vim.g.python3_host_prog = "/home/pxwg-dogggie/pyenv-nvim/bin/python3"
+    end
     vim.g.jieba_vim_lazy = 1
     vim.g.jieba_vim_keymap = 1
   end,
