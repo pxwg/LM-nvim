@@ -115,3 +115,19 @@ autocmd("OptionSet", {
 
 vim.o.scrolloff = 5
 vim.o.winborder = "none"
+
+if vim.fn.has("linux") == 1 then
+  vim.g.clipboard = {
+    name = "orbstack-clipboard",
+    copy = {
+      ["+"] = { "pbcopy" },
+      ["*"] = { "pbcopy" },
+    },
+    paste = {
+      ["+"] = { "pbpaste" },
+      ["*"] = { "pbpaste" },
+    },
+    cache_enabled = 1,
+  }
+  vim.o.clipboard = "unnamedplus"
+end
