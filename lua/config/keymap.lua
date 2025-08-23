@@ -99,6 +99,11 @@ end
 map("n", "<C-j>", "<C-w>j", { silent = true })
 map("n", "<C-k>", "<C-w>k", { silent = true })
 
+if vim.fn.has("linux") then
+  map("n", "<C-O>", "<C-w>j", { silent = true, desc = "Move to down window" })
+  map("n", "<C-P>", "<C-w>k", { silent = true, desc = "Move to up window" })
+end
+
 --split
 map("n", "<C-w>v", "", {
   noremap = true,
