@@ -56,14 +56,14 @@ end
 -- switch to right window
 map("n", "<C-l>", function()
   if not vim.fn.has("mac") then
-    vim.cmd("wincmd l")
+    vim.cmd("KittyNavigateRight")
   end
 end, { noremap = true, silent = true, desc = "Move to right window" })
 
 -- same for left
-map("n", "<C-h>", function()
+map("n", "<C-H>", function()
   if not vim.fn.has("mac") then
-    vim.cmd("wincmd h")
+    vim.cmd("KittyNavigateLeft")
   end
 end, { noremap = true, silent = true, desc = "Move to left window" })
 
