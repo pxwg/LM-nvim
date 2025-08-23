@@ -12,7 +12,7 @@ return {
         else
           local current_file = vim.api.nvim_buf_get_name(0)
           local cwd = vim.fn.getcwd()
-          if vim.bo.filetype == "hello" then
+          if vim.bo.filetype == "hello" or vim.bo.filetype == "minifiles" then
             require("mini.files").open(cwd, true)
           else
             require("mini.files").open(vim.fs.dirname(current_file), true)
@@ -130,6 +130,7 @@ return {
       vim.keymap.set("n", lhs, rhs, { buffer = buf_id, desc = desc })
     end
 
+    local MiniFiles = require("mini.files")
     local files_set_cwd = function()
       local cur_entry_path = MiniFiles.get_fs_entry().path
       local cur_directory = vim.fs.dirname(cur_entry_path)
@@ -153,5 +154,8 @@ return {
         map_split(buf_id, "<C-w>V", "vertical", true)
       end,
     })
+
+    local MiniDiffs = require("mini.diff")
+    MiniDiffs.setup({})
   end,
 }

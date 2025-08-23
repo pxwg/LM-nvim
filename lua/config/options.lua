@@ -20,8 +20,9 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
   end,
 })
 vim.opt.showmode = false
-vim.o.tabstop = 4
-vim.o.shiftwidth = 4
+vim.o.tabstop = 2
+vim.opt.softtabstop = 2
+vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
 _G.mode = "error"
@@ -114,3 +115,19 @@ autocmd("OptionSet", {
 
 vim.o.scrolloff = 5
 vim.o.winborder = "none"
+
+if vim.fn.has("linux") == 1 then
+  vim.g.clipboard = {
+    name = "orbstack-clipboard",
+    copy = {
+      ["+"] = { "pbcopy" },
+      ["*"] = { "pbcopy" },
+    },
+    paste = {
+      ["+"] = { "pbpaste" },
+      ["*"] = { "pbpaste" },
+    },
+    cache_enabled = 1,
+  }
+  vim.o.clipboard = "unnamedplus"
+end

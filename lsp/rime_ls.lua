@@ -27,6 +27,34 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 -- capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
 capabilities.general.positionEncodings = { "utf-8" }
 
+local function get_data_dir()
+  local sys_name = vim.loop.os_uname().sysname
+  if sys_name == "Darwin" then
+    return "/Library/Input Methods/Squirrel.app/Contents/SharedSupport"
+  elseif sys_name == "Linux" then
+    return vim.fn.expand("~/.local/state/rime/")
+  elseif sys_name == "Windows_NT" then
+    return vim.fn.expand("C:/ProgramData/Rime/")
+  else
+    error("Unsupported OS: " .. sys_name)
+    return ""
+  end
+end
+
+local function get_user_data_dir()
+  local sys_name = vim.loop.os_uname().sysname
+  if sys_name == "Darwin" then
+    return vim.fn.expand("~/Library/Rime_2/")
+  elseif sys_name == "Linux" then
+    return vim.fn.expand("~/.local/share/rime/")
+  elseif sys_name == "Windows_NT" then
+    return vim.fn.expand("C:/Users/" .. vim.fn.expand("$USER") .. "/AppData/Roaming/Rime/")
+  else
+    error("Unsupported OS: " .. sys_name)
+    return ""
+  end
+end
+
 return {
   name = "rime_ls",
   -- cmd = vim.lsp.rpc.connect("127.0.0.1", 9257),
@@ -35,8 +63,8 @@ return {
   single_file_support = true,
   init_options = {
     enabled = vim.g.rime_enabled,
-    shared_data_dir = "/Library/Input Methods/Squirrel.app/Contents/SharedSupport",
-    user_data_dir = "~/Library/Rime_2/",
+    shared_data_dir = get_data_dir(),
+    user_data_dir = get_user_data_dir(),
     log_dir = vim.fn.expand("~/.local/share/rime-ls-1/"),
     paging_characters = { ",", "." },
     trigger_characters = {},

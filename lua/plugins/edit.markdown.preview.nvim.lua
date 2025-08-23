@@ -2,6 +2,7 @@ return {
   {
     "iamcco/markdown-preview.nvim",
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    event = { "VeryLazy" },
     enabled = true,
     run = "cd app && npm install",
     init = function()

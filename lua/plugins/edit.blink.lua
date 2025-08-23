@@ -62,9 +62,9 @@ return {
   -- event = "UIEnter",
   -- enabled = false,
   -- use a release tag to download pre-built binaries
-  -- version = "*",
+  version = '1.*',
   -- enabled = true,
-  build = "cargo build --release",
+  -- build = "cargo build --release",
   dependencies = {
     -- add source
     "Kaiser-Yang/blink-cmp-avante",
