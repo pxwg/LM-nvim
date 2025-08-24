@@ -464,9 +464,9 @@ end, { noremap = true, silent = true })
 --   end
 -- end
 
-map("n", "<C-I>", function()
-  jump_forward()
-end, { noremap = true, silent = true })
+-- map("n", "<C-I>", function()
+--   jump_forward()
+-- end, { noremap = true, silent = true })
 
 map("n", "<leader>nf", function()
   require("util.note_fig").process_markdown_image_link()
@@ -637,15 +637,15 @@ map("i", "<CR>", function()
   end
 end, { noremap = true, silent = true, expr = true })
 
--- map("n", "o", function()
---   if vim.bo.filetype == "markdown" then
---     return nt_file.new_line_below()
---   elseif vim.bo.filetype == "tex" then
---     require("util.tex_item").insert_item_on_newline(false)
---   else
---     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
---   end
--- end)
+map("n", "o", function()
+  if vim.bo.filetype == "markdown" then
+    return nt_file.new_line_below()
+  elseif vim.bo.filetype == "tex" then
+    require("util.tex_item").insert_item_on_newline(false)
+  else
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
+  end
+end)
 
 map("n", "O", function()
   if vim.bo.filetype == "markdown" then
