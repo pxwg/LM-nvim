@@ -3,7 +3,7 @@ return {
   {
     "saghen/blink.cmp",
     event = "InsertEnter",
-    version = '1.*',
+    version = "1.*",
     dependencies = {
       "Kaiser-Yang/blink-cmp-avante",
       "L3MON4D3/LuaSnip",
@@ -25,3 +25,4 @@ return {
     config = false, -- Configuration handled by core.ui
   },
 }
+

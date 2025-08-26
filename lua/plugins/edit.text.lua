@@ -76,7 +76,7 @@ return {
           "<C-k>",
           function()
             return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
-              or "<c-\\><c-n>:call searchpair('[([{<|"'《]', '', '[)\\]}>|"'》]', 'W')<cr>a"
+              or "<c-\\><c-n>:call searchpair('[([{<|\"''《]', '', '[)\\]}>|\"''》]', 'W')<cr>a"
           end,
           expr = true,
           silent = true,
@@ -119,12 +119,12 @@ return {
 
   -- Chinese word segmentation
   {
-    "cathaysia/jieba_nvim",
-    build = "pip install jieba",
-    config = function()
-      require("jieba_nvim").setup({
-        dict = "cut_small",
-      })
+    "kkew3/jieba.vim",
+    tag = "v1.0.5",
+    build = "./build.sh",
+    init = function()
+      vim.g.jieba_vim_lazy = 1
+      vim.g.jieba_vim_keymap = 1
     end,
   },
 }

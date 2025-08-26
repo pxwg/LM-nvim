@@ -1,4 +1,5 @@
 -- AI assistance and code generation tools
+vim.g.copilot = true
 return {
   -- GitHub Copilot for code completion
   {
@@ -31,15 +32,43 @@ return {
       { "zbirenbaum/copilot.lua" },
       { "nvim-lua/plenary.nvim" },
     },
+    enabled = vim.g.copilot or false,
     build = "make tiktoken",
     opts = {
       debug = true,
     },
     keys = {
-      { "<leader>aa", function() require("CopilotChat").open() end, desc = "Open Copilot Chat" },
-      { "<leader>ax", function() require("CopilotChat").close() end, desc = "Close Copilot Chat" },
-      { "<leader>ar", function() require("CopilotChat").reset() end, desc = "Reset Copilot Chat" },
-      { "<leader>aq", function() local input = vim.fn.input("Quick Chat: ") if input ~= "" then require("CopilotChat").ask(input, { selection = require("CopilotChat.select").buffer }) end end, desc = "Quick Chat" },
+      {
+        "<C-c>",
+        function()
+          require("CopilotChat").open()
+        end,
+        desc = "Open Copilot Chat",
+      },
+      {
+        "<leader>ax",
+        function()
+          require("CopilotChat").close()
+        end,
+        desc = "Close Copilot Chat",
+      },
+      {
+        "<leader>ar",
+        function()
+          require("CopilotChat").reset()
+        end,
+        desc = "Reset Copilot Chat",
+      },
+      {
+        "<leader>aq",
+        function()
+          local input = vim.fn.input("Quick Chat: ")
+          if input ~= "" then
+            require("CopilotChat").ask(input, { selection = require("CopilotChat.select").buffer })
+          end
+        end,
+        desc = "Quick Chat",
+      },
     },
   },
 
@@ -49,6 +78,7 @@ return {
     event = "VeryLazy",
     lazy = false,
     version = false,
+    enabled = vim.g.avante or false,
     opts = {
       provider = "copilot",
     },
@@ -85,6 +115,7 @@ return {
   -- CodeCompanion for comprehensive AI coding assistance
   {
     "olimorris/codecompanion.nvim",
+    enabled = vim.g.codecompanion or false,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
