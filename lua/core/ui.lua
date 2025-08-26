@@ -4,10 +4,10 @@ local M = {}
 function M.setup()
   -- Load theme
   M.setup_theme()
-  
+
   -- Load treesitter
   M.setup_treesitter()
-  
+
   -- Load completion
   M.setup_completion()
 end
@@ -112,10 +112,31 @@ function M.setup_treesitter()
   require("nvim-treesitter.configs").setup({
     ignore_install = {},
     ensure_installed = {
-      "bash", "c", "diff", "html", "javascript", "jsdoc", "json", "jsonc",
-      "lua", "luadoc", "luap", "markdown", "markdown_inline", "printf",
-      "python", "query", "regex", "toml", "latex", "tsx", "typescript",
-      "vim", "vimdoc", "xml", "yaml",
+      "bash",
+      "c",
+      "diff",
+      "html",
+      "javascript",
+      "jsdoc",
+      "json",
+      "jsonc",
+      "lua",
+      "luadoc",
+      "luap",
+      "markdown",
+      "markdown_inline",
+      "printf",
+      "python",
+      "query",
+      "regex",
+      "toml",
+      "latex",
+      "tsx",
+      "typescript",
+      "vim",
+      "vimdoc",
+      "xml",
+      "yaml",
     },
     sync_install = false,
     auto_install = true,
@@ -425,6 +446,23 @@ function M.setup_completion()
             CompletionItemKind[kind_idx] = "Copilot"
             for _, item in ipairs(items) do
               item.kind = kind_idx
+            end
+            return items
+          end,
+        },
+        copilot_c = {
+          name = "CopilotC",
+          module = "util.blink_copilot",
+          score_offset = 1000000,
+          transform_items = function(_, items)
+            -- demote snippets
+            for _, item in ipairs(items) do
+              -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
+              --   item.score_offset = item.score_offset - 3
+              -- end
+              if item.kind == require("blink.cmp.types").CompletionItemKind.Avante then
+                item.score_offset = item.score_offset + 10
+              end
             end
             return items
           end,

@@ -9,10 +9,10 @@ local state_manager = require("core.input.state_manager")
 function M.setup_lsp()
   local lspconfig = require("lspconfig")
   local configs = require("lspconfig.configs")
-  
+
   -- Initialize dictionary state
   state_manager.set_dict_enabled(false)
-  
+
   -- Register the dictionary LSP server
   if not configs.dictionary then
     configs.dictionary = {
@@ -26,7 +26,7 @@ function M.setup_lsp()
       },
     }
   end
-  
+
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   capabilities.general.positionEncodings = { "utf-8" }
 
@@ -69,7 +69,7 @@ end
 function M.attach_to_buffer(bufnr)
   local active_clients = vim.lsp.get_clients()
   local dict_client_id = nil
-  
+
   for _, client in ipairs(active_clients) do
     if client.name == "dictionary" then
       dict_client_id = client.id
@@ -88,7 +88,7 @@ end
 function M.set_enabled(enabled)
   local client = vim.lsp.get_clients({ name = "dictionary" })[1]
   if client then
-    local command = enabled and "dictionary.enable-cmp" or "dictionary.disable-cmp"
+    local command = enabled and "dictionary.enable-cmp" or "dictionary.toggle-cmp"
     client.request("workspace/executeCommand", { command = command }, function(_, result, ctx, _)
       if ctx.client_id == client.id then
         state_manager.set_dict_enabled(enabled)

@@ -3,6 +3,52 @@
 
 local M = {}
 
+local function is_rightmost_window()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_pos = vim.api.nvim_win_get_position(current_win)[2]
+  local max_col = current_pos
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local pos = vim.api.nvim_win_get_position(win)[2]
+    if pos > max_col then
+      max_col = pos
+    end
+  end
+
+  return current_pos == max_col
+end
+
+local function is_leftmost_window()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_pos = vim.api.nvim_win_get_position(current_win)[2]
+  local min_col = current_pos
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local pos = vim.api.nvim_win_get_position(win)[2]
+    if pos < min_col then
+      min_col = pos
+    end
+  end
+
+  return current_pos == min_col
+end
+
+function ChNeovim()
+  if is_leftmost_window() and vim.bo.filetype == "tex" then
+    vim.fn.system("hs -c 'focusPreviousWindow()'")
+  else
+    vim.cmd("KittyNavigateLeft")
+  end
+end
+
+function ClNeovim()
+  if is_rightmost_window() and vim.bo.filetype == "tex" then
+    vim.fn.system("hs -c 'focusPreviousWindow()'")
+  else
+    vim.cmd("KittyNavigateRight")
+  end
+end
+
 local map = vim.keymap.set
 
 M.setup = function()

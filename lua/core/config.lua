@@ -9,7 +9,7 @@ M.setup = function()
   vim.g.picker = "telescope"
   vim.g.mini_file_opened = false
   vim.g.hammerspoon = true
-  
+
   -- Core editor settings
   vim.o.splitkeep = "screen"
   vim.opt.showmode = false
@@ -17,10 +17,10 @@ M.setup = function()
   vim.opt.softtabstop = 2
   vim.o.shiftwidth = 2
   vim.o.expandtab = true
-  
+
   -- Global mode (error handling)
   _G.mode = "error"
-  
+
   -- Essential editor options
   vim.o.breakindent = true
   vim.opt.undofile = true
@@ -35,13 +35,13 @@ M.setup = function()
   vim.opt.splitright = true
   vim.opt.splitbelow = true
   vim.opt.conceallevel = 2
-  
+
   -- Spell checking - disable global, will be enabled per filetype
   vim.opt.spell = false
-  
+
   -- TeX concealment
   vim.g.tex_conceal = "abdmg"
-  
+
   -- Basic diagnostic configuration
   vim.diagnostic.config({
     virtual_text = true,
@@ -49,10 +49,10 @@ M.setup = function()
     underline = true,
     signs = {
       text = {
-        [vim.diagnostic.severity.ERROR] = "●",
-        [vim.diagnostic.severity.WARN] = "●",
-        [vim.diagnostic.severity.HINT] = "●",
-        [vim.diagnostic.severity.INFO] = "●",
+        [vim.diagnostic.severity.ERROR] = "",
+        [vim.diagnostic.severity.WARN] = "",
+        [vim.diagnostic.severity.HINT] = "",
+        [vim.diagnostic.severity.INFO] = "",
       },
       linehl = {},
       numhl = {},
@@ -62,24 +62,23 @@ M.setup = function()
       focusable = false,
       style = "minimal",
       border = "rounded",
-      source = "always",
       header = "",
       prefix = "",
     },
   })
-  
+
   -- Scrolling and borders
   vim.o.scrolloff = 5
   vim.o.winborder = "none"
-  
+
   -- Status line with git branch
   vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
   vim.opt.matchpairs:append("$:$")
-  
+
   -- Enable LSP servers
   vim.lsp.enable({
     "dictionary",
-    "harper_ls", 
+    "harper_ls",
     "html_lsp",
     "ltex",
     "lua_ls",
