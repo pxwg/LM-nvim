@@ -1,3 +1,4 @@
+-- Markdown language support and preview
 return {
   {
     "iamcco/markdown-preview.nvim",

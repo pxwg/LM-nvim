@@ -166,6 +166,8 @@ vim.api.nvim_create_autocmd({ "UIEnter", "VimResized" }, {
       set_buffer_lines(centered_lines)
       vim.cmd("setfiletype hello")
       vim.cmd("setlocal nowrap")
+      vim.cmd("setlocal nonumber")
+      vim.cmd("setlocal norelativenumber")
     end
   end,
 })

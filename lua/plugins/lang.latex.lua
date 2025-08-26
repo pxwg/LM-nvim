@@ -1,3 +1,4 @@
+-- LaTeX language support and tools
 return {
   {
     "pxwg/latex.nvim",
@@ -7,7 +8,7 @@ return {
         enabled = {
           "greek",
           "math",
-          "script",
+          "script", 
           "delim",
           "font",
         },
@@ -28,10 +29,8 @@ return {
   {
     "lervag/vimtex",
     priority = 10000000,
-    -- ft = { "latex", "markdown" },
-    -- enabled = false,
     init = function()
-      vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
+      vim.g.vimtex_mappings_disable = { ["n"] = { "K" } }
       vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
       vim.g.vimtex_compiler_silent = 1
       vim.g.vimtex_syntax_enabled = 1
@@ -55,10 +54,12 @@ let g:vimtex_compiler_latexmk = {
 ]])
     end,
   },
-  { "let-def/texpresso.vim" },
+  {
+    "let-def/texpresso.vim",
+    ft = "tex",
+  },
   {
     "ixru/nvim-markdown",
-    -- event = "VeryLazy",
     enabled = false,
     config = function()
       vim.cmd([[let g:vim_markdown_math = 1]])

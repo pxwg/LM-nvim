@@ -1,4 +1,59 @@
+-- Text editing enhancements: movement, snippets, and text manipulation
 return {
+  -- Better escape sequences
+  {
+    "max397574/better-escape.nvim",
+    event = "InsertEnter",
+    opts = {
+      timeout = 200,
+      default_mappings = false,
+      mappings = {
+        i = {
+          j = {
+            j = "<Esc>",
+            n = function()
+              require("lsp.rime_ls").toggle_rime()
+              _G.rime_toggled = not _G.rime_toggled
+              _G.rime_ls_active = not _G.rime_ls_active
+            end,
+          },
+        },
+        c = {
+          j = {
+            j = "<Esc>",
+          },
+        },
+        n = {},
+        t = {
+          j = {
+            k = "<C-\\><C-n>",
+          },
+        },
+        v = {
+          j = {
+            k = "<Esc>",
+          },
+        },
+        s = {
+          j = {
+            k = "<Esc>",
+          },
+        },
+      },
+    },
+  },
+
+  -- Text surround operations
+  {
+    "kylechui/nvim-surround",
+    version = "^3.0.0",
+    event = "VeryLazy",
+    config = function()
+      require("nvim-surround").setup({})
+    end,
+  },
+
+  -- LuaSnip for snippet expansion
   {
     "L3MON4D3/LuaSnip",
     event = "InsertEnter",
@@ -21,7 +76,7 @@ return {
           "<C-k>",
           function()
             return require("luasnip").expand_or_locally_jumpable() and "<Plug>luasnip-jump-next"
-              or "<c-\\><c-n>:call searchpair('[([{<|“‘《]', '', '[)\\]}>|”’》]', 'W')<cr>a"
+              or "<c-\\><c-n>:call searchpair('[([{<|"'《]', '', '[)\\]}>|"'》]', 'W')<cr>a"
           end,
           expr = true,
           silent = true,
@@ -59,6 +114,17 @@ return {
           mode = { "i", "s" },
         },
       }
+    end,
+  },
+
+  -- Chinese word segmentation
+  {
+    "cathaysia/jieba_nvim",
+    build = "pip install jieba",
+    config = function()
+      require("jieba_nvim").setup({
+        dict = "cut_small",
+      })
     end,
   },
 }

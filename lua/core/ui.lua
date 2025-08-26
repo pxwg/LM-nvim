@@ -1,0 +1,467 @@
+-- Core UI configuration: Theme, treesitter, and completion
+local M = {}
+
+function M.setup()
+  -- Load theme
+  M.setup_theme()
+  
+  -- Load treesitter
+  M.setup_treesitter()
+  
+  -- Load completion
+  M.setup_completion()
+end
+
+function M.setup_theme()
+  local catppuccin = require("catppuccin")
+  catppuccin.setup({
+    integrations = { blink_cmp = {
+      style = "bordered",
+    } },
+    highlight_overrides = {
+      mocha = {
+        WinSeparator = { fg = "#BAC2DE", bg = "" },
+        Statusline = { fg = "#cdd6f4", bg = "#1e1e2f" },
+        AvanteSidebarNormal = { fg = "#cdd6f4", bg = "#1e1e2f" },
+        AvantePromptInputBorder = { fg = "#cdd6f4", bg = "#1e1e2f" },
+        AvanteSidebarWinHorizontalSeparator = { fg = "#1e1e2f", bg = "#1e1e2f" },
+        AvanteSidebarWinSeparator = { fg = "#1e1e2f", bg = "#1e1e2f" },
+        -- Math in md
+        Conceal = { fg = "#89b4fa", bg = "" },
+        ["@conceal"] = { fg = "#89b4fa", bg = "" },
+        ["@conceal_dollar"] = { fg = "#7f849d", bg = "" },
+        SnacksImageMath = { fg = "#eba0ac", bg = "" },
+        -- Math in tex
+        texEnvArgName = { fg = "#9399b3" },
+        texOptEqual = { fg = "#7dc4e4" },
+        texMathDelim = { fg = "#f9e2af" },
+        texMathSymbol = { fg = "#89b4fa" },
+        texFileArg = { fg = "#b4befe" },
+        texPartConcArgTitle = { fg = "#89b4fa", bold = true },
+        texCmdRef = { fg = "#7dc4e4" },
+        texCmdEnv = { fg = "#b4befe", italic = true },
+        texCmdInput = { fg = "#7dc4e4", italic = true },
+        texCmdClass = { fg = "#eba0ac", italic = true, bold = true },
+        NoteEngDefinition = { fg = "#b4befe", italic = true },
+        NoteEngWord = { fg = "#7dc4e4", bold = true },
+        -- Telescope
+        TelescopeeTitle = { fg = "#1e1e2e", bg = "#eba0ac" },
+        TelescopeNormal = { fg = "#cdd6f4", bg = "#181825" },
+        TelescopeBorder = { fg = "#181825", bg = "#181825" },
+        WhichKeyBorder = { fg = "#181825", bg = "#181825" },
+        BlinkCmpMenuSelection = { bg = "#45475b", italic = true, bold = true },
+        -- Math symbols highlighting
+        ["@sub_ident"] = { fg = "#94e2d6" },
+        ["@sub_letter"] = { fg = "#94e2d6" },
+        ["@sub_number"] = { fg = "#94e2d6" },
+        ["@sup"] = { fg = "#fab388" },
+        ["@sup_ident"] = { fg = "#fab388" },
+        ["@sup_letter"] = { fg = "#fab388" },
+        ["@sup_object"] = { fg = "#fab387" },
+        ["@sup_object.typst"] = { fg = "#fab387" },
+        ["@sup_number"] = { fg = "#fab388" },
+        ["@font_letter.typst"] = { fg = "#fab388" },
+        ["@symbol"] = { fg = "#74c7ed" },
+        ["@typ_greek_symbol.typst"] = { fg = "#f5c2e8" },
+        ["@typ_inline_dollar.typst"] = { fg = "#9399b3" },
+        ["@typ_math_delim.typst"] = { fg = "#9399b3" },
+        ["@typ_math_font.typst"] = { fg = "#eba0ad" },
+        ["@typ_math_symbol.typst"] = { fg = "#74c7ed" },
+        ["@typ_phy_symbol.typst"] = { fg = "#a6e3a2" },
+        -- LaTeX specific highlights
+        ["@open1.latex"] = { fg = "#7f849d" },
+        ["@open2.latex"] = { fg = "#7f849d" },
+        ["@close1.latex"] = { fg = "#7f849d" },
+        ["@close2.latex"] = { fg = "#7f849d" },
+        ["@punctuation.latex"] = { fg = "#9399b3" },
+        ["@left_paren.latex"] = { fg = "#7f849d" },
+        ["@right_paren.latex"] = { fg = "#7f849d" },
+        ["@close_paren.latex"] = { fg = "#7f849d" },
+        ["@cmd.latex"] = { fg = "#f9e2af" },
+        ["@font_letter.latex"] = { fg = "#fab388" },
+        ["@frac.latex"] = { fg = "#a6e3a2" },
+        ["@left_1.latex"] = { fg = "#7f849d" },
+        ["@left_2.latex"] = { fg = "#7f849d" },
+        ["@left_brace.latex"] = { fg = "#7f849d" },
+        ["@open_paren.latex"] = { fg = "#7f849d" },
+        ["@right_1.latex"] = { fg = "#7f849d" },
+        ["@right_2.latex"] = { fg = "#7f849d" },
+        ["@right_brace.latex"] = { fg = "#7f849d" },
+        ["@sub_object.latex"] = { fg = "#fab388" },
+        ["@sub_symbol.latex"] = { fg = "#fab388" },
+        ["@sup_symbol.latex"] = { fg = "#fab388" },
+        ["@tex_font_name.latex"] = { fg = "#eba0ad" },
+        ["@tex_greek_symbol.latex"] = { fg = "#f5c2e8" },
+        ["@conceal.latex"] = { fg = "#a6adc8" },
+        ["@conceal_dollar.latex"] = { fg = "#a6adc8" },
+        ["@sub_letter.latex"] = { fg = "#fab388" },
+        ["@sup_letter.latex"] = { fg = "#fab388" },
+        ["@sup_object.latex"] = { fg = "#fab388" },
+        ["@tex_greek.latex"] = { fg = "#f5c2e8" },
+        ["@tex_math_command.latex"] = { fg = "#f9e2af" },
+        ["@punctuation.delimiter.latex"] = { fg = "#f5c2e7" },
+        ["@left_paren_cmd.latex"] = { fg = "#f9e2af" },
+        ["@right_paren_cmd.latex"] = { fg = "#f9e2af" },
+      },
+    },
+  })
+  vim.cmd("colorscheme catppuccin")
+end
+
+function M.setup_treesitter()
+  require("nvim-treesitter.configs").setup({
+    ignore_install = {},
+    ensure_installed = {
+      "bash", "c", "diff", "html", "javascript", "jsdoc", "json", "jsonc",
+      "lua", "luadoc", "luap", "markdown", "markdown_inline", "printf",
+      "python", "query", "regex", "toml", "latex", "tsx", "typescript",
+      "vim", "vimdoc", "xml", "yaml",
+    },
+    sync_install = false,
+    auto_install = true,
+    modules = {},
+    highlight = {
+      enable = true,
+      additional_vim_regex_highlighting = false,
+    },
+    indent = {
+      enable = true,
+    },
+    incremental_selection = {
+      enable = true,
+    },
+    textobjects = {
+      select = {
+        enable = true,
+        lookahead = true,
+      },
+      move = {
+        enable = true,
+        set_jumps = true,
+        goto_next = {
+          ["]e"] = "@math.outer",
+        },
+        goto_next_start = { ["]s"] = "@section.outer" },
+        goto_previous = {
+          ["[e"] = "math.outer",
+        },
+        goto_previous_start = { ["[s"] = "@section.outer" },
+      },
+    },
+  })
+end
+
+function M.setup_completion()
+  require("util.rime_blinks")
+  local rime_ls = require("util.rime_ls")
+
+  local function mention_get_items()
+    vim.notify("hello from mention_get_items", vim.log.levels.INFO)
+    local items = require("avante.utils").get_mentions()
+    local side_bar, _, _ = require("avante").get()
+
+    local timeout_ms = 5000
+
+    local function with_timeout(callback, name)
+      return function()
+        local completed = false
+
+        vim.schedule(function()
+          local success, err = pcall(callback)
+          completed = true
+          if not success then
+            vim.notify(string.format("%s failed: %s", name, err), vim.log.levels.ERROR)
+          end
+        end)
+
+        vim.defer_fn(function()
+          if not completed then
+            vim.notify(string.format("%s timed out after %dms", name, timeout_ms), vim.log.levels.WARN)
+          end
+        end, timeout_ms)
+      end
+    end
+
+    table.insert(items, {
+      description = "file",
+      command = "file",
+      details = "add files...",
+      callback = with_timeout(function()
+        vim.notify("Opening file selector...", vim.log.levels.INFO)
+        side_bar.file_selector:open()
+      end, "File selector"),
+    })
+    table.insert(items, {
+      description = "quickfix",
+      command = "quickfix",
+      details = "add files in quickfix list to chat context",
+      callback = with_timeout(function()
+        side_bar.file_selector:add_quickfix_files()
+      end, "Quickfix operation"),
+    })
+    table.insert(items, {
+      description = "buffers",
+      command = "buffers",
+      details = "add open buffers to the chat context",
+      callback = with_timeout(function()
+        side_bar.file_selector:add_buffer_files()
+      end, "Buffer operation"),
+    })
+    return items
+  end
+
+  -- Blink completion setup with enhanced configuration
+  local types = require("blink.cmp.types")
+  require("blink.cmp.completion.list").show_emitter:on(function(event)
+    if #event.items ~= 1 then
+      return
+    end
+    local col = vim.fn.col(".") - 1
+    if event.context.line:sub(1, col):match("^.*%a+%d+$") == nil then
+      return
+    end
+    local client = vim.lsp.get_client_by_id(event.items[1].client_id)
+    if (not client) or client.name ~= "rime_ls" then
+      return
+    end
+    require("blink.cmp").accept({ index = 1 })
+  end)
+
+  -- Link BlinkCmpKind to CmpItemKind for theme compatibility
+  local set_hl = function(hl_group, opts)
+    opts.default = true
+    vim.api.nvim_set_hl(0, hl_group, opts)
+  end
+  for _, kind in ipairs(require("blink.cmp.types").CompletionItemKind) do
+    set_hl("BlinkCmpKind" .. kind, { link = ("CmpItemKind" .. kind) or "BlinkCmpKind" })
+  end
+
+  require("copilot_cmp").setup()
+  require("blink.cmp").setup({
+    keymap = {
+      preset = "none",
+      ["<cr>"] = { "accept", "fallback" },
+      ["<C-y>"] = { "select_and_accept" },
+      ["<s-tab>"] = { "snippet_backward", "fallback" },
+      ["<c-j>"] = { "scroll_documentation_up", "fallback" },
+      ["<c-k>"] = { "scroll_documentation_down", "fallback" },
+      ["<c-n>"] = { "select_next", "fallback" },
+      ["<down>"] = { "select_next", "fallback" },
+      ["<up>"] = { "select_prev", "fallback" },
+      ["<c-p>"] = { "select_prev", "fallback" },
+      ["<c-x>"] = { "show", "fallback" },
+      ["<c-c>"] = { "cancel", "fallback" },
+      ["<space>"] = {
+        function(cmp)
+          if not vim.g.rime_enabled then
+            return false
+          end
+          local rime_item_index = get_n_rime_item_index(1)
+          if #rime_item_index ~= 1 then
+            return false
+          end
+          return cmp.accept({ index = rime_item_index[1] })
+        end,
+        "fallback",
+      },
+      ["1"] = {
+        function(cmp)
+          if not vim.g.rime_enabled then
+            return false
+          end
+          local rime_item_index = get_n_rime_item_index(1)
+          if #rime_item_index ~= 1 then
+            return false
+          end
+          return cmp.accept({ index = rime_item_index[1] })
+        end,
+        "fallback",
+      },
+      [";"] = {
+        function(cmp)
+          if not vim.g.rime_enabled then
+            return false
+          end
+          local rime_item_index = get_n_rime_item_index(2)
+          if #rime_item_index ~= 2 then
+            return false
+          end
+          return cmp.accept({ index = rime_item_index[2] })
+        end,
+        "fallback",
+      },
+      ["'"] = {
+        function(cmp)
+          if not vim.g.rime_enabled then
+            return false
+          end
+          local rime_item_index = get_n_rime_item_index(3)
+          if #rime_item_index ~= 3 then
+            return false
+          end
+          return cmp.accept({ index = rime_item_index[3] })
+        end,
+        "fallback",
+      },
+    },
+    cmdline = { enabled = false },
+    completion = {
+      ghost_text = { enabled = true },
+      documentation = {
+        auto_show = true,
+        window = {
+          min_width = 10,
+          max_width = 80,
+          max_height = 20,
+          winblend = 0,
+          scrollbar = true,
+          direction_priority = {
+            menu_north = { "e", "w", "n", "s" },
+            menu_south = { "e", "w", "s", "n" },
+          },
+        },
+      },
+      menu = {
+        auto_show = function(ctx)
+          return ctx.mode ~= "cmdline"
+        end,
+        draw = {
+          columns = { { "kind_icon", "label", "label_description", gap = 1 }, { "kind" } },
+        },
+        winhighlight = "CursorLine:BlinkCmpMenuSelection",
+      },
+    },
+    signature = {
+      enabled = false,
+      trigger = {
+        enabled = true,
+        show_on_trigger_character = false,
+        show_on_insert_on_trigger_character = false,
+      },
+    },
+    snippets = { preset = "luasnip" },
+    fuzzy = {
+      sorts = {
+        "score",
+        function(a, b)
+          local sort = require("blink.cmp.fuzzy.sort")
+          if a.source_id == "spell" and b.source_id == "spell" then
+            return sort.label(a, b)
+          end
+        end,
+        "kind",
+        "label",
+      },
+    },
+    sources = {
+      default = { "lsp", "path", "buffer", "copilot", "spell" },
+      per_filetype = {
+        codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
+        ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
+        AvanteInput = {
+          "avante",
+          "lsp",
+          "buffer",
+          "path",
+          "copilot",
+        },
+      },
+      providers = {
+        spell = {
+          name = "Spell",
+          module = "blink-cmp-spell",
+          opts = {
+            enable_in_context = function()
+              local curpos = vim.api.nvim_win_get_cursor(0)
+              local captures = vim.treesitter.get_captures_at_pos(0, curpos[1] - 1, curpos[2] - 1)
+              local in_spell_capture = false
+              for _, cap in ipairs(captures) do
+                if cap.capture == "spell" and rime_ls.rime_toggle_word() ~= "cn" then
+                  in_spell_capture = true
+                elseif cap.capture == "nospell" or rime_ls.rime_toggle_word() == "cn" then
+                  return false
+                end
+              end
+              return in_spell_capture
+            end,
+          },
+        },
+        avante = {
+          module = "blink-cmp-avante",
+          name = "Avante",
+          opts = {
+            avante = {
+              mention = {
+                triggers = { "@" },
+                get_items = mention_get_items,
+              },
+            },
+          },
+        },
+        lsp = {
+          min_keyword_length = 0,
+          fallbacks = { "ripgrep", "buffer" },
+          transform_items = function(_, items)
+            for _, item in ipairs(items) do
+              if item.kind == types.CompletionItemKind.Text and is_rime_item(item) then
+                item.score_offset = item.score_offset + 2
+              end
+              if vim.bo.filetype == "typst" and item.kind == types.CompletionItemKind.Field then
+                item.score_offset = item.score_offset + 10
+              end
+            end
+            return items
+          end,
+        },
+        buffer = { max_items = 5 },
+        copilot = {
+          name = "copilot",
+          module = "blink.compat.source",
+          score_offset = 100,
+          async = true,
+          transform_items = function(_, items)
+            local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
+            local kind_idx = #CompletionItemKind + 1
+            CompletionItemKind[kind_idx] = "Copilot"
+            for _, item in ipairs(items) do
+              item.kind = kind_idx
+            end
+            return items
+          end,
+        },
+      },
+    },
+    appearance = {
+      kind_icons = {
+        Copilot = "",
+        Text = "",
+        Method = "󰊕",
+        Function = "󰊕",
+        Constructor = "󰒓",
+        Field = "󰜢",
+        Variable = "󰆦",
+        Property = "󰖷",
+        Class = "󱡠",
+        Interface = "󱡠",
+        Struct = "󱡠",
+        Module = "󰅩",
+        Unit = "󰪚",
+        Value = "󰦨",
+        Enum = "󰦨",
+        EnumMember = "󰦨",
+        Keyword = "󰻾",
+        Constant = "󰏿",
+        Snippet = "󱄽",
+        Color = "󰏘",
+        File = "󰈔",
+        Reference = "󰬲",
+        Folder = "󰉋",
+        Event = "󱐋",
+        Operator = "󰪚",
+        TypeParameter = "󰬛",
+      },
+    },
+  })
+end
+
+return M
