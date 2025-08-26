@@ -11,6 +11,10 @@ local state = {
   rime_math = false,
   dict_enabled = false,
   changed_by_auto = false, -- renamed from changed_by_this for clarity
+  -- Original state tracking for math environment switching
+  original_rime_enabled = nil,
+  original_dict_enabled = nil,
+  in_math_environment = false,
 }
 
 -- State getters
@@ -36,6 +40,18 @@ end
 
 function M.is_changed_by_auto()
   return state.changed_by_auto
+end
+
+function M.is_in_math_environment()
+  return state.in_math_environment
+end
+
+function M.get_original_rime_state()
+  return state.original_rime_enabled
+end
+
+function M.get_original_dict_state()
+  return state.original_dict_enabled
 end
 
 -- Initialize global variables for backward compatibility
@@ -86,17 +102,51 @@ function M.set_changed_by_auto(changed)
   _G.changed_by_this = changed
 end
 
+function M.set_in_math_environment(in_math)
+  state.in_math_environment = in_math
+end
+
+-- Save current state as original state (before entering math environment)
+function M.save_original_state()
+  state.original_rime_enabled = M.is_rime_enabled()
+  state.original_dict_enabled = M.is_dict_enabled()
+end
+
+-- Restore original state (when exiting math environment)
+function M.restore_original_state()
+  if state.original_rime_enabled ~= nil and state.original_dict_enabled ~= nil then
+    M.set_rime_enabled(state.original_rime_enabled)
+    M.set_dict_enabled(state.original_dict_enabled)
+    -- Clear original state after restoration
+    state.original_rime_enabled = nil
+    state.original_dict_enabled = nil
+  end
+end
+
 -- Combined state operations
-function M.disable_rime_for_math()
-  M.set_rime_toggled(false)
+function M.enter_math_environment()
+  -- Save current state before switching
+  M.save_original_state()
+  M.set_in_math_environment(true)
   M.set_rime_math_mode(true)
   M.set_changed_by_auto(true)
 end
 
-function M.enable_rime_for_text()
-  M.set_rime_toggled(true)
+function M.exit_math_environment()
+  -- Restore original state
+  M.restore_original_state()
+  M.set_in_math_environment(false)
   M.set_rime_math_mode(false)
   M.set_changed_by_auto(false)
+end
+
+-- Legacy functions for backward compatibility
+function M.disable_rime_for_math()
+  M.enter_math_environment()
+end
+
+function M.enable_rime_for_text()
+  M.exit_math_environment()
 end
 
 function M.reset_state()
@@ -106,6 +156,9 @@ function M.reset_state()
   state.rime_math = false
   state.dict_enabled = false
   state.changed_by_auto = false
+  state.original_rime_enabled = nil
+  state.original_dict_enabled = nil
+  state.in_math_environment = false
 end
 
 -- Debug function to view current state
@@ -117,6 +170,9 @@ function M.get_state()
     rime_math = M.is_rime_math_mode(),
     dict_enabled = M.is_dict_enabled(),
     changed_by_auto = M.is_changed_by_auto(),
+    in_math_environment = M.is_in_math_environment(),
+    original_rime_state = M.get_original_rime_state(),
+    original_dict_state = M.get_original_dict_state(),
   }
 end
 

@@ -18,28 +18,34 @@ local function auto_toggle_input_methods()
   end
 
   local should_disable_rime = detector.should_disable_rime()
-  local is_rime_active = state_manager.is_rime_active()
-  local is_rime_toggled = state_manager.is_rime_toggled()
+  local currently_in_math = state_manager.is_in_math_environment()
   
-  -- If we should disable rime (in math/formula environment)
-  if should_disable_rime and is_rime_active then
-    if is_rime_toggled then
-      -- Disable rime, enable dictionary
-      rime_manager.set_enabled(false)
-      dictionary_manager.set_enabled(true)
-      state_manager.disable_rime_for_math()
+  -- Entering math environment
+  if should_disable_rime and not currently_in_math then
+    -- Save current state and switch to math mode defaults
+    state_manager.enter_math_environment()
+    -- In math environment: enable dictionary, disable rime
+    rime_manager.set_enabled(false)
+    dictionary_manager.set_enabled(true)
+    
+  -- Exiting math environment  
+  elseif not should_disable_rime and currently_in_math then
+    -- Get original states before restoring
+    local original_rime = state_manager.get_original_rime_state()
+    local original_dict = state_manager.get_original_dict_state()
+    
+    -- Restore original states
+    state_manager.exit_math_environment()
+    
+    -- Apply the original states to the LSP clients
+    if original_rime ~= nil then
+      rime_manager.set_enabled(original_rime)
     end
-  -- If we should enable rime (in text environment)  
-  elseif not should_disable_rime and is_rime_active then
-    -- Only re-enable if it was disabled by auto-switching (not manual toggle)
-    if not is_rime_toggled and (state_manager.is_changed_by_auto() or state_manager.is_rime_math_mode()) then
-      -- Enable rime, disable dictionary
-      rime_manager.set_enabled(true)
-      dictionary_manager.set_enabled(false)
-      state_manager.enable_rime_for_text()
+    if original_dict ~= nil then
+      dictionary_manager.set_enabled(original_dict)
     end
   end
-  -- If rime is not active (manually disabled), do nothing
+  -- If no state change needed (staying in same environment), do nothing
 end
 
 -- Manual toggle for rime (with keyboard shortcut)
