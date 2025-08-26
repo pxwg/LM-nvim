@@ -29,7 +29,9 @@ require("util.lazyfile").lazy_file()
 -- This is also a good place to setup other settings (vim.opt)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
-require("config.options")
+
+-- Load core configuration immediately
+require("core.config").setup()
 -- Setup lazy.nvim
 require("lazy").setup({
   dev = {
@@ -91,22 +93,26 @@ autocmd("FileType", {
   end,
 })
 
+vim.api.nvim_create_user_command("RimeSync", function()
+  require("lsp.rime_ls").sync_settings()
+end, { desc = "Sync Rime settings" })
+
+vim.api.nvim_create_user_command("AvanteOpenFileSelector", function()
+  local FileSelector = require("avante.file_selector")
+  local tabpage_id = vim.api.nvim_get_current_tabpage()
+  local file_selector = FileSelector:new(tabpage_id)
+  file_selector:open()
+end, {})
+
 require("util.dashboard")
--- autocmd("BufLeave", {
---   callback = function()
---     if vim.bo.filetype == "hello" then
---       vim.cmd("setlocal relativenumber")
---       vim.cmd("setlocal number")
---     end
---   end,
--- })
 
 vim.api.nvim_create_autocmd("User", {
   pattern = "VeryLazy",
   callback = function()
-    -- require("util.statusline")
-    require("config.keymap")
-    require("config.autocmd")
+    -- Load core configuration using new modular system
+    require("core").setup()
+    
+    -- Load remaining utilities
     require("util.history_search")
     local function get_front_window_id()
       local result = vim.fn.system("hs -c 'GetWinID()'")
@@ -125,10 +131,4 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
-local map = vim.keymap.set
-map({ "n", "v" }, "j", "gj", { silent = true })
-map({ "n", "v" }, "k", "gk", { silent = true })
 
--- The LSP completion handler is now managed through completion plugins like nvim-cmp
--- If you're using nvim-cmp, this manual handler configuration is not needed
--- require("util.current_function")

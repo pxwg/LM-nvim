@@ -1,45 +1,24 @@
 local M = {}
 
-function M.dictionary_setup()
-  -- local dictionary_filetypes = { " vimwiki", "tex", "markdown", "copilot-chat", "Avante", "help" }
-  local configs = require("lspconfig.configs")
-  vim.g.dict_enabled = false
-  local lspconfig = require("lspconfig")
-  -- Register the dictionary LSP server first
-  if not configs.dictionary then
-    configs.dictionary = {
-      default_config = {
-        -- filetypes = dictionary_filetypes,
-        cmd = { vim.fn.expand("~/dictionary_lsp/target/release/dictionary_lsp") },
-        autostart = true,
-        single_file_support = true,
-        root_dir = function(fname)
-          return vim.fs.dirname(fname) or vim.fn.getcwd()
-        end,
-      },
-    }
-  end
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-  -- capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-  -- capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
-  capabilities.general.positionEncodings = { "utf-8" }
+-- Legacy compatibility layer for dictionary_lsp
+-- Redirects to new core.input system while preserving existing API
 
-  -- Then set it up
-  lspconfig.dictionary.setup({
-    single_file_support = true,
-    capabilities = capabilities,
-  })
+function M.dictionary_setup()
+  -- Use new input management system (will setup both rime and dictionary)
+  require("core.input").setup()
 end
 
 function M.toggle_dictionary()
-  local client = vim.lsp.get_clients({ name = "dictionary" })[1]
-  if client then
-    client.request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
-      if ctx.client_id == client.id then
-        vim.g.dict_enabled = result
-      end
-    end)
-  end
+  require("core.input").dictionary.toggle()
+end
+
+-- Additional compatibility functions
+function M.check_dictionary_status()
+  return require("core.input").dictionary.is_running()
+end
+
+function M.attach_dictionary_to_buffer(bufnr)
+  require("core.input").dictionary.attach_to_buffer(bufnr)
 end
 
 return M

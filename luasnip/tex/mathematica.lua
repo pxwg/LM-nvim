@@ -8,6 +8,9 @@ local d = ls.dynamic_node
 local fmta = require("luasnip.extras.fmt").fmta
 local tex = require("util.latex")
 
+-- Import the unified math computation engine
+local math_engines = require("core.math.engines")
+
 local get_visual = function(args, parent)
   if #parent.snippet.env.select_raw > 0 then
     return sn(nil, t(parent.snippet.env.select_raw))
@@ -51,50 +54,15 @@ return {
     }),
     { condition = tex.in_mathzone }
   ),
-  s( -- this one evaluates anything inside the simpy block
+  s( -- Mathematica computation block evaluator using unified engine
     {
       trig = "mcal.*mcals",
       regTrig = true,
-      desc = "sympy block evaluator",
+      desc = "Mathematica block evaluator",
       snippetType = "autosnippet",
       priority = 10000,
     },
-    d(1, function(_, parent)
-      -- gets the part of the block we actually want, and replaces spaces
-      -- at the beginning and at the end
-      local to_eval = string.gsub(parent.trigger, "^mcal(.*)mcals", "%1")
-      to_eval = string.gsub(to_eval, "^%s+(.*)%s+$", "%1")
-      local scan_input = to_eval
-
-      -- replace single backslashes with double backslashes
-      to_eval = string.gsub(to_eval, "\\mathrm{d}", "d")
-      to_eval = string.gsub(to_eval, "\\mathrm{i}", "i")
-      to_eval = string.gsub(to_eval, "\\", "\\\\")
-
-      local job = require("plenary.job")
-
-      local sympy_script =
-          string.format('a = FullSimplify[ToExpression["%s", TeXForm]]; b = TeXForm[a]; Return["%s = " b]', to_eval,
-            to_eval, scan_input)
-
-      sympy_script = string.gsub(sympy_script, "^[\t%s]+", "")
-      local result = {}
-
-      job
-          :new({
-            command = "wolframscript",
-            args = {
-              "-c",
-              sympy_script,
-            },
-            on_exit = function(j)
-              result = j:result()
-            end,
-            -- timeout = 210000000,
-          })
-          :sync()
-
-      return sn(nil, t(result))
-    end)
+    d(1, math_engines.presets.mathematica_mcal()),
+    { condition = tex.in_mathzone }
   ),
 }

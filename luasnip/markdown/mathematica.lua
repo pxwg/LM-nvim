@@ -10,6 +10,10 @@ local fmta = require("luasnip.extras.fmt").fmta
 local rep = require("luasnip.extras").rep
 local line_begin = require("luasnip.extras.expand_conditions").line_begin
 local tex = require("util.latex")
+
+-- Import the unified math computation engine
+local math_engines = require("core.math.engines")
+
 local get_visual = function(args, parent)
   if #parent.snippet.env.SELECT_RAW > 0 then
     return sn(nil, t(parent.snippet.env.SELECT_RAW))
@@ -53,53 +57,9 @@ return {
     }),
     { condition = tex.in_latex }
   ),
-  s( -- This one evaluates anything inside the simpy block
-    { trig = "mcal.*mcals", regTrig = true, desc = "Sympy block evaluator", snippetType = "autosnippet" },
-    d(1, function(_, parent)
-      -- Gets the part of the block we actually want, and replaces spaces
-      -- at the beginning and at the end
-      local to_eval = string.gsub(parent.trigger, "^mcal(.*)mcals", "%1")
-      to_eval = string.gsub(to_eval, "^%s+(.*)%s+$", "%1")
-
-      -- Replace single backslashes with double backslashes
-      to_eval = string.gsub(to_eval, "\\mathrm{d}", "d")
-      to_eval = string.gsub(to_eval, "\\mathrm{i}", "i")
-      to_eval = string.gsub(to_eval, "\\", "\\\\")
-
-      local job = require("plenary.job")
-
-      local sympy_script = string.format(
-        [[
-        a = FullSimplify[ToExpression["%s",TeXForm] ];
-        b = TeXForm[a];
-        Return["%s =" b]
-        ]],
-        -- origin = re.sub(r'^\s+|\s+$', '', origin)
-        -- parsed = parse_expr(origin)
-        -- output = origin + parsed
-        -- print_latex(parsed)
-        to_eval,
-        to_eval
-      )
-
-      sympy_script = string.gsub(sympy_script, "^[\t%s]+", "")
-      local result = {}
-
-      job
-        :new({
-          command = "wolframscript",
-          args = {
-            "-c",
-            sympy_script,
-          },
-          on_exit = function(j)
-            result = j:result()
-          end,
-          -- timeout = 210000000,
-        })
-        :sync()
-
-      return sn(nil, t(result))
-    end)
+  s( -- Mathematica computation block evaluator using unified engine
+    { trig = "mcal.*mcals", regTrig = true, desc = "Mathematica block evaluator", snippetType = "autosnippet" },
+    d(1, math_engines.presets.mathematica_mcal()),
+    { condition = tex.in_latex }
   ),
 }
