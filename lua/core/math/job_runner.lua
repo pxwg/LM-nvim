@@ -64,9 +64,21 @@ def controlled_gate_12(gate):
     return TensorProduct(Matrix([ [1, 0], [0, 0] ]), eye(2))+TensorProduct(Matrix([ [0, 0], [0, 1] ]), gate)
 def controlled_gate_21(gate):
     return TensorProduct(eye(2), Matrix([ [1, 0], [0, 0] ]))+TensorProduct(gate, Matrix([ [0, 0], [0, 1] ]))
-origin = r"%s"
-origin = latex(sympify(origin))
-print(origin)
+H = Matrix([ [1, 1], [1, -1] ]) / sqrt(2)
+X = Matrix([ [0, 1], [1, 0] ])
+Y = Matrix([ [0, -I], [I, 0] ])
+Z = Matrix([ [1, 0], [0, -1] ])
+e1 = Matrix([ [1], [0], [0], [0] ])
+e2 = Matrix([ [0], [1], [0], [0] ])
+e3 = Matrix([ [0], [0], [1], [0] ])
+e4 = Matrix([ [0], [0], [0], [1] ])
+out00 = e1*e1.transpose()
+out01 = e2*e2.transpose()
+out10 = e3*e3.transpose()
+out11 = e4*e4.transpose()
+%s
+output = latex(res)
+print(output)
     ]], tex_input)
   elseif computation_type == "latex2latex" then
     script = string.format(
