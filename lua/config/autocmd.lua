@@ -96,7 +96,8 @@ autocmd({ "CursorMovedI", "CursorMoved" }, {
 })
 
 -- auto change insert mode
-require("util.math_autochange")
+-- NOTE: This functionality has been moved to core.input system
+-- require("util.math_autochange")
 
 -- -- open rime_ls
 -- local job_id = vim.fn.jobstart("rime_ls --listen", {

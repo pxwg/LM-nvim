@@ -1,28 +1,26 @@
 local M = {}
 
-local function is_rime_ls_attached()
-  local clients = vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })
-  for _, client in ipairs(clients) do
-    if client.name == "rime_ls" then
-      return true
-    end
-  end
-  return false
-end
-
-function M.check_rime_status()
-  local clients = vim.lsp.get_clients()
-  for _, client in ipairs(clients) do
-    if client.name == "rime_ls" then
-      return true
-    end
-  end
-  return false
-end
+-- Legacy compatibility layer for util.rime_ls UI functions
+-- Redirects to new core.input system while preserving UI functionality
 
 local tex = require("util.latex")
 
+-- Check if rime_ls is running
+function M.check_rime_status()
+  return require("core.input").rime.is_running()
+end
+
+-- Check if rime is attached to current buffer
+local function is_rime_ls_attached()
+  return require("core.input").rime.is_attached()
+end
+
+-- Rime toggle color for status line
 local function rime_toggle_color()
+  local state = require("core.input").state
+  local rime_toggled = state.is_rime_toggled()
+  local rime_ls_active = state.is_rime_active()
+  
   if M.check_rime_status() and rime_toggled then
     return { bg = "#74c7ec", fg = "#313244", gui = "bold" }
   elseif rime_ls_active then
@@ -34,15 +32,20 @@ local function rime_toggle_color()
   end
 end
 
+-- Rime toggle word for status line
 local function rime_toggle_word()
   if is_rime_ls_attached() then
-    if M.check_rime_status() and _G.rime_toggled then
+    local state = require("core.input").state
+    local rime_toggled = state.is_rime_toggled()
+    local rime_ls_active = state.is_rime_active()
+    
+    if M.check_rime_status() and rime_toggled then
       return "cn"
-    elseif _G.rime_ls_active and tex.in_latex() then
+    elseif rime_ls_active and tex.in_latex() then
       return "math"
-    elseif _G.rime_ls_active then
+    elseif rime_ls_active then
       return tex.in_text() and "error" or "math"
-    elseif not _G.rime_toggled and not _G.rime_ls_active then
+    elseif not rime_toggled and not rime_ls_active then
       return tex.in_text() and "en" or "math"
     end
   else
@@ -50,63 +53,28 @@ local function rime_toggle_word()
   end
 end
 
+-- Change cursor color based on rime status
 local function change_cursor_color()
-  if M.rime_toggle_word() == "cn" then
+  if rime_toggle_word() == "cn" then
     vim.cmd("highlight Cursor guifg=#313244 guibg=#74c7ec")
   else
     vim.cmd("highlight Cursor guifg=NONE guibg=NONE")
   end
 end
 
+-- Attach rime to buffer
 function M.attach_rime_to_buffer(bufnr)
-  local active_clients = vim.lsp.get_clients()
-
-  local rime_client_id = nil
-  local dictionary_client_id = nil
-  for _, client in ipairs(active_clients) do
-    if client.name == "rime_ls" then
-      rime_client_id = client.id
-    elseif client.name == "dictionary" then
-      dictionary_client_id = client.id
-    end
-  end
-
-  if rime_client_id then
-    vim.lsp.buf_attach_client(bufnr, rime_client_id)
-  else
-    vim.notify("rime_ls client not found", vim.log.levels.ERROR)
-  end
-
-  if dictionary_client_id then
-    vim.lsp.buf_attach_client(bufnr, dictionary_client_id)
-  else
-    vim.notify("dictionary client not found", vim.log.levels.ERROR)
-  end
+  require("core.input").attach_to_buffer(bufnr)
 end
 
+-- Start rime_ls daemon
 function M.start_rime_ls()
-  local job_id = vim.fn.jobstart(vim.fn.expand("~/rime-ls/target/release/rime_ls") .. " --listen", {
-    on_stdout = function() end,
-    on_stderr = function() end,
-    on_exit = function(_, code)
-      if code ~= 0 then
-        vim.api.nvim_err_writeln("rime_ls exited with code " .. code)
-      end
-    end,
-  })
-
-  -- Create an autocommand to stop the job when Neovim exits
-  vim.api.nvim_create_autocmd("VimLeavePre", {
-    callback = function()
-      vim.fn.jobstop(job_id)
-    end,
-  })
+  return require("core.input").rime.start_daemon()
 end
 
+-- Export functions
 M.change_cursor_color = change_cursor_color
-
 M.rime_toggle_color = rime_toggle_color
-
 M.rime_toggle_word = rime_toggle_word
 
 return M
