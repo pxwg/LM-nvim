@@ -90,7 +90,7 @@ function M.set_enabled(enabled)
   local client = vim.lsp.get_clients({ name = "dictionary" })[1]
   if client then
     local current_state = state_manager.is_dict_enabled()
-    
+
     -- Only toggle if the current state differs from desired state
     if current_state ~= enabled then
       client.request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
