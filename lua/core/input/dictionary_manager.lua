@@ -85,15 +85,20 @@ function M.attach_to_buffer(bufnr)
 end
 
 -- Force enable/disable dictionary
+-- Since dictionary LSP only has toggle-cmp command, we need to track state
 function M.set_enabled(enabled)
   local client = vim.lsp.get_clients({ name = "dictionary" })[1]
   if client then
-    local command = enabled and "dictionary.enable-cmp" or "dictionary.toggle-cmp"
-    client.request("workspace/executeCommand", { command = command }, function(_, result, ctx, _)
-      if ctx.client_id == client.id then
-        state_manager.set_dict_enabled(enabled)
-      end
-    end)
+    local current_state = state_manager.is_dict_enabled()
+    
+    -- Only toggle if the current state differs from desired state
+    if current_state ~= enabled then
+      client.request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
+        if ctx.client_id == client.id then
+          state_manager.set_dict_enabled(result)
+        end
+      end)
+    end
   end
 end
 
