@@ -1,6 +1,7 @@
 local map = vim.keymap.set
 local cn = require("util.autocorrect")
 local fit = require("util.fit")
+local hs = require("util.hammerspoon")
 local nt_file = require("util.note_file_index")
 
 require("util.fast_keymap")
@@ -55,14 +56,14 @@ end
 
 -- switch to right window
 map("n", "<C-l>", function()
-  if not vim.fn.has("mac") then
+  if not vim.fn.has("mac") or not hs.hammerspoon_enabled() then
     vim.cmd("KittyNavigateRight")
   end
 end, { noremap = true, silent = true, desc = "Move to right window" })
 
 -- same for left
 map("n", "<C-H>", function()
-  if not vim.fn.has("mac") then
+  if not vim.fn.has("mac") or not hs.hammerspoon_enabled() then
     vim.cmd("KittyNavigateLeft")
   end
 end, { noremap = true, silent = true, desc = "Move to left window" })
@@ -126,7 +127,7 @@ map({ "n", "v", "i" }, "<C-s>", function()
   -- vim.cmd("stopinsert")
   -- if vim.bo.filetype ~= "markdown" then
   require("conform").format()
-  vim.cmd("w")
+  vim.cmd("silent! w")
   vim.cmd("stopinsert")
 end, { noremap = true, silent = true })
 
@@ -712,3 +713,14 @@ map("n", "<leader>aa", function()
     rime.attach_rime_to_buffer(bufnr)
   end
 end, { desc = "AvanteAsk" })
+
+local adjust_ui_for_window_size = require("util.sidenote").adjust_ui_for_window_size
+
+if vim.fn.has("mac") then
+  map("n", "tn", function()
+    adjust_ui_for_window_size()
+    -- vim.fn.system("kitty @ set-window-title sidenote && hs -c TopSidenote()")
+    vim.cmd("edit " .. vim.fn.expand("~/personal-wiki/Side_Note.md"))
+    vim.cmd("TransparentEnable")
+  end, { desc = "[T]o [N]ote" })
+end

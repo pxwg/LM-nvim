@@ -1,7 +1,7 @@
 return {
   "pxwg/phonograph.nvim",
   dev = vim.fn.has("mac") == 1,
-  enabled = vim.fn.has("mac") == 1,
+  enabled = false,
   event = "VeryLazy",
   dependencies = {
     "MunifTanjim/nui.nvim",

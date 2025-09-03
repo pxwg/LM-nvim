@@ -33,17 +33,9 @@ local function parse_lines(lines)
       return text
     end
     -- Only add icons to leading keywords to keep find() simpler later
-    text = text
-      :gsub("^error:", " error:")
-      :gsub("^warning:", " warning:")
-      :gsub("^help:", " help:")
-      :gsub("^hint:", " hint:")
+    text = text:gsub("^error:", "error:"):gsub("^warning:", "warning:"):gsub("^help:", "help:"):gsub("^hint:", " hint:")
     -- Also replace internal separators (extra parts)
-    text = text
-      :gsub(" hint:", "  hint:")
-      :gsub(" help:", "  help:")
-      :gsub(" warning:", "  warning:")
-      :gsub(" error:", "  error:")
+    text = text:gsub(" hint:", "hint:"):gsub(" help:", "help:"):gsub(" warning:", "warning:"):gsub(" error:", "error:")
     return text
   end
 
@@ -121,13 +113,9 @@ function M.apply_qf_highlight()
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   -- Pattern map (lower-case compare) -> highlight group
   local map = {
-    { word = " error", hl = "TypstQFError" },
     { word = "error", hl = "TypstQFError" },
-    { word = " warning", hl = "TypstQFWarning" },
     { word = "warning", hl = "TypstQFWarning" },
-    { word = " hint", hl = "TypstQFHint" },
     { word = "hint", hl = "TypstQFHint" },
-    { word = " help", hl = "TypstQFHelp" },
     { word = "help", hl = "TypstQFHelp" },
   }
 

@@ -59,6 +59,11 @@ autocmd("VimLeavePre", {
       if vim.bo[buf].filetype == "neo-tree" or vim.bo[buf].filetype == "copilot-chat" then
         vim.api.nvim_buf_delete(buf, { force = true })
       end
+      vim.cmd("TransparentDisable")
+      if vim.fn.has("mac") == 1 then
+        -- vim.fn.system("kitty @ set-window-title")
+        -- vim.fn.system("hs -c UnTopSidenote()")
+      end
     end
   end,
 })
@@ -155,54 +160,6 @@ autocmd("VimLeavePre", {
   end,
 })
 
--- Generate a unique log file name for each Neovim instance
-local function get_front_window_id()
-  local result = vim.fn.system("hs -c 'GetWinID()'")
-  return result:match("%d+")
-end
-
-local log_file = vim.fn.expand("~/.local/state/nvim/windows/") .. get_front_window_id() .. "_nvim_startup.log"
-
--- Delete the unique log file on Neovim exit
-autocmd("VimLeavePre", {
-  callback = function()
-    os.remove(log_file)
-  end,
-})
-
--- -- Function to trim trailing blank lines from the current buffer
--- local function trim_trailing_blank_lines()
---   local bufnr = vim.api.nvim_get_current_buf()
---   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
---
---   local last_non_blank = #lines
---   while last_non_blank > 0 and lines[last_non_blank]:match("^%s*$") do
---     last_non_blank = last_non_blank - 1
---   end
---
---   if last_non_blank < #lines then
---     vim.cmd([[
---       let save_view = winsaveview()
---       let save_ul = &undolevels
---       set undolevels=-1
---       silent! execute "keepjumps lockmarks " . (]] .. last_non_blank .. [[+1) . ",$delete _"
---       let &undolevels = save_ul
---       call winrestview(save_view)
---     ]])
---   end
--- end
---
--- -- Create a command to run the function
--- vim.api.nvim_create_user_command("TrimTrailingBlankLines", trim_trailing_blank_lines, {})
---
--- -- Optionally, you can run the function automatically on save
--- vim.api.nvim_create_autocmd("BufWritePre", {
---   pattern = "*",
---   callback = function()
---     trim_trailing_blank_lines()
---   end,
--- })
-
 autocmd({ "BufEnter", "BufWinEnter" }, {
   pattern = { "*.md", "*.copilot-chat" },
   callback = function()
@@ -210,7 +167,7 @@ autocmd({ "BufEnter", "BufWinEnter" }, {
   end,
 })
 
-autocmd("VimResized", {
+autocmd({ "VimResized" }, {
   callback = function()
     vim.cmd("wincmd =")
   end,
@@ -392,7 +349,6 @@ autocmd("FileType", {
   end,
 })
 
--- 函数：折叠 \title 之上的所有内容
 local function fold_above_title()
   -- 保存当前光标位置
   local save_cursor = vim.fn.getcurpos()
@@ -456,5 +412,27 @@ autocmd("BufLeave", {
     if vim.bo.filetype == "minifiles" then
       vim.g.mini_file_opened = false
     end
+  end,
+})
+
+local adjust_ui_for_window_size = require("util.sidenote").adjust_ui_for_window_size
+
+local augroup = vim.api.nvim_create_augroup("WindowResizeUI", { clear = true })
+
+vim.api.nvim_create_autocmd({ "VimResized" }, {
+  group = augroup,
+  callback = function()
+    vim.schedule(function()
+      adjust_ui_for_window_size()
+    end)
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "VimEnter" }, {
+  group = augroup,
+  callback = function()
+    vim.schedule(function()
+      adjust_ui_for_window_size()
+    end)
   end,
 })

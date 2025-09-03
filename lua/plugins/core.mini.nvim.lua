@@ -157,5 +157,8 @@ return {
 
     local MiniDiffs = require("mini.diff")
     MiniDiffs.setup({})
+
+    local MiniGit = require("mini.git")
+    MiniGit.setup({})
   end,
 }

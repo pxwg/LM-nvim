@@ -62,6 +62,7 @@ vim.cmd([[highlight WinSeparator guifg=#181825]])
 -- vim.g.codecompanion_enabled = true
 vim.g.avante_enabled = true
 vim.g.copilot_chat_enabled = true
+vim.o.title = false
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
 -- vim.opt.virtualedit = "all"
 function Get_git_branch()
@@ -91,6 +92,7 @@ vim.lsp.enable({
   "wolfram_lsp",
   "clangd",
   "astro-ls",
+  "sourcekit-lsp",
 })
 
 autocmd("FileType", {

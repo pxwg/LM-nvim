@@ -100,6 +100,11 @@ require("util.dashboard")
 --     end
 --   end,
 -- })
+vim.api.nvim_create_user_command("SideNoteMode", function()
+  require("util.sidenote").adjust_ui_for_window_size()
+  vim.cmd("edit " .. vim.fn.expand("~/personal-wiki/Side_Note.md"))
+  vim.cmd("highlight Normal guibg=NONE ctermbg=NONE")
+end, { desc = "Adjust UI for Side Note Mode" })
 
 vim.api.nvim_create_autocmd("User", {
   pattern = "VeryLazy",
@@ -108,19 +113,9 @@ vim.api.nvim_create_autocmd("User", {
     require("config.keymap")
     require("config.autocmd")
     require("util.history_search")
-    local function get_front_window_id()
-      local result = vim.fn.system("hs -c 'GetWinID()'")
-      return result:match("%d+")
-    end
-    local log_file = vim.fn.expand("~/.local/state/nvim/windows/") .. get_front_window_id() .. "_nvim_startup.log"
-
-    -- Record current window number and servername on Neovim startup
-    local current_win = get_front_window_id()
-    local servername = vim.fn.eval("v:servername")
-    local file = io.open(log_file, "w")
-    if file then
-      file:write(current_win .. "\n" .. servername)
-      file:close()
+    local hs = require("util.hammerspoon")
+    if hs.hammerspoon_enabled() then
+      hs.hammerspoon_load()
     end
   end,
 })

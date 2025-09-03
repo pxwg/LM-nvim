@@ -74,6 +74,9 @@ return {
       typst = { "typstyle", "autocorrect", "trimlines" },
       json = { "fixjson" },
       javascript = { "prettier", "injected" },
+      toml = { "taplo" },
+      cpp = { "clang_format" },
+      objc = { "clang_format" },
       markdown = {
         -- { "/Users/pxwg-dogggie/trim_blank_fmt/target/release/trim_blank_fmt" },
         "autocorrect",
