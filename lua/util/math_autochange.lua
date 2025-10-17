@@ -5,6 +5,20 @@ _G.rime_toggled = true
 _G.rime_ls_active = true
 _G.rime_math = false
 
+-- Debounce function
+local timer = vim.loop.new_timer()
+local function debounce(fn, ms)
+  return function(...)
+    local args = { ... }
+    timer:stop()
+    timer:start(ms, 0, function()
+      vim.schedule(function()
+        fn(unpack(args))
+      end)
+    end)
+  end
+end
+
 local function in_math()
   return tex.in_mathzone() or typst.in_math()
 end
@@ -85,7 +99,7 @@ end
 
 vim.api.nvim_create_autocmd({ "CursorMovedI" }, {
   pattern = { "*.tex", "*.typ" },
-  callback = switch_rime_math,
+  callback = debounce(switch_rime_math, 200),
 })
 
 local function switch_rime_math_md()
@@ -112,7 +126,7 @@ end
 
 vim.api.nvim_create_autocmd("CursorMovedI", {
   pattern = "*.md",
-  callback = switch_rime_math_md,
+  callback = debounce(switch_rime_math_md, 200),
 })
 
 return M

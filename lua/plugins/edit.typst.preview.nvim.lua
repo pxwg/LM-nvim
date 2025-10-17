@@ -13,13 +13,14 @@ return {
   version = "1.*",
   opts = {
     -- port = 56000,
+    debug = true,
     open_cmd = get_open_cmd()
       .. " @ --to unix:/tmp/mykitty launch --type window --title TypstPreview --dont-take-focus awrit %s",
     extra_args = {
       "--input=preview=true",
     },
-    get_root = function(fname)
-      local dir = require("util.cwd_attach").get_cwd(fname)
+    get_root = function(_)
+      local dir = vim.fn.getcwd()
       return dir
     end,
   },

@@ -138,6 +138,13 @@ return {
     wordTrig = true,
   }, t("\\in "), { condition = tex.in_mathzone }),
 
+  s({
+    trig = [[diff]],
+    snippetType = "autosnippet",
+    wordTrig = true,
+    priority = 2000,
+  }, t("\\partial"), { condition = tex.in_mathzone }),
+
   -- 下面是一些等号
   s({
     trig = [[==]],

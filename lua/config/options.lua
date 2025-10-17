@@ -93,6 +93,7 @@ vim.lsp.enable({
   "clangd",
   "astro-ls",
   "sourcekit-lsp",
+  "arduino",
 })
 
 autocmd("FileType", {

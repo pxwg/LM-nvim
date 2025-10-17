@@ -111,4 +111,8 @@ return {
   -- Tensor products
   s({ trig = "oxx", snippetType = "autosnippet", wordTrig = false }, t("times.circle"), { condition = in_math }),
   s({ trig = "xx", snippetType = "autosnippet", wordTrig = false }, t("times"), { condition = in_math }),
+
+  -- Intersection and union
+  s({ trig = "cup", snippetType = "autosnippet", wordTrig = false }, t("inter"), { condition = in_math }),
+  s({ trig = "cap", snippetType = "autosnippet", wordTrig = false }, t("union"), { condition = in_math }),
 }

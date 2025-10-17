@@ -64,14 +64,22 @@ return {
         "trimlines",
       },
       -- mma = { "wolfram-lsp" },
-      tex = {
-        "autocorrect",
-        -- "latexindent",
-        "tex-fmt",
-        "trimlines",
-      },
+      tex = function()
+        local file_path = vim.api.nvim_buf_get_name(0)
+        local disable_dir = { "chiral_def_brst" }
+        if vim.tbl_contains(disable_dir, vim.fn.fnamemodify(file_path, ":p:h:t")) then
+          return { "trimlines" }
+        end
+        return {
+          "autocorrect",
+          -- "latexindent",
+          "tex-fmt",
+          "trimlines",
+        }
+      end,
       yml = { "yq" },
       typst = { "typstyle", "autocorrect", "trimlines" },
+      arduino = { "clang_format" },
       json = { "fixjson" },
       javascript = { "prettier", "injected" },
       toml = { "taplo" },

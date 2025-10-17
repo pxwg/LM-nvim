@@ -187,6 +187,9 @@ end
 
 local function typst_script(content)
   local content_string = replace_commutative_diagrams_with_images(0) or content.content
+  local lines = vim.split(content_string, "\n")
+  lines[1] = lines[1]:gsub("blog%.typ", "blog-preview.typ")
+  content_string = table.concat(lines, "\n")
   local title = get_typst_title(0) or content.title
   local path = write_content_to_tempfile_and_return_path(content_string, content.path) or content.path
   local dir_path = vim.fn.getcwd()
@@ -211,7 +214,7 @@ local function typst_script(content)
   else
     output.content = "Error: " .. result
   end
-  print(output.content)
+  -- print(output.content)
   return output
 end
 

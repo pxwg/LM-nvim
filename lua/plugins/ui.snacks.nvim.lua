@@ -34,6 +34,7 @@ return {
         -- only_render_image_at_cursor = vim.g.neovim_mode == "skitty" and false or true,
         -- render the image in a floating window
         -- only used if `opts.inline` is disabled
+        enabled = false,
         float = false,
         inline = true,
         -- Sets the size of the image

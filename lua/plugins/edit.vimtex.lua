@@ -1,58 +1,40 @@
 return {
   {
-    "pxwg/latex.nvim",
-    enabled = false,
-    opts = {
-      conceals = {
-        enabled = {
-          "greek",
-          "math",
-          "script",
-          "delim",
-          "font",
-        },
-        add = {},
-      },
-      imaps = {
-        enabled = false,
-        add = {},
-        default_leader = "`",
-      },
-      surrounds = {
-        enabled = false,
-        command = "c",
-        environment = "e",
-      },
-    },
-  },
-  {
     "lervag/vimtex",
-    priority = 10000000,
+    priority = 100,
     -- ft = { "latex", "markdown" },
     -- enabled = false,
     init = function()
       vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
-      vim.g.vimtex_quickfix_method = vim.fn.executable("pplatex") == 1 and "pplatex" or "latexlog"
+      vim.g.vimtex_quickfix_mode = 0
       vim.g.vimtex_compiler_silent = 1
       vim.g.vimtex_syntax_enabled = 1
       vim.g.vimtex_syntax_conceal_disable = 1
       vim.g.vimtex_view_method = "sioyek"
       vim.cmd([[
-let g:vimtex_compiler_latexmk = {
-        \ 'aux_dir' : '',
-        \ 'out_dir' : '',
-        \ 'callback' : 1,
-        \ 'continuous' : 1,
-        \ 'executable' : 'latexmk',
-        \ 'hooks' : [],
-        \ 'options' : [
-        \   '-verbose',
-        \   '-file-line-error',
-        \   '-synctex=1',
-        \   '-interaction=nonstopmode',
-        \ ],
-        \}
+      let g:vimtex_view_sioyek_exe='sioyek'
+      let g:vimtex_callback_progpath = '/opt/homebrew/opt/neovim/bin/nvim'
+      let g:vimtex_compiler_latexmk = {
+      \ 'aux_dir' : '',
+      \ 'out_dir' : '',
+      \ 'callback' : 1,
+      \ 'continuous' : 1,
+      \ 'executable' : 'latexmk',
+      \ 'hooks' : [],
+      \ 'options' : [
+      \   '-verbose',
+      \   '-file-line-error',
+      \   '-synctex=1',
+      \   '-interaction=nonstopmode',
+      \ ],
+      \}
 ]])
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "VimtexEventViewReverse",
+        callback = function()
+          vim.system({ "open", "/Applications/kitty.app" })
+        end,
+      })
     end,
   },
   { "let-def/texpresso.vim" },
