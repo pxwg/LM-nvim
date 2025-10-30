@@ -62,7 +62,7 @@ return {
   -- event = "UIEnter",
   -- enabled = false,
   -- use a release tag to download pre-built binaries
-  version = '1.*',
+  version = "1.*",
   -- enabled = true,
   -- build = "cargo build --release",
   dependencies = {
@@ -196,7 +196,7 @@ return {
           "fallback",
         },
       },
-      cmdline = { enabled = false },
+      -- cmdline = { enabled = false },
       completion = {
         ghost_text = { enabled = true },
         documentation = {
@@ -422,6 +422,50 @@ return {
           Event = "󱐋",
           Operator = "󰪚",
           TypeParameter = "󰬛",
+        },
+      },
+      cmdline = {
+        enabled = true,
+        -- use 'inherit' to inherit mappings from top level `keymap` config
+        keymap = { preset = "cmdline" },
+        sources = { "buffer", "cmdline" },
+
+        -- OR explicitly configure per cmd type
+        -- This ends up being equivalent to above since the sources disable themselves automatically
+        -- when not available. You may override their `enabled` functions via
+        -- `sources.providers.cmdline.override.enabled = function() return your_logic end`
+
+        -- sources = function()
+        --   local type = vim.fn.getcmdtype()
+        --   -- Search forward and backward
+        --   if type == '/' or type == '?' then return { 'buffer' } end
+        --   -- Commands
+        --   if type == ':' or type == '@' then return { 'cmdline', 'buffer' } end
+        --   return {}
+        -- end,
+
+        completion = {
+          trigger = {
+            show_on_blocked_trigger_characters = {},
+            show_on_x_blocked_trigger_characters = {},
+          },
+          list = {
+            selection = {
+              -- When `true`, will automatically select the first item in the completion list
+              preselect = true,
+              -- When `true`, inserts the completion item automatically when selecting it
+              auto_insert = true,
+            },
+          },
+          -- Whether to automatically show the window when new completion items are available
+          -- Default is false for cmdline, true for cmdwin (command-line window)
+          menu = {
+            auto_show = function(ctx, _)
+              return ctx.mode == "cmdwin"
+            end,
+          },
+          -- Displays a preview of the selected item on the current line
+          ghost_text = { enabled = true },
         },
       },
     })

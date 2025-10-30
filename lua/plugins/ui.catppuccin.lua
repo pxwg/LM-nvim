@@ -2,6 +2,7 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
+    enabled = false,
     -- event = "UIEnter",
     -- lazy = false,
     priority = 1000000,

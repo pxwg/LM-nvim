@@ -80,6 +80,8 @@ return {
       yml = { "yq" },
       typst = { "typstyle", "autocorrect", "trimlines" },
       arduino = { "clang_format" },
+      typescript = { "prettier" },
+      astro = { "prettier" },
       json = { "fixjson" },
       javascript = { "prettier", "injected" },
       toml = { "taplo" },

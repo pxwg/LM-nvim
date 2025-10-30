@@ -75,6 +75,8 @@ require("lazy").setup({
 local autocmd = vim.api.nvim_create_autocmd
 
 -- set relativenumber when entering hello file type and unset when leaving
+require("mini.hues").setup({ background = "#11262d", foreground = "#d2c8cc", saturation = "lowmedium" })
+vim.cmd("hi Normal guibg=#11262d")
 
 autocmd("UIEnter", {
   callback = function()
