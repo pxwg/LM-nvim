@@ -9,6 +9,8 @@ return {
   root_dir = vim.fn.getcwd(),
   settings = {
     python = {
+      venvPath = ".",
+      venv = ".venv",
       analysis = {
         diagnosticMode = "off",
         typeCheckingMode = "off",
