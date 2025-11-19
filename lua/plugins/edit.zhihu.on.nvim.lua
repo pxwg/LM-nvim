@@ -14,7 +14,8 @@ local function get_commutative_diagram_ranges(bufnr)
   local query_str = [[
     (call
       item: (ident) @cmd
-      (#eq? @cmd "commutative-diagram")) @call
+      (#match? @cmd "commutative-diagram|equation-frame")
+      (#not-has-ancestor? @cmd let)) @call
   ]]
 
   local query = vim.treesitter.query.parse("typst", query_str)
@@ -54,12 +55,54 @@ local function replace_commutative_diagrams_with_images(bufnr)
   local template = [[
 #import "@preview/physica:0.9.5": *
 #import "@preview/commute:0.3.0": arr, commutative-diagram, node
+#import "@preview/cetz:0.4.2": canvas, draw
 
 #set page(
   width: auto,
   height: auto,
   margin: 0cm
 )
+#let CS = math.upright("CS")
+#let wedge = math.and
+#let GL = math.upright("GL")
+#let Conf = math.upright("Conf")
+#let Hol = math.upright("Hol")
+
+#let string-diagram(top-conn, bottom-conn, color: color) = {
+  let x = (0, 4, 8)
+  let y = (3, 9)
+  let height = 12
+
+  let hline(conn, y-level) = {
+    let (x1, x2) = if conn == "12" {
+      (x.at(0), x.at(1))
+    } else if conn == "13" {
+      (x.at(0), x.at(2))
+    } else {
+      (x.at(1), x.at(2))
+    }
+
+    draw.line((x1, y-level), (x2, y-level), stroke: color)
+    draw.circle((x1, y-level), radius: 0.6, stroke: color)
+    draw.circle((x2, y-level), radius: 0.6, stroke: color)
+  }
+
+  canvas(length: 2pt, {
+    for i in (0, 1, 2) {
+      draw.line((x.at(i), 0), (x.at(i), height), stroke: color)
+    }
+    hline(top-conn, y.at(1))
+    hline(bottom-conn, y.at(0))
+  })
+}
+
+#let equation-frame(content) = {
+  if type(content) == function {
+    content(string-diagram.with(color: black))
+  } else {
+    content
+  }
+}
 
 %s
 ]]
@@ -185,8 +228,142 @@ local function write_content_to_tempfile_and_return_path(content_string, orig_pa
   end
 end
 
+local typst_template = [[
+#import "@preview/physica:0.9.5": *
+
+#let image_viewer(
+  path: "",
+  desc: "",
+  dark-adapt: false,
+  adapt-mode: "darken",
+  width-ratio: 0.6,
+) = {
+  let img-width = width-ratio * 100%
+  figure(
+    image(path, width: img-width),
+    caption: if desc != "" { desc } else { none },
+  )
+}
+
+#let theorem-block(
+  content,
+  title: "Theorem",
+  icon: "📐",
+  number: none,
+  border-color: rgb("#3498db"),
+  bg-color: rgb("#e8f4f8"),
+  text-color: rgb("#2c3e50"),
+) = {
+  let full-title = if number != none {
+    title + " " + str(number)
+  } else {
+    title
+  }
+  quote(block: true, [
+    #full-title #icon
+
+    #content
+  ])
+}
+
+// Theorem
+#let theorem(content, title: "", number: none) = theorem-block(
+  content,
+  title: "Theorem " + title,
+  icon: "📐",
+  number: number,
+  border-color: rgb("#3498db"),
+  bg-color: rgb("#e8f4f8"),
+  text-color: rgb("#2c3e50"),
+)
+
+// Claim
+#let claim(content, number: none) = theorem-block(
+  content,
+  title: "Claim",
+  icon: "💡",
+  number: number,
+  border-color: rgb("#f39c12"),
+  bg-color: rgb("#fef5e7"),
+  text-color: rgb("#7d6608"),
+)
+
+// Remark
+#let remark(content, number: none) = theorem-block(
+  content,
+  title: "Remark",
+  icon: "💭",
+  number: number,
+  border-color: rgb("#9b59b6"),
+  bg-color: rgb("#f4ecf7"),
+  text-color: rgb("#5b2c5f"),
+)
+
+// Proof
+#let proof(content, title: "Proof") = {
+  block(
+    width: 100%,
+    inset: 6pt,
+    radius: 4pt,
+    fill: rgb("#f9f9f9"),
+    stroke: (left: 2pt + rgb("#95a5a6")),
+    collapse: true,
+    [
+      #text(fill: rgb("#95a5a6"), weight: "bold", size: 0.95em)[📓 #title.]
+      #v(0.1em)
+      #text(fill: rgb("#34495e"), size: 0.95em)[#content]
+      #v(0.1em)
+      #text(weight: "bold")[END of Proof]
+    ],
+  )
+}
+
+// Question
+#let question(content, number: none) = theorem-block(
+  content,
+  title: "Question",
+  icon: "❓",
+  number: number,
+  border-color: rgb("#e74c3c"),
+  bg-color: rgb("#fadbd8"),
+  text-color: rgb("#922b21"),
+)
+
+// Custom block with configurable colors
+#let custom-block(
+  content,
+  title: "Note",
+  icon: "📌",
+  number: none,
+  border-color: rgb("#16a085"),
+  bg-color: rgb("#e8f8f5"),
+  text-color: rgb("#0d3d35"),
+) = theorem-block(
+  content,
+  title: title,
+  icon: icon,
+  number: number,
+  border-color: border-color,
+  bg-color: bg-color,
+  text-color: text-color,
+)
+]]
+
 local function typst_script(content)
   local content_string = replace_commutative_diagrams_with_images(0) or content.content
+
+  local start_marker = "// {content: start}"
+  local marker_pos = content_string:find(start_marker, 1, true)
+  if marker_pos then
+    -- Find the end of the line containing the marker
+    local line_end = content_string:find("\n", marker_pos)
+    if line_end then
+      -- Extract content from after the marker line
+      content_string = content_string:sub(line_end + 1)
+    end
+  end
+  content_string = typst_template .. "\n" .. content_string
+
   local lines = vim.split(content_string, "\n")
   lines[1] = lines[1]:gsub("blog%.typ", "blog-preview.typ")
   content_string = table.concat(lines, "\n")

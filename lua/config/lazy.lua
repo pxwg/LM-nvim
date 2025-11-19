@@ -78,6 +78,7 @@ local autocmd = vim.api.nvim_create_autocmd
 require("mini.hues").setup({ background = "#11262d", foreground = "#c0c8cc", saturation = "lowmedium" })
 -- vim.api.nvim_set_hl(0, "Normal", { bg = "#11262d" })
 vim.api.nvim_set_hl(0, "@typ_inline_dollar.typst", { link = "Comment" })
+vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
 
 autocmd("UIEnter", {
   callback = function()
