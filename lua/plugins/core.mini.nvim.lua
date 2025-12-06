@@ -1,3 +1,53 @@
+local function md_block_spec(ai_type, id, opts)
+  local parser = vim.treesitter.get_parser(0, "markdown")
+  if not parser then
+    return
+  end
+  local root = parser:parse()[1]:root()
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local row, col = cursor[1] - 1, cursor[2]
+
+  local node = root:named_descendant_for_range(row, col, row, col)
+  while node do
+    if node:type() == "fenced_code_block" then
+      break
+    end
+    node = node:parent()
+  end
+
+  if not node then
+    return
+  end
+
+  local function ts_to_mini(sr, sc, er, ec)
+    if ec == 0 then
+      er = er - 1
+      local line_text = vim.api.nvim_buf_get_lines(0, er, er + 1, false)[1] or ""
+      ec = #line_text
+    end
+
+    return {
+      from = { line = sr + 1, col = sc + 1 },
+      to = { line = er + 1, col = ec },
+      vis_mode = "V",
+    }
+  end
+
+  if ai_type == "a" then
+    local sr, sc, er, ec = node:range()
+    return ts_to_mini(sr, sc, er, ec)
+  else
+    for child in node:iter_children() do
+      if child:type() == "code_fence_content" then
+        local sr, sc, er, ec = child:range()
+        return ts_to_mini(sr, sc, er, ec)
+      end
+    end
+    return nil
+  end
+end
+
 return {
   "echasnovski/mini.nvim",
   version = false,
@@ -64,6 +114,7 @@ return {
         u = MiniAi.gen_spec.function_call(), -- u for "Usage"
         U = MiniAi.gen_spec.function_call({ name_pattern = "[%w_]" }), -- without dot in function name
         e = MiniAi.gen_spec.treesitter({ a = "@math.outer", i = "@math.inner" }),
+        b = md_block_spec,
       },
     })
 

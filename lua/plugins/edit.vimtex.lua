@@ -7,10 +7,10 @@ return {
     init = function()
       vim.g.vimtex_mappings_disable = { ["n"] = { "K" } } -- disable `K` as it conflicts with LSP hover
       vim.g.vimtex_quickfix_mode = 0
-      vim.g.vimtex_compiler_silent = 1
-      vim.g.vimtex_syntax_enabled = 1
+      -- vim.g.vimtex_compiler_silent = 1
+      -- vim.g.vimtex_syntax_enabled = 1
       vim.g.vimtex_syntax_conceal_disable = 1
-      vim.g.vimtex_view_method = "sioyek"
+      vim.g.vimtex_view_method = "skim"
       vim.cmd([[
       let g:vimtex_view_sioyek_exe='sioyek'
       let g:vimtex_callback_progpath = '/opt/homebrew/opt/neovim/bin/nvim'

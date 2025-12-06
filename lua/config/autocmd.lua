@@ -436,3 +436,9 @@ vim.api.nvim_create_autocmd({ "VimEnter" }, {
     end)
   end,
 })
+
+vim.api.nvim_create_user_command("ConcealFold", function()
+  vim.cmd("syntax match FoldMarkerOpen '{{{' conceal")
+  vim.cmd("syntax match FoldMarkerClose '}}}' conceal")
+  vim.wo.conceallevel = 2
+end, {})
