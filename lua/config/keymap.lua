@@ -611,12 +611,14 @@ end)
 
 -- smart tab for copilot, inserting and completion via luasnip
 map("i", "<Tab>", function()
+  if vim.bo.filetype == "make" then
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("\t", true, false, true), "n", true)
+  end
   if vim.fn.pumvisible() == 1 then
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
   end
   local success = require("copilot.suggestion").is_visible()
   local jumpable = require("luasnip").jumpable(1)
-  -- local regex_match = vim.fn.searchpair("[([{<|“‘《]", "", "[)\\]}>|”’》]", "W") > 0
   if jumpable then
     require("luasnip").jump(1)
   elseif success then

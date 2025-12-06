@@ -1,3 +1,5 @@
+; extends
+
 ; ((latex_block)
 ;   @conceal (#set! conceal_lines "") (#set! injection.language "latex"))
 ; ((latex_span_delimiter)

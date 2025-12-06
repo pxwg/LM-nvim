@@ -440,5 +440,12 @@ vim.api.nvim_create_autocmd({ "VimEnter" }, {
 vim.api.nvim_create_user_command("ConcealFold", function()
   vim.cmd("syntax match FoldMarkerOpen '{{{' conceal")
   vim.cmd("syntax match FoldMarkerClose '}}}' conceal")
+  vim.cmd([[
+      syntax match markdownFoldOpen /<!--\s*{{\+\d\+\s*-->/ conceal
+      syntax match markdownFoldClose /<!--\s*}}\+\d\+\s*-->/ conceal
+      set nospell
+  ]])
   vim.wo.conceallevel = 2
+  vim.wo.foldmethod = "marker"
+  vim.wo.concealcursor = "nv"
 end, {})

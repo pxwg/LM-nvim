@@ -16,7 +16,12 @@ local function cwd(ignore_home)
   end
 
   if vim.v.shell_error == 0 then
-    last_git_dir = vim.fn.trim(git_dir)
+    local git_root = vim.fn.trim(git_dir)
+    if git_root == vim.fn.expand("$HOME") then
+      last_file_dir = file_dir
+      return last_file_dir
+    end
+    last_git_dir = git_root
     return last_git_dir
   else
     last_file_dir = file_dir

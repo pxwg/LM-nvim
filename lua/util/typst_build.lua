@@ -143,9 +143,16 @@ function M.build_current(opts)
     return
   end
   local out = opts.out or ""
-  local cmd = { "typst", "compile", file }
-  if out ~= "" then
-    table.insert(cmd, out)
+  local dir = vim.fn.fnamemodify(file, ":h")
+  local makefile = dir .. "/Makefile"
+  local cmd
+  if vim.fn.filereadable(makefile) == 1 then
+    cmd = { "make", "-C", dir }
+  else
+    cmd = { "typst", "compile", file }
+    if out ~= "" then
+      table.insert(cmd, out)
+    end
   end
 
   local stdout_data, stderr_data = {}, {}
