@@ -27,11 +27,15 @@ function contains_unacceptable_character(content)
 end
 
 function is_rime_item(item)
-  if item == nil or item.source_name ~= "LSP" then
+  if item == nil then
     return false
   end
-  local client = vim.lsp.get_client_by_id(item.client_id)
-  return client ~= nil and client.name == "rime_ls"
+  -- 兼容新版本 blink.cmp：检查 source_id 而不是 source_name
+  if item.source_id == "lsp" or item.source_name == "LSP" then
+    local client = vim.lsp.get_client_by_id(item.client_id)
+    return client ~= nil and client.name == "rime_ls"
+  end
+  return false
 end
 --- @param item blink.cmp.CompletionItem
 function rime_item_acceptable(item)

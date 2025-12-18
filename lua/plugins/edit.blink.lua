@@ -1,5 +1,28 @@
 require("util.rime_blinks")
 local rime_ls = require("util.rime_ls")
+vim.g.rime_enabled = true
+
+function _G.rime_ls_disabled(context)
+  if not vim.g.rime_enabled then
+    return true
+  end
+  local line = context.line
+  local cursor_column = context.cursor[2]
+  for _, pattern in ipairs(vim.g.disable_rime_ls_pattern or {}) do
+    local start_pos = 1
+    while true do
+      local match_start, match_end = string.find(line, pattern, start_pos)
+      if not match_start then
+        break
+      end
+      if cursor_column >= match_start and cursor_column < match_end then
+        return true
+      end
+      start_pos = match_end + 1
+    end
+  end
+  return false
+end
 
 local function mention_get_items()
   vim.notify("hello from mention_get_items", vim.log.levels.INFO)
@@ -168,8 +191,111 @@ return {
           end,
           "fallback",
         },
+        ["2"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(2)
+            if #rime_item_index ~= 2 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[2] })
+          end,
+          "fallback",
+        },
+        ["3"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(3)
+            if #rime_item_index ~= 3 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[3] })
+          end,
+          "fallback",
+        },
+        ["4"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(4)
+            if #rime_item_index ~= 4 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[4] })
+          end,
+          "fallback",
+        },
+        ["5"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(5)
+            if #rime_item_index ~= 5 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[5] })
+          end,
+          "fallback",
+        },
+        ["6"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(6)
+            if #rime_item_index ~= 6 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[6] })
+          end,
+          "fallback",
+        },
+        ["7"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(7)
+            if #rime_item_index ~= 7 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[7] })
+          end,
+          "fallback",
+        },
+        ["8"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(8)
+            if #rime_item_index ~= 8 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[8] })
+          end,
+          "fallback",
+        },
+        ["9"] = {
+          function(cmp)
+            if not vim.g.rime_enabled then
+              return false
+            end
+            local rime_item_index = get_n_rime_item_index(9)
+            if #rime_item_index ~= 9 then
+              return false
+            end
+            return cmp.accept({ index = rime_item_index[9] })
+          end,
+          "fallback",
+        },
         [";"] = {
-          -- FIX: can not work when binding ;<space> to other key
           function(cmp)
             if not vim.g.rime_enabled then
               return false
@@ -336,18 +462,27 @@ return {
           lsp = {
             min_keyword_length = 0,
             fallbacks = { "ripgrep", "buffer" },
+            --- @param ctx blink.cmp.Context
             --- @param items blink.cmp.CompletionItem[]
-            transform_items = function(_, items)
-              -- demote snippets
-              for _, item in ipairs(items) do
-                -- if item.kind == require("blink.cmp.types").CompletionItemKind.Snippet then
-                --   item.score_offset = item.score_offset - 3
-                -- end
-                if item.kind == types.CompletionItemKind.Text and is_rime_item(item) then
-                  item.score_offset = item.score_offset + 2
+            transform_items = function(ctx, items)
+              local TYPE_ALIAS = require("blink.cmp.types").CompletionItemKind
+              if _G.rime_ls_disabled({ line = ctx.line, cursor = ctx.cursor }) then
+                items = vim.tbl_filter(function(item)
+                  return not is_rime_item(item)
+                end, items)
+              else
+                for _, item in ipairs(items) do
+                  if is_rime_item(item) then
+                    local idx = item.label:match("^(%d+)")
+                    if idx then
+                      item.score_offset = (#items - tonumber(idx)) * 9999
+                    end
+                  end
                 end
-                if vim.bo.filetype == "typst" and item.kind == types.CompletionItemKind.Field then
-                  item.score_offset = item.score_offset + 10
+              end
+              for _, item in ipairs(items) do
+                if vim.bo.filetype == "typst" and item.kind == TYPE_ALIAS.Field then
+                  item.score_offset = (item.score_offset or 0) + 10
                 end
               end
               return items
