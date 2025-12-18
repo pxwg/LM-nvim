@@ -466,20 +466,6 @@ return {
             --- @param items blink.cmp.CompletionItem[]
             transform_items = function(ctx, items)
               local TYPE_ALIAS = require("blink.cmp.types").CompletionItemKind
-              if _G.rime_ls_disabled({ line = ctx.line, cursor = ctx.cursor }) then
-                items = vim.tbl_filter(function(item)
-                  return not is_rime_item(item)
-                end, items)
-              else
-                for _, item in ipairs(items) do
-                  if is_rime_item(item) then
-                    local idx = item.label:match("^(%d+)")
-                    if idx then
-                      item.score_offset = (#items - tonumber(idx)) * 9999
-                    end
-                  end
-                end
-              end
               for _, item in ipairs(items) do
                 if vim.bo.filetype == "typst" and item.kind == TYPE_ALIAS.Field then
                   item.score_offset = (item.score_offset or 0) + 10
