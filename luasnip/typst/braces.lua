@@ -30,9 +30,9 @@ return {
     wordTrig = false,
     trigEngine = "ecma",
   }, {
-    t("angle.l "),
+    t("chevron.l "),
     i(1),
-    t(" angle.r "),
+    t(" chevron.r "),
     i(0),
   }, { condition = typst.in_math }),
 

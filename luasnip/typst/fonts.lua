@@ -266,6 +266,16 @@ return {
       return "tilde(" .. snip.captures[1] .. ")"
     end),
   }, { condition = in_math }),
+  s({
+    trig = "(%a+)bf",
+    snippetType = "autosnippet",
+    wordTrig = false,
+    regTrig = true,
+  }, {
+    f(function(_, snip)
+      return "bold(" .. snip.captures[1] .. ")"
+    end),
+  }, { condition = in_math }),
 
   s({
     trig = "(%a+)vec",
