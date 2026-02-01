@@ -713,6 +713,13 @@ map("n", "<leader>aa", function()
   local bufnr = vim.api.nvim_get_current_buf()
   if vim.bo[bufnr].filetype == "AvanteInput" then
     rime.attach_rime_to_buffer(bufnr)
+    vim.api.nvim_buf_set_keymap(
+      bufnr,
+      "n",
+      "q",
+      ":AvanteToggle<CR>",
+      { noremap = true, silent = true, desc = "AvanteToggle" }
+    )
   end
 end, { desc = "AvanteAsk" })
 

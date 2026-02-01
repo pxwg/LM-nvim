@@ -98,6 +98,7 @@ return {
     "dmitmel/cmp-digraphs",
     "hrsh7th/cmp-nvim-lsp",
     "giuxtaposition/blink-cmp-copilot",
+    { "pxwg/blink-cmp-copilot-chat" },
     -- "jalvesaq/cmp-zotcite",
     {
       "saghen/blink.compat",
@@ -443,8 +444,8 @@ return {
             },
           },
           copilot_c = {
-            name = "CopilotC",
-            module = "util.blink_copilot",
+            name = "CopilotChat",
+            module = "blink-cmp-copilot-chat",
             score_offset = 1000000,
             transform_items = function(_, items)
               -- demote snippets

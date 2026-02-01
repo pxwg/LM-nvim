@@ -457,13 +457,12 @@ end
 
 return {
   -- "pxwg/zhihu_neovim",
-  dir = "~/zhihu_on_nvim/",
-  build = "bash deploy.sh",
-  cmd = { "ZhihuAuth" },
+  "pxwg/zhihu.nvim",
+  main = "zhihu",
+  -- cmd = { "ZhihuAuth" },
   -- ft = { "typst", "markdown", "tex" },
-  enabled = vim.fn.has("mac") == 1,
+  enabled = false,
   dev = true,
-  main = "zhvim",
   ---@type ZhnvimConfigs
   opts = {
     script = {

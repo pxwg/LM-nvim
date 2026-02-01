@@ -13,7 +13,7 @@ return {
   version = "1.*",
   opts = {
     -- port = 56000,
-    debug = true,
+    -- debug = true,
     open_cmd = get_open_cmd()
       .. " @ --to unix:/tmp/mykitty launch --type window --title TypstPreview --dont-take-focus awrit %s",
     extra_args = {
@@ -23,5 +23,9 @@ return {
       local dir = vim.fn.getcwd()
       return dir
     end,
+    dependencies_bin = {
+      ["tinymist"] = "tinymist",
+      ["websocat"] = "websocat",
+    },
   },
 }

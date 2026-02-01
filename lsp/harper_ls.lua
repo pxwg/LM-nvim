@@ -1,9 +1,9 @@
 return {
   name = "harper_ls",
-  cmd = { "harper-ls" },
-  filetypes = { "markdown", "tex", "typst" },
+  cmd = { "harper-ls", "--stdio" },
+  filetypes = { "tex", "typst" },
   settings = {
-    allowedFileTypes = { "markdown", "tex", "typst" },
+    allowedFileTypes = { "tex", "typst" },
     markdown = {
       IgnoreLinkTitle = true,
       SpellCheck = false,

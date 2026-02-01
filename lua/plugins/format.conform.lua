@@ -57,6 +57,7 @@ return {
     formatters_by_ft = {
       lua = { "stylua", "injected" },
       html = { "htmlbeautifier" },
+      swift = { "swiftformat" },
       plaintex = {
         "autocorrect",
         -- "latexindent",

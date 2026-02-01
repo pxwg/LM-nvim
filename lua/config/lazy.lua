@@ -3,6 +3,8 @@
 vim.env.PATH = vim.env.PATH .. ":" .. vim.fn.expand("~/.local/share/nvim/mason/bin/")
 package.path = package.path .. ";" .. "/Users/pxwg-dogggie/.luarocks/share/lua/5.1/?/init.lua"
 package.path = package.path .. ";" .. "/Users/pxwg-dogggie/.luarocks/share/lua/5.1/?.lua"
+--- .so file
+package.cpath = package.cpath .. ";" .. "/Users/pxwg-dogggie/.luarocks/lib/lua/5.1/?.so"
 
 _G.HOMEPARH = vim.fn.expand("$HOME")
 
@@ -20,9 +22,20 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
     vim.fn.getchar()
     os.exit(1)
   end
+  package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
 end
 vim.opt.rtp:prepend(lazypath)
-require("util.lazyfile").lazy_file()
+
+local status_ok, lazy_module = pcall(require, "util.lazyfile")
+if not status_ok then
+  vim.notify("Critical Error: Failed to load util.lazyfile\n" .. lazy_module, vim.log.levels.ERROR)
+  return
+end
+
+local setup_ok, setup_err = pcall(lazy_module.lazy_file)
+if not setup_ok then
+  vim.notify("Lazy Setup Error:\n" .. setup_err, vim.log.levels.ERROR)
+end
 
 -- Make sure to setup `mapleader` and `maplocalleader` before
 -- loading lazy.nvim so that mappings are correct.
@@ -131,3 +144,9 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 -- The LSP completion handler is now managed through completion plugins like nvim-cmp
 -- If you're using nvim-cmp, this manual handler configuration is not needed
 -- require("util.current_function")
+local luarocks_path = vim.fn.expand("~/.luarocks/share/lua/5.1/?.lua")
+local luarocks_cpath = vim.fn.expand("~/.luarocks/lib/lua/5.1/?.so")
+
+-- 添加到 package.path 和 package.cpath
+package.path = package.path .. ";" .. luarocks_path
+package.cpath = package.cpath .. ";" .. luarocks_cpath

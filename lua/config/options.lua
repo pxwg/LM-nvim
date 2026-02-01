@@ -60,7 +60,7 @@ vim.opt.relativenumber = false
 -- set WinSeparator to " "
 vim.cmd([[highlight WinSeparator guifg=#181825]])
 -- vim.g.codecompanion_enabled = true
-vim.g.avante_enabled = false
+vim.g.avante_enabled = true
 vim.g.copilot_chat_enabled = true
 vim.o.title = false
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
@@ -81,7 +81,8 @@ vim.lsp.enable({
   "harper_ls",
   "html_lsp",
   "ltex",
-  "lua_ls",
+  -- "lua_ls",
+  "emmylua_ls",
   "pyright",
   "rime_ls",
   "rust_analyzer",

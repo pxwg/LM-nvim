@@ -18,11 +18,11 @@ return {
     "pxwg/math-conceal.nvim",
     event = "VeryLazy",
     dev = vim.fn.has("mac") == 1,
-    enabled = true,
-    build = "make lua51",
+    -- enabled = false,
+    -- build = "make lua51",
     main = "math-conceal",
-    --- @type LaTeXConcealOptions
     opts = {
+      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown" },
       enabled = true,
       conceal = {
         "greek",

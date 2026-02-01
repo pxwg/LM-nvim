@@ -3,108 +3,88 @@ local M = {}
 local Source = {}
 Source.__index = Source
 
---- WIP, I don't know how to check if the CopilotChat plugin is ready. Expectation: If the model and agent are not ready, it should return false and make sure to retry initialization.
--- function Source:is_copilot_ready()
---   local success, chat = pcall(require, "CopilotChat")
---   if not success then
---     return false
---   end
---
---   local has_config = chat.config and chat.config.contexts
---   local has_client = pcall(function()
---     return chat.complete_info() ~= nil
---   end)
---
---   if not has_config or not has_client then
---     pcall(chat.setup)
---   end
---   return has_config and has_client
--- end
-
 function Source:get_trigger_characters()
-  local success, chat = pcall(require, "CopilotChat")
+  local success, completion = pcall(require, "CopilotChat.completion")
   if not success then
     return {}
   end
 
-  local info_success, info = pcall(chat.complete_info)
-  if not info_success or not info then
-    return {}
-  end
-
-  return info.triggers
+  return completion.info().triggers
 end
 
 function Source:get_completions(ctx, callback)
-  local chat = require("CopilotChat")
-
-  local line = ctx.line
-  local cursor_col = ctx.cursor[2]
-  local before_cursor = line:sub(1, cursor_col)
-
-  local success, info = pcall(chat.complete_info)
-  if not success or not info then
+  local success_chat, chat = pcall(require, "CopilotChat")
+  if not success_chat then
     callback({ items = {} })
     return
   end
 
-  local prefix, _ = unpack(vim.fn.matchstrpos(before_cursor, info.pattern))
+  local _ = chat.initialized
+
+  local success_comp, completion = pcall(require, "CopilotChat.completion")
+  local success_async, async = pcall(require, "plenary.async")
+
+  if not success_comp or not success_async then
+    callback({ items = {} })
+    return
+  end
+
+  local line = ctx.line
+  local cursor_col = ctx.cursor[2]
+  local before_cursor = line:sub(1, cursor_col)
+  local info = completion.info()
+
+  local match = vim.fn.matchstrpos(before_cursor, info.pattern)
+  local prefix = match and match[1] or ""
 
   if not prefix or prefix == "" then
     callback({ items = {} })
     return
   end
 
-  vim.schedule(function()
-    local co = coroutine.create(function()
-      local _, items = pcall(chat.complete_items)
-      local filtered_items = {}
-      for _, item in ipairs(items) do
-        if item and item.word and vim.startswith(item.word:lower(), prefix:lower()) then
-          local converted_item = {
-            label = item.word,
-            kind = self:convert_kind(item.kind),
-            detail = item.menu or "",
-            documentation = item.info or "",
-            data = item,
-          }
-          table.insert(filtered_items, converted_item)
-        end
-      end
-
-      vim.schedule(function()
-        callback({
-          items = filtered_items,
-          is_incomplete_forward = false,
-          is_incomplete_backward = false,
+  async.run(function()
+    local items = completion.items()
+    return items
+  end, function(items)
+    local filtered_items = {}
+    for _, item in ipairs(items or {}) do
+      if item.word and vim.startswith(item.word:lower(), prefix:lower()) then
+        table.insert(filtered_items, {
+          label = item.word,
+          kind = self:convert_kind(item.kind),
+          detail = item.menu or "",
+          documentation = item.info or "",
+          insertText = item.word,
+          data = item,
         })
-      end)
-    end)
-
-    local finish, err = coroutine.resume(co)
-    if not finish then
-      vim.notify("[blink-copilot] Error getting completions: " .. tostring(err), vim.log.levels.WARN)
-      callback({ items = {} })
+      end
     end
+
+    vim.schedule(function()
+      callback({
+        items = filtered_items,
+        is_incomplete_forward = false,
+        is_incomplete_backward = false,
+      })
+    end)
   end)
+
+  return function() end
 end
 
 function Source:convert_kind(kind_str)
+  local types = require("blink.cmp.types").CompletionItemKind
   local kind_map = {
-    ["user"] = require("blink.cmp.types").CompletionItemKind.Keyword,
-    ["system"] = require("blink.cmp.types").CompletionItemKind.Keyword,
-    ["context"] = require("blink.cmp.types").CompletionItemKind.Reference,
-    --- This is for the `tool` branch
-    ["resource"] = require("blink.cmp.types").CompletionItemKind.Reference,
-    ["tool"] = require("blink.cmp.types").CompletionItemKind.Function,
-    ["github_models"] = require("blink.cmp.types").CompletionItemKind.EnumMember,
+    ["user"] = types.Keyword,
+    ["system"] = types.Interface,
+    ["context"] = types.Reference,
+    ["resource"] = types.File,
+    ["tool"] = types.Constructor,
+    ["github_models"] = types.EnumMember,
+    ["group"] = types.Module,
   }
 
-  if kind_map[kind_str] then
-    return kind_map[kind_str]
-  end
-
-  return require("blink.cmp.types").CompletionItemKind.Variable
+  return kind_map[kind_str] or types.Variable
 end
 
 function Source:should_show_completion_item(item, ctx)

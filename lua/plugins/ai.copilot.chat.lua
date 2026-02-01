@@ -1,5 +1,97 @@
 local alsp = require("agents.lsp")
 local rime = require("util.rime_ls")
+package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
+
+local opts = {
+  chat_autocomplete = false,
+  stiky = "@neovim",
+  mappings = {
+    show_diff = {
+      full_diff = true,
+    },
+  },
+  contexts = {
+    neovim = {
+      description = "Executes Neovim command and returns the output. Format: <command>",
+      input = function(callback, source)
+        vim.ui.input({
+          prompt = "Enter Neovim command> ",
+        }, callback)
+      end,
+      resolve = function(input, source)
+        if not input or input == "" then
+          return {}
+        end
+        utils.schedule_main()
+
+        -- Use execute() to capture output instead of redir
+        local output = ""
+        local success, result = pcall(function()
+          return vim.api.nvim_exec2(input, { output = true })
+        end)
+
+        if success then
+          output = result.output
+        else
+          output = "Error executing command: " .. tostring(result)
+        end
+
+        -- If output is empty, try to provide some feedback
+        if output == "" then
+          if success then
+            output = "Command executed successfully with no output."
+          else
+            output = "Command failed with no output."
+          end
+        end
+        return {
+          {
+            content = "Command: " .. input .. "\n\n" .. output,
+            filename = "neovim_command_output",
+            filetype = "text",
+            score = 1.0, -- High relevance
+          },
+        }
+      end,
+    },
+    function_doc = {
+      description = "Gets precise function document with LSP. Format: [filepath:]function_name",
+      input = function(callback, source)
+        return input_lsp(callback, source)
+      end,
+      resolve = function(input, source)
+        return resolve_lsp(utils.schedule_main(), input, source)
+      end,
+    },
+  },
+
+  auto_insert_mode = false, -- Automatically enter insert mode when opening window and on new prompt
+  debug = false, -- Enable debugging
+  reset = {
+    normal = "<C-b>",
+    insert = "<C-b>",
+  },
+  -- prompts = {
+  --   nvim_runner = {
+  --     system_prompt = USER_SYSTEM_PROMPT,
+  --   },
+  -- },
+  complete = {
+    detail = "Use @<localleader>s or /<localleader>s for options.",
+    insert = "<localleader>s",
+  },
+  model = "auto",
+  window = {
+    layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
+    width = 0.3, -- fractional width of parent, or absolute width in columns when > 1
+  },
+  separator = "━",
+  headers = {
+    user = "💫 pxwg",
+    assistant = "✨ Ai",
+    tool = "🔭 Tool",
+  },
+}
 
 local function input_lsp(callback, source)
   return alsp.input_lsp(callback, source)
@@ -45,96 +137,9 @@ return {
     },
   },
 
-  opts = function()
-    local utils = require("CopilotChat.utils")
-    return {
-      chat_autocomplete = false,
-      mappings = {
-        show_diff = {
-          full_diff = true,
-        },
-      },
-      contexts = {
-        neovim = {
-          description = "Executes Neovim command and returns the output. Format: <command>",
-          input = function(callback, source)
-            vim.ui.input({
-              prompt = "Enter Neovim command> ",
-            }, callback)
-          end,
-          resolve = function(input, source)
-            if not input or input == "" then
-              return {}
-            end
-            utils.schedule_main()
-
-            -- Use execute() to capture output instead of redir
-            local output = ""
-            local success, result = pcall(function()
-              return vim.api.nvim_exec2(input, { output = true })
-            end)
-
-            if success then
-              output = result.output
-            else
-              output = "Error executing command: " .. tostring(result)
-            end
-
-            -- If output is empty, try to provide some feedback
-            if output == "" then
-              if success then
-                output = "Command executed successfully with no output."
-              else
-                output = "Command failed with no output."
-              end
-            end
-            return {
-              {
-                content = "Command: " .. input .. "\n\n" .. output,
-                filename = "neovim_command_output",
-                filetype = "text",
-                score = 1.0, -- High relevance
-              },
-            }
-          end,
-        },
-        function_doc = {
-          description = "Gets precise function document with LSP. Format: [filepath:]function_name",
-          input = function(callback, source)
-            return input_lsp(callback, source)
-          end,
-          resolve = function(input, source)
-            return resolve_lsp(utils.schedule_main(), input, source)
-          end,
-        },
-      },
-
-      auto_insert_mode = false, -- Automatically enter insert mode when opening window and on new prompt
-      debug = false, -- Enable debugging
-      reset = {
-        normal = "<C-b>",
-        insert = "<C-b>",
-      },
-      -- prompts = {
-      --   nvim_runner = {
-      --     system_prompt = USER_SYSTEM_PROMPT,
-      --   },
-      -- },
-      complete = {
-        detail = "Use @<localleader>s or /<localleader>s for options.",
-        insert = "<localleader>s",
-      },
-      question_header = "󰩃  Doggie  ",
-      answer_header = "⚡ Copilot ",
-      -- model = "claude-sonnet-4", -- Set claude model as default
-      window = {
-        layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
-        width = 0.3, -- fractional width of parent, or absolute width in columns when > 1
-      },
-    }
-  end,
+  opts = function() end,
   cmd = "CopilotChat",
-  config = function(_, opts)
+  config = function()
     local chat = require("CopilotChat")
     local mcp = require("mcphub")
     mcp.setup()
