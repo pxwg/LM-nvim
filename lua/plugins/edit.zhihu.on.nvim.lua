@@ -461,8 +461,7 @@ return {
   main = "zhihu",
   -- cmd = { "ZhihuAuth" },
   -- ft = { "typst", "markdown", "tex" },
-  enabled = false,
-  dev = true,
+  enabled = vim.fn.has("macos") == 1,
   ---@type ZhnvimConfigs
   opts = {
     script = {

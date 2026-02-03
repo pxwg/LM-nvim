@@ -1,5 +1,5 @@
 {
-  "CopilotChat.nvim": { "branch": "update", "commit": "068e2570ff94bf734d0333eaf567a41dad061f43" },
+  "CopilotChat.nvim": { "branch": "1517-add-auto-model-mode", "commit": "4d974a24fad5120ab1955d561263a72480ed1616" },
   "LuaSnip": { "branch": "master", "commit": "fb525166ccc30296fb3457441eb979113de46b00" },
   "auto-cmdheight.nvim": { "branch": "main", "commit": "82619eab0268f27024e1e0981ec3721a003ab2b7" },
   "avante.nvim": { "branch": "main", "commit": "46583943b67e68640568cac829c5fe08c69088ff" },
@@ -18,7 +18,7 @@
   "codecompanion.nvim": { "branch": "main", "commit": "f0e5ec927081474465e9c08f42112c19995f94a9" },
   "conform.nvim": { "branch": "master", "commit": "8314f4c9e205e7f30b62147069729f9a1227d8bf" },
   "copilot-cmp": { "branch": "master", "commit": "15fc12af3d0109fa76b60b5cffa1373697e261d1" },
-  "copilot.lua": { "branch": "master", "commit": "e78d1ffebdf6ccb6fd8be4e6898030c1cf5f9b64" },
+  "copilot.lua": { "branch": "master", "commit": "9b8d77c6c847c83c784c05f5f86b4821ed90d3a1" },
   "diagram.nvim": { "branch": "master", "commit": "84fe677aa940605ef248f36c0ea23561690c95eb" },
   "dressing.nvim": { "branch": "master", "commit": "2d7c2db2507fa3c4956142ee607431ddb2828639" },
   "fidget.nvim": { "branch": "main", "commit": "64463022a1f2ff1318ab22a2ea4125ed9313a483" },
@@ -72,5 +72,6 @@
   "vimtex": { "branch": "master", "commit": "a50f40783c1cade2e8e2994a9f4a8e038a0a57bc" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "xcodebuild.nvim": { "branch": "main", "commit": "02381ee7d8545ed9d0562efd74bd8fef26bcfb36" },
+  "zhihu.nvim": { "branch": "main", "commit": "ffdfdad9e5041e84aa91bb498f7861b036dc3cba" },
   "zotcite": { "branch": "master", "commit": "67d4bef627854c418dfae7ef121e8752e82d7440" }
 }

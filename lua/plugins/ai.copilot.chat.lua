@@ -4,7 +4,7 @@ package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/Copi
 
 local opts = {
   chat_autocomplete = false,
-  stiky = "@neovim",
+  tools = { "@neovim", "@copilot" },
   mappings = {
     show_diff = {
       full_diff = true,
@@ -80,7 +80,7 @@ local opts = {
     detail = "Use @<localleader>s or /<localleader>s for options.",
     insert = "<localleader>s",
   },
-  model = "auto",
+  model = "gpt-4.1",
   window = {
     layout = "vertical", -- 'vertical', 'horizontal', 'float', 'replace'
     width = 0.3, -- fractional width of parent, or absolute width in columns when > 1
