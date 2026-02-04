@@ -1,3 +1,9 @@
+---
+-- Zhihu.nvim plugin configuration with custom Typst and LaTeX support
+-- Handles conversion to Markdown and image embedding for Zhihu articles
+---
+
+-- Helper functions for diagram processing
 local function get_commutative_diagram_ranges(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local ok, parser = pcall(vim.treesitter.get_parser, bufnr, "typst")
@@ -78,7 +84,6 @@ local function replace_commutative_diagrams_with_images(bufnr)
     vim.fn.mkdir(temp_dir, "p")
     local typst_file = temp_dir .. "/diagram.typ"
     local pdf_file = temp_dir .. "/diagram.pdf"
-    -- 使用时间戳防止覆盖
     local png_file = figs_dir .. "/diagram_" .. os.time() .. "_" .. i .. ".png"
 
     local typst_content = string.format(template, diagram_content)
@@ -118,10 +123,13 @@ local function replace_commutative_diagrams_with_images(bufnr)
   return table.concat(result_lines, "\n")
 end
 
-local function get_typst_title(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-  local ok, parser = pcall(vim.treesitter.get_parser, bufnr, "typst")
-  if not ok or not parser then
+-- Typst utilities
+local function get_typst_title(content)
+  if not content or content == "" then
+    return nil
+  end
+  local parser = vim.treesitter.get_string_parser(content, "typst")
+  if not parser then
     return nil
   end
   local tree = parser:parse()[1]
@@ -130,29 +138,13 @@ local function get_typst_title(bufnr)
   end
   local query_str = [[ (let pattern: (ident) @cmd (#eq? @cmd "title") value: (string) @title) ]]
   local query = vim.treesitter.query.parse("typst", query_str)
-  for id, node in query:iter_captures(tree:root(), bufnr, 0, -1) do
+  for id, node in query:iter_captures(tree:root(), content, 0, -1) do
     if query.captures[id] == "title" then
-      local text = vim.treesitter.get_node_text(node, bufnr)
+      local text = vim.treesitter.get_node_text(node, content)
       return text:match('^"(.*)"$') or text
     end
   end
   return nil
-end
-
-local function write_content_to_tempfile_and_return_path(content_string, orig_path, ft)
-  ft = ft or ".typ"
-  local dir = vim.fn.fnamemodify(orig_path, ":h")
-  local filename = "converted_content_" .. tostring(os.time()) .. ft
-  local full_path = dir .. "/" .. filename
-  local file = io.open(full_path, "w")
-  if file then
-    file:write(content_string)
-    file:close()
-    return full_path
-  else
-    vim.notify("Failed to write content", vim.log.levels.ERROR)
-    return nil
-  end
 end
 
 local typst_template = [[
@@ -171,7 +163,24 @@ local typst_template = [[
 #let custom-block(content, title: "Note", icon: "📌", number: none, border-color: rgb("#16a085"), bg-color: rgb("#e8f8f5"), text-color: rgb("#0d3d35")) = theorem-block(content, title: title, icon: icon, border-color: border-color, bg-color: bg-color, text-color: text-color)
 ]]
 
-local function typst_script(content)
+local function write_content_to_tempfile_and_return_path(content_string, orig_path, ft)
+  ft = ft or ".typ"
+  local dir = vim.fn.fnamemodify(orig_path, ":h")
+  local filename = "converted_content_" .. tostring(os.time()) .. ft
+  local full_path = dir .. "/" .. filename
+  local file = io.open(full_path, "w")
+  if file then
+    file:write(content_string)
+    file:close()
+    return full_path
+  else
+    vim.notify("Failed to write content", vim.log.levels.ERROR)
+    return nil
+  end
+end
+
+-- Typst converter function
+local function typst_converter(content)
   local content_string = replace_commutative_diagrams_with_images(0) or content.content
   local start_marker = "// {content: start}"
   local marker_pos = content_string:find(start_marker, 1, true)
@@ -183,15 +192,13 @@ local function typst_script(content)
   end
   content_string = typst_template .. "\n" .. content_string
 
-  -- 移除 blog-preview 相关的替换，因为它可能破坏路径
   local lines = vim.split(content_string, "\n")
-  -- lines[1] = lines[1]:gsub("blog%.typ", "blog-preview.typ")
   content_string = table.concat(lines, "\n")
 
-  local title = get_typst_title(0) or content.title
+  -- local title = get_typst_title(0) or content.title
   local path = write_content_to_tempfile_and_return_path(content_string, content.path) or content.path
   local dir_path = vim.fn.getcwd()
-  local output = { title = title, content = "" }
+  local output = { title = "", content = "" }
   local cmd = {
     "pandoc",
     path,
@@ -207,7 +214,6 @@ local function typst_script(content)
     return job.stdout
   end)
 
-  -- 清理临时文件
   if path:match("converted_content_") then
     os.remove(path)
   end
@@ -217,9 +223,37 @@ local function typst_script(content)
   else
     output.content = "Error: " .. result
   end
-  return output
+  return output.content
 end
 
+-- Markdown to Typst converter function
+local function markdown_to_typst(content)
+  local temp_md_file = os.tmpname() .. ".md"
+  local temp_typ_file = os.tmpname() .. ".typ"
+  local f = io.open(temp_md_file, "w")
+  if not f then
+    error("Cannot create temp markdown file")
+  end
+  f:write(content)
+  f:close()
+  local cmd = string.format("pandoc '%s' -t typst -o '%s' 2>/dev/null", temp_md_file, temp_typ_file)
+  local exit_code = os.execute(cmd)
+  local typst = ""
+  if exit_code == 0 then
+    local out = io.open(temp_typ_file, "r")
+    if out then
+      typst = out:read("*a")
+      out:close()
+    end
+  else
+    typst = "Error: Pandoc conversion failed"
+  end
+  os.remove(temp_md_file)
+  os.remove(temp_typ_file)
+  return typst
+end
+
+-- LaTeX utilities
 local function get_tex_title(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local ok, parser = pcall(vim.treesitter.get_parser, bufnr, "latex")
@@ -249,7 +283,8 @@ local function get_tex_title(bufnr)
   return nil
 end
 
-local function tex_script(content)
+-- LaTeX converter function
+local function tex_converter(content)
   local content_string = content.content or ""
   local title = get_tex_title(0) or content.title
   local path = write_content_to_tempfile_and_return_path(content_string, content.path, ".tex") or content.path
@@ -275,31 +310,35 @@ local function tex_script(content)
   else
     output.content = "Error: " .. result
   end
-  print(output.content)
   return output
 end
 
--- =============================================================================
--- Plugin Config
--- =============================================================================
-
+-- Plugin configuration
 return {
   "pxwg/zhihu.nvim",
   main = "zhihu",
   dev = true,
 
-  -- 配置你的自定义脚本
-  opts = {
-    script = {
-      typst = { pattern = "*.typ", extension = { typ = "typst" }, script = typst_script },
-      tex = { pattern = "*.tex", extension = { tex = "tex" }, script = tex_script },
-    },
-  },
+  config = function()
+    require("zhihu").setup({
+      -- Define custom file type handlers
+      filetypes = {
+        typst = {
+          type = "markdown",
+          converter = {
+            ["in"] = typst_converter,
+            ["out"] = markdown_to_typst,
+          },
+          title = get_typst_title,
+        },
+        -- tex = {
+        --   type = "markdown",
+        --   converter = tex_converter,
+        -- },
+      },
+    })
 
-  -- 在 config 中注册自定义命令
-  config = function(_, opts)
-    require("zhihu").setup(opts)
-
+    -- Register ZhihuUploadArticle command
     vim.api.nvim_create_user_command("ZhihuUploadArticle", function()
       local ft = vim.bo.filetype
       if ft ~= "typst" then
@@ -315,7 +354,7 @@ return {
         title = get_typst_title(0) or "Untitled",
       }
 
-      local result = typst_script(content_input)
+      local result = typst_converter(content_input)
       if result.content:match("^Error:") then
         vim.notify(result.content, vim.log.levels.ERROR)
         return
@@ -327,13 +366,10 @@ return {
       vim.notify("Uploading images to Zhihu...", vim.log.levels.INFO)
       local Image = require("zhihu.image").Image
 
-      -- 匹配 ![](path) 格式的图片
       markdown = markdown:gsub("!%[(.-)%]%((.-)%)", function(alt, path)
         local expanded_path = vim.fn.expand(path)
-        -- 只有文件存在且是本地路径时才上传
         if vim.fn.filereadable(expanded_path) == 1 then
           local img_obj = Image.from_file(expanded_path)
-          -- state=1 表示上传成功
           if img_obj and img_obj.upload_file and img_obj.upload_file.state == 1 then
             local remote_url = tostring(img_obj)
             print("Uploaded: " .. path .. " -> " .. remote_url)
@@ -342,16 +378,14 @@ return {
             vim.notify("Failed to upload image: " .. path, vim.log.levels.WARN)
           end
         end
-        return nil -- 保持原样
+        return nil
       end)
 
-      -- D. 上传文章草稿
       vim.notify("Uploading draft...", vim.log.levels.INFO)
       local Article = require("zhihu.article.markdown").Article
       local article = Article({ title = title })
       article:set_content(markdown)
 
-      -- 调用 update (新建或更新)
       local err = article:update()
 
       if err then
