@@ -8,173 +8,113 @@ local function get_commutative_diagram_ranges(bufnr)
   if not trees or #trees == 0 then
     return {}
   end
-
   local root = trees[1]:root()
-
   local query_str = [[
     (call
       item: (ident) @cmd
       (#match? @cmd "commutative-diagram|equation-frame")
       (#not-has-ancestor? @cmd let)) @call
   ]]
-
   local query = vim.treesitter.query.parse("typst", query_str)
   local ranges = {}
-
   for id, node in query:iter_captures(root, bufnr, 0, -1) do
     if query.captures[id] == "call" then
       local start_row, _, end_row, _ = node:range()
-      table.insert(ranges, {
-        start_line = start_row + 1,
-        end_line = end_row + 1,
-      })
+      table.insert(ranges, { start_line = start_row + 1, end_line = end_row + 1 })
     end
   end
-
   return ranges
 end
 
 local function replace_commutative_diagrams_with_images(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-
-  -- Get all text lines
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-  local full_text = table.concat(lines, "\n")
-
-  -- Get commutative diagram ranges
   local ranges = get_commutative_diagram_ranges(bufnr)
   if #ranges == 0 then
-    return full_text
+    return table.concat(lines, "\n")
   end
 
-  -- Create figs directory
   local figs_dir = vim.fn.expand("~/figs")
   vim.fn.mkdir(figs_dir, "p")
 
-  -- Template for Typst compilation
   local template = [[
 #import "@preview/physica:0.9.5": *
 #import "@preview/commute:0.3.0": arr, commutative-diagram, node
 #import "@preview/cetz:0.4.2": canvas, draw
-
-#set page(
-  width: auto,
-  height: auto,
-  margin: 0cm
-)
+#set page(width: auto, height: auto, margin: 0cm)
 #let CS = math.upright("CS")
 #let wedge = math.and
 #let GL = math.upright("GL")
 #let Conf = math.upright("Conf")
 #let Hol = math.upright("Hol")
-
 #let string-diagram(top-conn, bottom-conn, color: color) = {
-  let x = (0, 4, 8)
-  let y = (3, 9)
-  let height = 12
-
+  let x = (0, 4, 8); let y = (3, 9); let height = 12
   let hline(conn, y-level) = {
-    let (x1, x2) = if conn == "12" {
-      (x.at(0), x.at(1))
-    } else if conn == "13" {
-      (x.at(0), x.at(2))
-    } else {
-      (x.at(1), x.at(2))
-    }
-
+    let (x1, x2) = if conn == "12" { (x.at(0), x.at(1)) } else if conn == "13" { (x.at(0), x.at(2)) } else { (x.at(1), x.at(2)) }
     draw.line((x1, y-level), (x2, y-level), stroke: color)
     draw.circle((x1, y-level), radius: 0.6, stroke: color)
     draw.circle((x2, y-level), radius: 0.6, stroke: color)
   }
-
   canvas(length: 2pt, {
-    for i in (0, 1, 2) {
-      draw.line((x.at(i), 0), (x.at(i), height), stroke: color)
-    }
-    hline(top-conn, y.at(1))
-    hline(bottom-conn, y.at(0))
+    for i in (0, 1, 2) { draw.line((x.at(i), 0), (x.at(i), height), stroke: color) }
+    hline(top-conn, y.at(1)); hline(bottom-conn, y.at(0))
   })
 }
-
-#let equation-frame(content) = {
-  if type(content) == function {
-    content(string-diagram.with(color: black))
-  } else {
-    content
-  }
-}
-
+#let equation-frame(content) = { if type(content) == function { content(string-diagram.with(color: black)) } else { content } }
 %s
 ]]
 
-  -- Process ranges in reverse order to maintain line numbers
   table.sort(ranges, function(a, b)
     return a.start_line > b.start_line
   end)
-
   local result_lines = vim.list_extend({}, lines)
-
   for i, range in ipairs(ranges) do
-    -- Extract diagram content
     local diagram_lines = {}
     for line_num = range.start_line, range.end_line do
       table.insert(diagram_lines, lines[line_num])
     end
     local diagram_content = table.concat(diagram_lines, "\n")
-
-    -- Create temporary Typst file
     local temp_dir = vim.fn.tempname()
     vim.fn.mkdir(temp_dir, "p")
     local typst_file = temp_dir .. "/diagram.typ"
     local pdf_file = temp_dir .. "/diagram.pdf"
-    local png_file = figs_dir .. "/diagram_" .. i .. ".png"
+    -- 使用时间戳防止覆盖
+    local png_file = figs_dir .. "/diagram_" .. os.time() .. "_" .. i .. ".png"
 
-    -- Write Typst content
     local typst_content = string.format(template, diagram_content)
     local file = io.open(typst_file, "w")
     if file then
       file:write(typst_content)
       file:close()
     else
-      vim.notify("Failed to create Typst file: " .. typst_file, vim.log.levels.ERROR)
+      vim.notify("Failed to create Typst file", vim.log.levels.ERROR)
       goto continue
     end
 
-    -- Compile Typst to PDF
     local compile_cmd = string.format("typst compile '%s' '%s'", typst_file, pdf_file)
-    local compile_result = vim.fn.system(compile_cmd)
-    if vim.v.shell_error ~= 0 then
-      vim.notify("Typst compilation failed: " .. compile_result, vim.log.levels.ERROR)
+    if vim.fn.system(compile_cmd) ~= "" and vim.v.shell_error ~= 0 then
+      vim.notify("Typst compilation failed", vim.log.levels.ERROR)
       goto continue
     end
 
-    -- Convert PDF to PNG using ImageMagick
     local convert_cmd = string.format(
       "convert -density 300 '%s' -background white -alpha remove -alpha off -quality 90 '%s'",
       pdf_file,
       png_file
     )
-    local convert_result = vim.fn.system(convert_cmd)
-    if vim.v.shell_error ~= 0 then
-      vim.notify("PDF to PNG conversion failed: " .. convert_result, vim.log.levels.ERROR)
+    if vim.fn.system(convert_cmd) ~= "" and vim.v.shell_error ~= 0 then
+      vim.notify("PDF to PNG conversion failed", vim.log.levels.ERROR)
       goto continue
     end
 
-    -- Replace diagram with image reference
     local image_ref = string.format('#image("%s")', png_file)
-
-    -- Replace lines in result from bottom to top
     for line_idx = range.end_line, range.start_line, -1 do
       table.remove(result_lines, line_idx)
     end
     table.insert(result_lines, range.start_line, image_ref)
-
-    -- Cleanup temporary files
     vim.fn.delete(temp_dir, "rf")
-
     ::continue::
   end
-
   return table.concat(result_lines, "\n")
 end
 
@@ -188,185 +128,66 @@ local function get_typst_title(bufnr)
   if not tree then
     return nil
   end
-  local root = tree:root()
-  local query_str = [[
-    (let
-      pattern: (ident) @cmd
-      (#eq? @cmd "title")
-      value: (string) @title)
-  ]]
+  local query_str = [[ (let pattern: (ident) @cmd (#eq? @cmd "title") value: (string) @title) ]]
   local query = vim.treesitter.query.parse("typst", query_str)
-  for id, node in query:iter_captures(root, bufnr, 0, -1) do
-    local capture_name = query.captures[id]
-    if capture_name == "title" then
+  for id, node in query:iter_captures(tree:root(), bufnr, 0, -1) do
+    if query.captures[id] == "title" then
       local text = vim.treesitter.get_node_text(node, bufnr)
       return text:match('^"(.*)"$') or text
     end
   end
-
   return nil
 end
 
 local function write_content_to_tempfile_and_return_path(content_string, orig_path, ft)
   ft = ft or ".typ"
-  -- Get directory of the original file
   local dir = vim.fn.fnamemodify(orig_path, ":h")
-  -- Generate a unique filename in the same directory
   local filename = "converted_content_" .. tostring(os.time()) .. ft
-  print(filename)
   local full_path = dir .. "/" .. filename
-
-  -- Write content_string to the file
   local file = io.open(full_path, "w")
   if file then
     file:write(content_string)
     file:close()
     return full_path
   else
-    vim.notify("Failed to write content to file: " .. full_path, vim.log.levels.ERROR)
+    vim.notify("Failed to write content", vim.log.levels.ERROR)
     return nil
   end
 end
 
 local typst_template = [[
 #import "@preview/physica:0.9.5": *
-
-#let image_viewer(
-  path: "",
-  desc: "",
-  dark-adapt: false,
-  adapt-mode: "darken",
-  width-ratio: 0.6,
-) = {
-  let img-width = width-ratio * 100%
-  figure(
-    image(path, width: img-width),
-    caption: if desc != "" { desc } else { none },
-  )
+#let image_viewer(path: "", desc: "", dark-adapt: false, adapt-mode: "darken", width-ratio: 0.6) = {
+  figure(image(path, width: width-ratio * 100%), caption: if desc != "" { desc } else { none })
 }
-
-#let theorem-block(
-  content,
-  title: "Theorem",
-  icon: "📐",
-  number: none,
-  border-color: rgb("#3498db"),
-  bg-color: rgb("#e8f4f8"),
-  text-color: rgb("#2c3e50"),
-) = {
-  let full-title = if number != none {
-    title + " " + str(number)
-  } else {
-    title
-  }
-  quote(block: true, [
-    #full-title #icon
-
-    #content
-  ])
+#let theorem-block(content, title: "Theorem", icon: "📐", number: none, border-color: rgb("#3498db"), bg-color: rgb("#e8f4f8"), text-color: rgb("#2c3e50")) = {
+  quote(block: true, [ #title #icon #content ])
 }
-
-// Theorem
-#let theorem(content, title: "", number: none) = theorem-block(
-  content,
-  title: "Theorem " + title,
-  icon: "📐",
-  number: number,
-  border-color: rgb("#3498db"),
-  bg-color: rgb("#e8f4f8"),
-  text-color: rgb("#2c3e50"),
-)
-
-// Claim
-#let claim(content, number: none) = theorem-block(
-  content,
-  title: "Claim",
-  icon: "💡",
-  number: number,
-  border-color: rgb("#f39c12"),
-  bg-color: rgb("#fef5e7"),
-  text-color: rgb("#7d6608"),
-)
-
-// Remark
-#let remark(content, number: none) = theorem-block(
-  content,
-  title: "Remark",
-  icon: "💭",
-  number: number,
-  border-color: rgb("#9b59b6"),
-  bg-color: rgb("#f4ecf7"),
-  text-color: rgb("#5b2c5f"),
-)
-
-// Proof
-#let proof(content, title: "Proof") = {
-  block(
-    width: 100%,
-    inset: 6pt,
-    radius: 4pt,
-    fill: rgb("#f9f9f9"),
-    stroke: (left: 2pt + rgb("#95a5a6")),
-    collapse: true,
-    [
-      #text(fill: rgb("#95a5a6"), weight: "bold", size: 0.95em)[📓 #title.]
-      #v(0.1em)
-      #text(fill: rgb("#34495e"), size: 0.95em)[#content]
-      #v(0.1em)
-      #text(weight: "bold")[END of Proof]
-    ],
-  )
-}
-
-// Question
-#let question(content, number: none) = theorem-block(
-  content,
-  title: "Question",
-  icon: "❓",
-  number: number,
-  border-color: rgb("#e74c3c"),
-  bg-color: rgb("#fadbd8"),
-  text-color: rgb("#922b21"),
-)
-
-// Custom block with configurable colors
-#let custom-block(
-  content,
-  title: "Note",
-  icon: "📌",
-  number: none,
-  border-color: rgb("#16a085"),
-  bg-color: rgb("#e8f8f5"),
-  text-color: rgb("#0d3d35"),
-) = theorem-block(
-  content,
-  title: title,
-  icon: icon,
-  number: number,
-  border-color: border-color,
-  bg-color: bg-color,
-  text-color: text-color,
-)
+#let theorem(content, title: "", number: none) = theorem-block(content, title: "Theorem " + title)
+#let claim(content, number: none) = theorem-block(content, title: "Claim", icon: "💡", border-color: rgb("#f39c12"), bg-color: rgb("#fef5e7"), text-color: rgb("#7d6608"))
+#let remark(content, number: none) = theorem-block(content, title: "Remark", icon: "💭", border-color: rgb("#9b59b6"), bg-color: rgb("#f4ecf7"), text-color: rgb("#5b2c5f"))
+#let proof(content, title: "Proof") = { block(fill: rgb("#f9f9f9"), inset: 6pt, radius: 4pt, stroke: (left: 2pt + rgb("#95a5a6")), [ #text(weight: "bold")[📓 #title.] #content #text(weight: "bold")[END of Proof] ]) }
+#let question(content, number: none) = theorem-block(content, title: "Question", icon: "❓", border-color: rgb("#e74c3c"), bg-color: rgb("#fadbd8"), text-color: rgb("#922b21"))
+#let custom-block(content, title: "Note", icon: "📌", number: none, border-color: rgb("#16a085"), bg-color: rgb("#e8f8f5"), text-color: rgb("#0d3d35")) = theorem-block(content, title: title, icon: icon, border-color: border-color, bg-color: bg-color, text-color: text-color)
 ]]
 
 local function typst_script(content)
   local content_string = replace_commutative_diagrams_with_images(0) or content.content
-
   local start_marker = "// {content: start}"
   local marker_pos = content_string:find(start_marker, 1, true)
   if marker_pos then
-    -- Find the end of the line containing the marker
     local line_end = content_string:find("\n", marker_pos)
     if line_end then
-      -- Extract content from after the marker line
       content_string = content_string:sub(line_end + 1)
     end
   end
   content_string = typst_template .. "\n" .. content_string
 
+  -- 移除 blog-preview 相关的替换，因为它可能破坏路径
   local lines = vim.split(content_string, "\n")
-  lines[1] = lines[1]:gsub("blog%.typ", "blog-preview.typ")
+  -- lines[1] = lines[1]:gsub("blog%.typ", "blog-preview.typ")
   content_string = table.concat(lines, "\n")
+
   local title = get_typst_title(0) or content.title
   local path = write_content_to_tempfile_and_return_path(content_string, content.path) or content.path
   local dir_path = vim.fn.getcwd()
@@ -379,19 +200,23 @@ local function typst_script(content)
     "--lua-filter=" .. vim.fn.stdpath("config") .. "/typ_md.lua",
   }
   local ok, result = pcall(function()
-    local job = vim.system(cmd, { cwd = dir_path }):wait()
+    local job = vim.system(cmd, { cwd = dir_path, text = true }):wait()
     if job.code ~= 0 then
       error("Pandoc failed: " .. (job.stderr or ""))
     end
     return job.stdout
   end)
-  os.remove(path)
+
+  -- 清理临时文件
+  if path:match("converted_content_") then
+    os.remove(path)
+  end
+
   if ok then
     output.content = result
   else
     output.content = "Error: " .. result
   end
-  -- print(output.content)
   return output
 end
 
@@ -421,7 +246,6 @@ local function get_tex_title(bufnr)
       return text
     end
   end
-
   return nil
 end
 
@@ -455,18 +279,86 @@ local function tex_script(content)
   return output
 end
 
+-- =============================================================================
+-- Plugin Config
+-- =============================================================================
+
 return {
-  -- "pxwg/zhihu_neovim",
   "pxwg/zhihu.nvim",
   main = "zhihu",
-  -- cmd = { "ZhihuAuth" },
-  -- ft = { "typst", "markdown", "tex" },
-  enabled = vim.fn.has("macos") == 1,
-  ---@type ZhnvimConfigs
+  dev = true,
+
+  -- 配置你的自定义脚本
   opts = {
     script = {
       typst = { pattern = "*.typ", extension = { typ = "typst" }, script = typst_script },
       tex = { pattern = "*.tex", extension = { tex = "tex" }, script = tex_script },
     },
   },
+
+  -- 在 config 中注册自定义命令
+  config = function(_, opts)
+    require("zhihu").setup(opts)
+
+    vim.api.nvim_create_user_command("ZhihuUploadArticle", function()
+      local ft = vim.bo.filetype
+      if ft ~= "typst" then
+        vim.notify("ZhihuUploadArticle only works on typst files", vim.log.levels.WARN)
+        return
+      end
+
+      vim.notify("Converting Typst to Markdown...", vim.log.levels.INFO)
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      local content_input = {
+        content = table.concat(lines, "\n"),
+        path = vim.api.nvim_buf_get_name(0),
+        title = get_typst_title(0) or "Untitled",
+      }
+
+      local result = typst_script(content_input)
+      if result.content:match("^Error:") then
+        vim.notify(result.content, vim.log.levels.ERROR)
+        return
+      end
+
+      local markdown = result.content
+      local title = result.title
+
+      vim.notify("Uploading images to Zhihu...", vim.log.levels.INFO)
+      local Image = require("zhihu.image").Image
+
+      -- 匹配 ![](path) 格式的图片
+      markdown = markdown:gsub("!%[(.-)%]%((.-)%)", function(alt, path)
+        local expanded_path = vim.fn.expand(path)
+        -- 只有文件存在且是本地路径时才上传
+        if vim.fn.filereadable(expanded_path) == 1 then
+          local img_obj = Image.from_file(expanded_path)
+          -- state=1 表示上传成功
+          if img_obj and img_obj.upload_file and img_obj.upload_file.state == 1 then
+            local remote_url = tostring(img_obj)
+            print("Uploaded: " .. path .. " -> " .. remote_url)
+            return string.format("![%s](%s)", alt, remote_url)
+          else
+            vim.notify("Failed to upload image: " .. path, vim.log.levels.WARN)
+          end
+        end
+        return nil -- 保持原样
+      end)
+
+      -- D. 上传文章草稿
+      vim.notify("Uploading draft...", vim.log.levels.INFO)
+      local Article = require("zhihu.article.markdown").Article
+      local article = Article({ title = title })
+      article:set_content(markdown)
+
+      -- 调用 update (新建或更新)
+      local err = article:update()
+
+      if err then
+        vim.notify("Upload failed: " .. tostring(err), vim.log.levels.ERROR)
+      else
+        vim.notify(string.format("Success! Uploaded '%s' (ID: %s)", title, article.itemId), vim.log.levels.INFO)
+      end
+    end, {})
+  end,
 }
