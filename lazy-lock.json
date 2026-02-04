@@ -72,6 +72,5 @@
   "vimtex": { "branch": "master", "commit": "a50f40783c1cade2e8e2994a9f4a8e038a0a57bc" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "xcodebuild.nvim": { "branch": "main", "commit": "02381ee7d8545ed9d0562efd74bd8fef26bcfb36" },
-  "zhihu.nvim": { "branch": "main", "commit": "ffdfdad9e5041e84aa91bb498f7861b036dc3cba" },
   "zotcite": { "branch": "master", "commit": "67d4bef627854c418dfae7ef121e8752e82d7440" }
 }
