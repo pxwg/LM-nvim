@@ -864,10 +864,30 @@ function M.show_startup_summary()
     vim.api.nvim_win_set_cursor(win, { note_lines[next_idx], 0 })
   end
 
+  local function jump_to_prev_note()
+    local cursor = vim.api.nvim_win_get_cursor(win)
+    local line = cursor[1]
+    if #note_lines == 0 then
+      return
+    end
+    local prev_idx = #note_lines
+    for i = #note_lines, 1, -1 do
+      if note_lines[i] < line then
+        prev_idx = i
+        break
+      end
+      if i == 1 then
+        prev_idx = #note_lines
+      end
+    end
+    vim.api.nvim_win_set_cursor(win, { note_lines[prev_idx], 0 })
+  end
+
   vim.keymap.set("n", "q", close_summary, { buffer = buf, nowait = true })
   vim.keymap.set("n", "<Esc>", close_summary, { buffer = buf, nowait = true })
   vim.keymap.set("n", "<CR>", open_selected_note, { buffer = buf, nowait = true })
   vim.keymap.set("n", "<Tab>", jump_to_next_note, { buffer = buf, nowait = true })
+  vim.keymap.set("n", "<S-Tab>", jump_to_prev_note, { buffer = buf, nowait = true })
 end
 
 vim.api.nvim_create_user_command("Zk", function(opts)

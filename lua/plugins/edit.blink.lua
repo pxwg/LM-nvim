@@ -466,10 +466,23 @@ return {
             --- @param ctx blink.cmp.Context
             --- @param items blink.cmp.CompletionItem[]
             transform_items = function(ctx, items)
-              local TYPE_ALIAS = require("blink.cmp.types").CompletionItemKind
+              local kind = require("blink.cmp.types").CompletionItemKind
+              local is_typst = vim.bo.filetype == "typst"
+
               for _, item in ipairs(items) do
-                if vim.bo.filetype == "typst" and item.kind == TYPE_ALIAS.Field then
-                  item.score_offset = (item.score_offset or 0) + 10
+                if is_typst then
+                  if item.kind == kind.Field then
+                    item.score_offset = (item.score_offset or 0) + 10
+                  end
+
+                  if item.kind == kind.Reference then
+                    local title = (item.labelDetails and item.labelDetails.description) or item.detail
+
+                    if title and item.label:match("^%d%d%d%d%d%d%d%d%d%d") then
+                      local current_filter = item.filterText or item.label
+                      item.filterText = title
+                    end
+                  end
                 end
               end
               return items
