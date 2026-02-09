@@ -2,7 +2,7 @@ return {
   name = "emmylua_ls",
   cmd = { "emmylua_ls" },
   filetypes = { "lua" },
-  root_dir = vim.fn.getcwd(),
+  root_markers = { ".git" },
   single_file_support = true,
   settings = {
     Lua = {
