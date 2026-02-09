@@ -1,5 +1,144 @@
 local M = {}
 
+-- Check if a node is inside a code block or raw block
+local function is_in_code_block(node)
+  local current = node
+  while current do
+    local node_type = current:type()
+    -- Check for various code/raw block types in Typst
+    if
+      node_type == "raw_blck"
+      or node_type == "code_block"
+      or node_type == "raw"
+      or node_type == "raw_block"
+      or node_type == "code"
+      or node_type:match("^raw_")
+      or node_type:match("^code_")
+    then
+      return true
+    end
+    current = current:parent()
+  end
+  return false
+end
+
+-- Check if all todos are completed in the buffer (using Treesitter)
+local function check_todo_status()
+  -- Try to use Treesitter if available
+  local has_treesitter, ts_parsers = pcall(require, "nvim-treesitter.parsers")
+
+  if not has_treesitter then
+    -- Fallback to simple pattern matching
+    return check_todo_status_fallback()
+  end
+
+  local parser = ts_parsers.get_parser(0, "typst")
+  if not parser then
+    -- Fallback if Typst parser is not available
+    return check_todo_status_fallback()
+  end
+
+  local tree = parser:parse()[1]
+  local root = tree:root()
+
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local has_todos = false
+  local all_completed = true
+
+  -- Iterate through all lines
+  for line_num = 0, #lines - 1 do
+    local line = lines[line_num + 1]
+
+    -- Check if line matches todo pattern
+    if line:match("^%s*%- %[.%]") then
+      -- Get the node at this line
+      local node = root:descendant_for_range(line_num, 0, line_num, #line)
+
+      -- Skip if inside code block
+      if node and not is_in_code_block(node) then
+        has_todos = true
+        -- Check if this todo is not completed (has [ ] instead of [x])
+        if line:match("^%s*%- %[ %]") then
+          all_completed = false
+        end
+      end
+    end
+  end
+
+  return has_todos, all_completed
+end
+
+-- Fallback function without Treesitter
+local function check_todo_status_fallback()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local has_todos = false
+  local all_completed = true
+  local in_code_block = false
+
+  for _, line in ipairs(lines) do
+    -- Detect code block boundaries (``` or """)
+    if line:match("^%s*```") or line:match('^%s*"""') then
+      in_code_block = not in_code_block
+    end
+
+    -- Match any todo item pattern: - [ ] or - [x]
+    if not in_code_block and line:match("^%s*%- %[.%]") then
+      has_todos = true
+      -- Check if this todo is not completed (has [ ] instead of [x])
+      if line:match("^%s*%- %[ %]") then
+        all_completed = false
+      end
+    end
+  end
+
+  return has_todos, all_completed
+end
+
+-- Auto-update tag based on todo completion status
+function M.auto_update_tag()
+  local filepath = vim.fn.expand("%:p")
+
+  -- Only process .typ files in the note directory
+  if not filepath:match("/note/%d+%.typ$") then
+    return
+  end
+
+  local has_todos, all_completed = check_todo_status()
+
+  -- Only update if there are todos in the file
+  if not has_todos then
+    return
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+  -- Check line 5 (index 5 in Lua) for the tag
+  if #lines < 5 then
+    return
+  end
+
+  local tag_line = lines[5]
+  local tag_line_idx = 4 -- 0-indexed for nvim_buf_set_lines
+
+  -- Determine what the tag should be
+  local should_be_done = has_todos and all_completed
+  local current_is_todo = tag_line:match("#tag%.todo")
+  local current_is_done = tag_line:match("#tag%.done")
+
+  -- Update if needed
+  if should_be_done and current_is_todo then
+    -- Change todo to done
+    local new_line = tag_line:gsub("#tag%.todo", "#tag.done")
+    vim.api.nvim_buf_set_lines(0, tag_line_idx, tag_line_idx + 1, false, { new_line })
+    vim.notify("All todos completed! Tag updated to #tag.done", vim.log.levels.INFO)
+  elseif not should_be_done and current_is_done then
+    -- Change done back to todo if there are incomplete todos
+    local new_line = tag_line:gsub("#tag%.done", "#tag%.todo")
+    vim.api.nvim_buf_set_lines(0, tag_line_idx, tag_line_idx + 1, false, { new_line })
+    vim.notify("Found incomplete todos. Tag updated to #tag.todo", vim.log.levels.INFO)
+  end
+end
+
 -- Toggle or create todo item
 function M.toggle_todo()
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -18,6 +157,11 @@ function M.toggle_todo()
     local new_state = (state == " ") and "x" or " "
     local new_line = indent .. "- [" .. new_state .. "]" .. rest
     vim.api.nvim_buf_set_lines(0, row - 1, row, false, { new_line })
+
+    -- Auto-check and update tag after toggling
+    vim.schedule(function()
+      M.auto_update_tag()
+    end)
   else
     -- Insert new todo item with proper indentation
     local indent_match = line:match("^(%s*)")
@@ -318,7 +462,7 @@ function M.search_title()
       local lines = vim.fn.readfile(note_path)
       local title = "Untitled"
       local tags = {}
-      
+
       -- Extract title from line 4
       if #lines >= 4 then
         local heading_line = lines[4]
@@ -329,7 +473,7 @@ function M.search_title()
           title = heading_line:gsub("^=%s*", "")
         end
       end
-      
+
       -- Extract tags from line 5
       if #lines >= 5 then
         local tag_line = lines[5]
@@ -337,7 +481,7 @@ function M.search_title()
           table.insert(tags, tag)
         end
       end
-      
+
       local note_id = vim.fn.fnamemodify(note_path, ":t:r")
       table.insert(all_results, {
         filename = note_path,
@@ -431,29 +575,29 @@ function M.search_title()
           vim.cmd("cd " .. vim.fn.fnameescape(root))
           vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
         end)
-        
+
         -- Ctrl-t: enter tag filter mode - open new picker with tag selection
         map("i", "<C-t>", function()
           actions.close(prompt_bufnr)
-          
+
           local all_tags = {}
           for _, result in ipairs(all_results) do
             for _, tag in ipairs(result.tags) do
               all_tags[tag] = true
             end
           end
-          
+
           local tag_list = {}
           for tag, _ in pairs(all_tags) do
             table.insert(tag_list, tag)
           end
           table.sort(tag_list)
-          
+
           if #tag_list == 0 then
             vim.notify("No tags found", vim.log.levels.INFO)
             return
           end
-          
+
           -- Open a new picker for tag selection
           pickers
             .new({}, {
@@ -471,7 +615,7 @@ function M.search_title()
                     selected_tag = tag_selection.value
                     search_mode = "tag_filter"
                     tag_filter_indicator = " (tag: " .. selected_tag .. ")"
-                    
+
                     pickers
                       .new({}, {
                         prompt_title = "ZK Note Search [TITLE]" .. tag_filter_indicator,
@@ -488,7 +632,7 @@ function M.search_title()
                             vim.cmd("cd " .. vim.fn.fnameescape(root))
                             vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
                           end)
-                          
+
                           -- Ctrl-t: toggle tag filter off
                           new_map("i", "<C-t>", function()
                             actions.close(new_prompt_bufnr)
@@ -506,7 +650,7 @@ function M.search_title()
                             tag_filter_indicator = ""
                             M.search_title()
                           end)
-                          
+
                           return true
                         end,
                       })
@@ -518,7 +662,7 @@ function M.search_title()
             })
             :find()
         end)
-        
+
         -- Ctrl-c: clear tag filter
         map("i", "<C-c>", function()
           selected_tag = nil
@@ -528,7 +672,7 @@ function M.search_title()
           update_title(prompt_bufnr)
           refresh_picker(prompt_bufnr)
         end)
-        
+
         return true
       end,
     })
@@ -754,6 +898,15 @@ end, {
       return vim.startswith(opt, arg_lead)
     end, opts)
   end,
+})
+
+-- Auto-update tag on buffer write (save)
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*/note/*.typ",
+  callback = function()
+    M.auto_update_tag()
+  end,
+  desc = "Auto-update ZK note tags based on todo completion status",
 })
 
 vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
