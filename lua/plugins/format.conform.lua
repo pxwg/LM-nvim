@@ -79,7 +79,7 @@ return {
         }
       end,
       yml = { "yq" },
-      typst = { "typstyle", "autocorrect", "trimlines" },
+      typst = { "typstyle", "autocorrect", "trimlines", "injected" },
       arduino = { "clang_format" },
       typescript = { "prettier" },
       astro = { "prettier" },
