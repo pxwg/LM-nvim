@@ -23,27 +23,17 @@ local function is_in_code_block(node)
 end
 
 -- Check if all todos are completed in the buffer (using Treesitter)
+-- Returns: (has_todos, completed_count, incomplete_count)
 local function check_todo_status()
   -- Try to use Treesitter if available
-  local has_treesitter, ts_parsers = pcall(require, "nvim-treesitter.parsers")
-
-  if not has_treesitter then
-    -- Fallback to simple pattern matching
-    return check_todo_status_fallback()
-  end
-
+  local _, ts_parsers = pcall(require, "nvim-treesitter.parsers")
   local parser = ts_parsers.get_parser(0, "typst")
-  if not parser then
-    -- Fallback if Typst parser is not available
-    return check_todo_status_fallback()
-  end
-
   local tree = parser:parse()[1]
   local root = tree:root()
 
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local has_todos = false
-  local all_completed = true
+  local completed_count = 0
+  local incomplete_count = 0
 
   -- Iterate through all lines
   for line_num = 0, #lines - 1 do
@@ -56,23 +46,26 @@ local function check_todo_status()
 
       -- Skip if inside code block
       if node and not is_in_code_block(node) then
-        has_todos = true
-        -- Check if this todo is not completed (has [ ] instead of [x])
-        if line:match("^%s*%- %[ %]") then
-          all_completed = false
+        -- Check if this todo is completed or not
+        if line:match("^%s*%- %[x%]") or line:match("^%s*%- %[X%]") then
+          completed_count = completed_count + 1
+        else
+          incomplete_count = incomplete_count + 1
         end
       end
     end
   end
 
-  return has_todos, all_completed
+  local has_todos = completed_count > 0 or incomplete_count > 0
+  return has_todos, completed_count, incomplete_count
 end
 
 -- Fallback function without Treesitter
+-- Returns: (has_todos, completed_count, incomplete_count)
 local function check_todo_status_fallback()
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local has_todos = false
-  local all_completed = true
+  local completed_count = 0
+  local incomplete_count = 0
   local in_code_block = false
 
   for _, line in ipairs(lines) do
@@ -83,15 +76,17 @@ local function check_todo_status_fallback()
 
     -- Match any todo item pattern: - [ ] or - [x]
     if not in_code_block and line:match("^%s*%- %[.%]") then
-      has_todos = true
-      -- Check if this todo is not completed (has [ ] instead of [x])
-      if line:match("^%s*%- %[ %]") then
-        all_completed = false
+      -- Check if this todo is completed or not
+      if line:match("^%s*%- %[x%]") or line:match("^%s*%- %[X%]") then
+        completed_count = completed_count + 1
+      else
+        incomplete_count = incomplete_count + 1
       end
     end
   end
 
-  return has_todos, all_completed
+  local has_todos = completed_count > 0 or incomplete_count > 0
+  return has_todos, completed_count, incomplete_count
 end
 
 -- Auto-update tag based on todo completion status
@@ -103,7 +98,7 @@ function M.auto_update_tag()
     return
   end
 
-  local has_todos, all_completed = check_todo_status()
+  local has_todos, completed_count, incomplete_count = check_todo_status()
 
   -- Only update if there are todos in the file
   if not has_todos then
@@ -120,22 +115,47 @@ function M.auto_update_tag()
   local tag_line = lines[5]
   local tag_line_idx = 4 -- 0-indexed for nvim_buf_set_lines
 
-  -- Determine what the tag should be
-  local should_be_done = has_todos and all_completed
-  local current_is_todo = tag_line:match("#tag%.todo")
-  local current_is_done = tag_line:match("#tag%.done")
+  -- Determine what the tag should be based on todo counts
+  local new_tag = nil
+  if incomplete_count == 0 and completed_count > 0 then
+    -- All todos completed
+    new_tag = "#tag.done"
+  elseif completed_count > 0 and incomplete_count > 0 then
+    -- Mixed state: some completed, some incomplete
+    new_tag = "#tag.wip"
+  else
+    -- All todos incomplete
+    new_tag = "#tag.todo"
+  end
+
+  -- Check current tag
+  local current_tag = nil
+  if tag_line:match("#tag%.done") then
+    current_tag = "#tag.done"
+  elseif tag_line:match("#tag%.wip") then
+    current_tag = "#tag.wip"
+  elseif tag_line:match("#tag%.todo") then
+    current_tag = "#tag.todo"
+  end
 
   -- Update if needed
-  if should_be_done and current_is_todo then
-    -- Change todo to done
-    local new_line = tag_line:gsub("#tag%.todo", "#tag.done")
+  if new_tag and current_tag ~= new_tag then
+    local new_line = tag_line
+    if current_tag then
+      new_line = tag_line:gsub(current_tag, new_tag)
+    else
+      -- No existing tag found, append the new tag
+      new_line = tag_line .. " " .. new_tag
+    end
     vim.api.nvim_buf_set_lines(0, tag_line_idx, tag_line_idx + 1, false, { new_line })
-    vim.notify("All todos completed! Tag updated to #tag.done", vim.log.levels.INFO)
-  elseif not should_be_done and current_is_done then
-    -- Change done back to todo if there are incomplete todos
-    local new_line = tag_line:gsub("#tag%.done", "#tag%.todo")
-    vim.api.nvim_buf_set_lines(0, tag_line_idx, tag_line_idx + 1, false, { new_line })
-    vim.notify("Found incomplete todos. Tag updated to #tag.todo", vim.log.levels.INFO)
+
+    local message = string.format(
+      "Todo status updated: %d completed, %d incomplete. Tag updated to %s",
+      completed_count,
+      incomplete_count,
+      new_tag
+    )
+    vim.notify(message, vim.log.levels.INFO)
   end
 end
 
@@ -930,6 +950,17 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
-vim.keymap.set("n", "zn", ":Zk new<cr>", { noremap = true, silent = false, desc = "[Z]ettel [N]ew" })
-vim.keymap.set("n", "zs", ":Zk search<cr>", { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
+vim.keymap.set("n", "zn", M.new_note, { noremap = true, silent = false, desc = "[Z]ettel [N]ew" })
+vim.keymap.set("n", "zs", M.search_title, { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
+vim.keymap.set("n", "ze", M.export_for_ai, { noremap = true, silent = false, desc = "[Z]ettel [E]xport for AI" })
+vim.keymap.set(
+  "n",
+  "zS",
+  M.show_startup_summary,
+  { noremap = true, silent = false, desc = "[Z]ettel [S]tartup Summary" }
+)
+vim.keymap.set("n", "zt", M.search_todo, { noremap = true, silent = false, desc = "[Z]ettel [T]ODO Search" })
+
+require("zk_extmark").setup()
+
 return M
