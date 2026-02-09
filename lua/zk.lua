@@ -300,7 +300,7 @@ function M.search_by_tag(tag)
     :find()
 end
 
--- Search for notes by title using Telescope
+-- Enhanced search with multi-mode support (title, combined title+tag filter)
 function M.search_title()
   local has_telescope, _ = pcall(require, "telescope.builtin")
   if not has_telescope then
@@ -311,12 +311,15 @@ function M.search_title()
   local root = vim.fn.expand("~/wiki")
   local note_dir = root .. "/note"
   local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
-  local results = {}
+  local all_results = {}
 
   for _, note_path in ipairs(notes) do
     if vim.fn.filereadable(note_path) == 1 then
       local lines = vim.fn.readfile(note_path)
       local title = "Untitled"
+      local tags = {}
+      
+      -- Extract title from line 4
       if #lines >= 4 then
         local heading_line = lines[4]
         local match = heading_line:match("^=%s*(.-)%s*<")
@@ -326,18 +329,28 @@ function M.search_title()
           title = heading_line:gsub("^=%s*", "")
         end
       end
+      
+      -- Extract tags from line 5
+      if #lines >= 5 then
+        local tag_line = lines[5]
+        for tag in tag_line:gmatch("#tag%.([%w_]+)") do
+          table.insert(tags, tag)
+        end
+      end
+      
       local note_id = vim.fn.fnamemodify(note_path, ":t:r")
-      table.insert(results, {
+      table.insert(all_results, {
         filename = note_path,
         lnum = 4,
         col = 1,
         text = title,
         id = note_id,
+        tags = tags,
       })
     end
   end
 
-  if #results == 0 then
+  if #all_results == 0 then
     vim.notify("No notes found", vim.log.levels.INFO)
     return
   end
@@ -348,32 +361,165 @@ function M.search_title()
   local actions = require("telescope.actions")
   local action_state = require("telescope.actions.state")
 
+  -- Search mode: "title" (default), "tag_filter"
+  local search_mode = "title"
+  local mode_indicator = "[TITLE]"
+  local selected_tag = nil
+  local tag_filter_indicator = ""
+
+  local function get_filtered_results()
+    if search_mode == "tag_filter" and selected_tag then
+      local filtered = {}
+      for _, result in ipairs(all_results) do
+        for _, tag in ipairs(result.tags) do
+          if tag == selected_tag then
+            table.insert(filtered, result)
+            break
+          end
+        end
+      end
+      return filtered
+    end
+    return all_results
+  end
+
+  local function make_entry(entry)
+    local tag_display = #entry.tags > 0 and (" #" .. table.concat(entry.tags, " #")) or ""
+    return {
+      value = entry,
+      display = string.format("[%s] %s%s", entry.id, entry.text, tag_display),
+      ordinal = entry.text .. " " .. entry.id .. " " .. table.concat(entry.tags, " "),
+      filename = entry.filename,
+      lnum = entry.lnum,
+      col = entry.col,
+    }
+  end
+
+  local function refresh_picker(prompt_bufnr)
+    local current_picker = action_state.get_current_picker(prompt_bufnr)
+    if current_picker then
+      local filtered_results = get_filtered_results()
+      local new_finder = finders.new_table({
+        results = filtered_results,
+        entry_maker = make_entry,
+      })
+      current_picker:refresh(new_finder, { reset_prompt = false })
+    end
+  end
+
+  local function update_title(prompt_bufnr)
+    local current_picker = action_state.get_current_picker(prompt_bufnr)
+    if current_picker then
+      local title = "ZK Note Search " .. mode_indicator .. tag_filter_indicator
+      current_picker.prompt_border:change_title(title)
+    end
+  end
+
   pickers
     .new({}, {
-      prompt_title = "ZK Note Search",
+      prompt_title = "ZK Note Search " .. mode_indicator .. tag_filter_indicator,
       finder = finders.new_table({
-        results = results,
-        entry_maker = function(entry)
-          return {
-            value = entry,
-            display = string.format("[%s] %s", entry.id, entry.text),
-            ordinal = entry.text .. " " .. entry.id,
-            filename = entry.filename,
-            lnum = entry.lnum,
-            col = entry.col,
-          }
-        end,
+        results = get_filtered_results(),
+        entry_maker = make_entry,
       }),
       sorter = conf.generic_sorter({}),
       previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, _)
+      attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()
           actions.close(prompt_bufnr)
           local selection = action_state.get_selected_entry()
-
           vim.cmd("cd " .. vim.fn.fnameescape(root))
           vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
         end)
+        
+        -- Ctrl-t: enter tag filter mode - open new picker with tag selection
+        map("i", "<C-t>", function()
+          actions.close(prompt_bufnr)
+          
+          local all_tags = {}
+          for _, result in ipairs(all_results) do
+            for _, tag in ipairs(result.tags) do
+              all_tags[tag] = true
+            end
+          end
+          
+          local tag_list = {}
+          for tag, _ in pairs(all_tags) do
+            table.insert(tag_list, tag)
+          end
+          table.sort(tag_list)
+          
+          if #tag_list == 0 then
+            vim.notify("No tags found", vim.log.levels.INFO)
+            return
+          end
+          
+          -- Open a new picker for tag selection
+          pickers
+            .new({}, {
+              prompt_title = "Select tag to filter",
+              finder = finders.new_table({
+                results = tag_list,
+              }),
+              sorter = conf.generic_sorter({}),
+              attach_mappings = function(tag_prompt_bufnr, tag_map)
+                actions.select_default:replace(function()
+                  actions.close(tag_prompt_bufnr)
+                  local tag_selection = action_state.get_selected_entry()
+                  if tag_selection then
+                    -- Reopen the main search with tag filter
+                    selected_tag = tag_selection.value
+                    search_mode = "tag_filter"
+                    tag_filter_indicator = " (tag: " .. selected_tag .. ")"
+                    
+                    pickers
+                      .new({}, {
+                        prompt_title = "ZK Note Search [TITLE]" .. tag_filter_indicator,
+                        finder = finders.new_table({
+                          results = get_filtered_results(),
+                          entry_maker = make_entry,
+                        }),
+                        sorter = conf.generic_sorter({}),
+                        previewer = conf.file_previewer({}),
+                        attach_mappings = function(new_prompt_bufnr, new_map)
+                          actions.select_default:replace(function()
+                            actions.close(new_prompt_bufnr)
+                            local selection = action_state.get_selected_entry()
+                            vim.cmd("cd " .. vim.fn.fnameescape(root))
+                            vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
+                          end)
+                          
+                          -- Ctrl-c: clear filter and restart
+                          new_map("i", "<C-c>", function()
+                            actions.close(new_prompt_bufnr)
+                            selected_tag = nil
+                            search_mode = "title"
+                            tag_filter_indicator = ""
+                            M.search_title()
+                          end)
+                          
+                          return true
+                        end,
+                      })
+                      :find()
+                  end
+                end)
+                return true
+              end,
+            })
+            :find()
+        end)
+        
+        -- Ctrl-c: clear tag filter
+        map("i", "<C-c>", function()
+          selected_tag = nil
+          search_mode = "title"
+          mode_indicator = "[TITLE]"
+          tag_filter_indicator = ""
+          update_title(prompt_bufnr)
+          refresh_picker(prompt_bufnr)
+        end)
+        
         return true
       end,
     })
