@@ -952,6 +952,7 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
 vim.keymap.set("n", "zn", M.new_note, { noremap = true, silent = false, desc = "[Z]ettel [N]ew" })
 vim.keymap.set("n", "zs", M.search_title, { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
+vim.keymap.set("n", "<leader>fz", M.search_title, { noremap = true, silent = false, desc = "[F]ind [Z]ettel" })
 vim.keymap.set("n", "ze", M.export_for_ai, { noremap = true, silent = false, desc = "[Z]ettel [E]xport for AI" })
 vim.keymap.set(
   "n",

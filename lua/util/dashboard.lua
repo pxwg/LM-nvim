@@ -176,13 +176,3 @@ vim.api.nvim_create_autocmd("BufWipeout", {
     vim.api.nvim_del_augroup_by_id(group_id)
   end,
 })
-
-local zk = require("zk")
-vim.api.nvim_create_autocmd("UIEnter", {
-  group = vim.api.nvim_create_augroup("ZkStartup", { clear = true }),
-  callback = function()
-    vim.schedule(function()
-      zk.show_startup_summary()
-    end)
-  end,
-})
