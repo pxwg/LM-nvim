@@ -605,9 +605,9 @@ map("n", "<CR>", function()
   end
 end, { desc = "Open markdown links (file or URL)" })
 
-map("n", "<C-T>", function()
-  require("util.note_todo").toggle()
-end)
+-- map("n", "<C-T>", function()
+--   require("util.note_todo").toggle()
+-- end)
 
 -- smart tab for copilot, inserting and completion via luasnip
 map("i", "<Tab>", function()

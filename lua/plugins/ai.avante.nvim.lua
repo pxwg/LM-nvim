@@ -202,7 +202,7 @@ return {
     },
     {
       "MeanderingProgrammer/render-markdown.nvim",
-      -- enabled = false,
+      enabled = false,
       opts = {
         code = {
           enabled = true,

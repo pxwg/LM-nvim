@@ -449,3 +449,5 @@ vim.api.nvim_create_user_command("ConcealFold", function()
   vim.wo.foldmethod = "marker"
   vim.wo.concealcursor = "nv"
 end, {})
+
+require("zk")

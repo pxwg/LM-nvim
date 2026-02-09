@@ -22,7 +22,7 @@ return {
     -- build = "make lua51",
     main = "math-conceal",
     opts = {
-      ft = { "plaintex", "tex", "context", "bibtex", "typst" },
+      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown" },
       enabled = true,
       conceal = {
         "greek",
