@@ -489,6 +489,15 @@ function M.search_title()
                             vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
                           end)
                           
+                          -- Ctrl-t: toggle tag filter off
+                          new_map("i", "<C-t>", function()
+                            actions.close(new_prompt_bufnr)
+                            selected_tag = nil
+                            search_mode = "title"
+                            tag_filter_indicator = ""
+                            M.search_title()
+                          end)
+
                           -- Ctrl-c: clear filter and restart
                           new_map("i", "<C-c>", function()
                             actions.close(new_prompt_bufnr)
