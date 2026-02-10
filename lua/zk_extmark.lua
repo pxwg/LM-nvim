@@ -42,8 +42,9 @@ end
 --- 刷新当前 Buffer 的 Extmarks
 function M.refresh_extmarks()
   local bufnr = vim.api.nvim_get_current_buf()
+  local noteid = vim.api.nvim_buf_get_name(0):match("note/(%d+)%.typ$")
 
-  if vim.bo[bufnr].filetype ~= "typst" and not vim.fn.expand("%"):match("%.typ$") then
+  if vim.bo[bufnr].filetype ~= "typst" and not noteid then
     return
   end
 
