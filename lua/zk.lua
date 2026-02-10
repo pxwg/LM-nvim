@@ -89,6 +89,35 @@ local function check_todo_status_fallback()
   return has_todos, completed_count, incomplete_count
 end
 
+-- Update referencing todos in other notes when this note's tag changes
+local function update_referencing_todos(note_id, new_tag)
+  local root = vim.fn.expand("~/wiki")
+  local note_dir = root .. "/note"
+  local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
+  local ref_pattern = "(@%s*" .. note_id .. "%s*)"
+
+  for _, note_path in ipairs(notes) do
+    if vim.fn.filereadable(note_path) == 1 then
+      local lines = vim.fn.readfile(note_path)
+      local changed = false
+      for i, line in ipairs(lines) do
+        -- Only update todo lines referencing this note
+        if line:match("^%s*%- %[[ xX]%].*" .. ref_pattern) then
+          local new_state = (new_tag == "#tag.done") and "x" or " "
+          local new_line = line:gsub("^%s*%- %[[ xX]%]", "- [" .. new_state .. "]")
+          if new_line ~= line then
+            lines[i] = new_line
+            changed = true
+          end
+        end
+      end
+      if changed then
+        vim.fn.writefile(lines, note_path)
+      end
+    end
+  end
+end
+
 -- Auto-update tag based on todo completion status
 function M.auto_update_tag()
   local filepath = vim.fn.expand("%:p")
@@ -155,6 +184,8 @@ function M.auto_update_tag()
       incomplete_count,
       new_tag
     )
+    local note_id = vim.fn.expand("%:t:r")
+    update_referencing_todos(note_id, new_tag)
     vim.notify(message, vim.log.levels.INFO)
   end
 end
