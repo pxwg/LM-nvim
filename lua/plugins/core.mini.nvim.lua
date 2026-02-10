@@ -211,5 +211,42 @@ return {
 
     local MiniGit = require("mini.git")
     MiniGit.setup({})
+
+    -- delete index while delete note file
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "MiniFilesActionDelete",
+      callback = function(args)
+        local deleted_path = args.data.from
+        if not deleted_path:match("/wiki/note/.*%.typ$") then
+          return
+        end
+
+        local note_filename = vim.fn.fnamemodify(deleted_path, ":t")
+        local wiki_root = vim.fn.expand("~/wiki")
+        local index_path = wiki_root .. "/index.typ"
+
+        if vim.fn.filereadable(index_path) == 0 then
+          return
+        end
+
+        local lines = vim.fn.readfile(index_path)
+        local new_lines = {}
+        local target_pattern = '#include "note/' .. note_filename .. '"'
+        local changed = false
+
+        for _, line in ipairs(lines) do
+          if line:find(target_pattern, 1, true) then
+            changed = true
+            vim.notify("ZK: Removed " .. note_filename .. " from index.typ", vim.log.levels.INFO)
+          else
+            table.insert(new_lines, line)
+          end
+        end
+
+        if changed then
+          vim.fn.writefile(new_lines, index_path)
+        end
+      end,
+    })
   end,
 }
