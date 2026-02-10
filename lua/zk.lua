@@ -241,7 +241,27 @@ function M.new_note()
   vim.api.nvim_win_set_cursor(0, { target_line, 2 })
 end
 
--- Get all note IDs referenced in a file
+-- Remove a note and update index.typ accordingly
+function M.remove_note(note_id)
+  local root, note_dir, note_path, index_path = note_paths(note_id)
+  -- Delete the note file if it exists
+  if vim.fn.filereadable(note_path) == 1 then
+    vim.fn.delete(note_path)
+  end
+  -- Remove the corresponding #include line from index.typ
+  if vim.fn.filereadable(index_path) == 1 then
+    local include_line = '#include "note/' .. note_id .. '.typ"'
+    local index_lines = vim.fn.readfile(index_path)
+    local new_lines = {}
+    for _, line in ipairs(index_lines) do
+      if line ~= include_line then
+        table.insert(new_lines, line)
+      end
+    end
+    vim.fn.writefile(new_lines, index_path)
+  end
+end
+
 local function extract_note_ids(filepath)
   local ids = {}
   if vim.fn.filereadable(filepath) == 0 then
@@ -961,6 +981,57 @@ vim.keymap.set(
   { noremap = true, silent = false, desc = "[Z]ettel [S]tartup Summary" }
 )
 vim.keymap.set("n", "zt", M.search_todo, { noremap = true, silent = false, desc = "[Z]ettel [T]ODO Search" })
+vim.keymap.set("n", "zr", function()
+  local note_id = vim.fn.expand("<cword>")
+  if note_id and note_id:match("^%d+$") then
+    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
+      if choice == "Yes" then
+        local bufnr = vim.api.nvim_get_current_buf()
+        M.remove_note(note_id)
+        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
+        if vim.api.nvim_buf_is_valid(bufnr) then
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+        local root = vim.fn.expand("~/wiki")
+        local index_path = root .. "/index.typ"
+        vim.cmd("edit " .. vim.fn.fnameescape(index_path))
+        vim.schedule(function()
+          M.show_startup_summary()
+        end)
+      else
+        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
+      end
+    end)
+  else
+    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
+  end
+end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove" })
+
+vim.keymap.set("n", "zR", function()
+  local note_id = vim.api.nvim_buf_get_name(0):match("note/(%d+)%.typ$")
+  if note_id and note_id:match("^%d+$") then
+    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
+      if choice == "Yes" then
+        local bufnr = vim.api.nvim_get_current_buf()
+        M.remove_note(note_id)
+        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
+        if vim.api.nvim_buf_is_valid(bufnr) then
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+        local root = vim.fn.expand("~/wiki")
+        local index_path = root .. "/index.typ"
+        vim.cmd("edit " .. vim.fn.fnameescape(index_path))
+        vim.schedule(function()
+          M.show_startup_summary()
+        end)
+      else
+        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
+      end
+    end)
+  else
+    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
+  end
+end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove (Buffer)" })
 
 require("zk_extmark").setup()
 
