@@ -1,5 +1,21 @@
 local M = {}
 
+-- Refreshing Tinymist LSP client to recognize new notes
+local function refresh_tinymist()
+  local clients = vim.lsp.get_clients({ name = "tinymist" })
+  for _, client in ipairs(clients) do
+    client.notify("workspace/didChangeWatchedFiles", {
+      changes = {
+        {
+          uri = vim.uri_from_fname(vim.fn.expand("~/wiki/link.typ")),
+          type = 3,
+        },
+      },
+    })
+  end
+  print("Tinymist refreshed for new note.")
+end
+
 -- Check if a node is inside a code block or raw block
 local function is_in_code_block(node)
   local current = node
@@ -235,6 +251,7 @@ end
 function M.new_note()
   local id = os.date("%y%m%d%H%M")
   local root, note_dir, note_path, index_path = note_paths(id)
+  local link_path = root .. "/link.typ"
 
   vim.fn.mkdir(note_dir, "p")
 
@@ -249,19 +266,21 @@ function M.new_note()
     }
     vim.fn.writefile(lines, note_path)
   end
-  if vim.fn.filereadable(index_path) == 1 then
+
+  -- Append #include to link.typ if not present
+  if vim.fn.filereadable(link_path) == 1 then
     local include_line = '#include "note/' .. id .. '.typ"'
-    local index_lines = vim.fn.readfile(index_path)
+    local link_lines = vim.fn.readfile(link_path)
     local exists = false
-    for _, line in ipairs(index_lines) do
+    for _, line in ipairs(link_lines) do
       if line == include_line then
         exists = true
         break
       end
     end
     if not exists then
-      table.insert(index_lines, include_line)
-      vim.fn.writefile(index_lines, index_path)
+      table.insert(link_lines, include_line)
+      vim.fn.writefile(link_lines, link_path)
     end
   end
 
@@ -270,27 +289,32 @@ function M.new_note()
 
   local target_line = math.min(4, vim.api.nvim_buf_line_count(0))
   vim.api.nvim_win_set_cursor(0, { target_line, 2 })
+
+  refresh_tinymist()
 end
 
 -- Remove a note and update index.typ accordingly
 function M.remove_note(note_id)
   local root, note_dir, note_path, index_path = note_paths(note_id)
+  local link_path = root .. "/link.typ"
   -- Delete the note file if it exists
   if vim.fn.filereadable(note_path) == 1 then
     vim.fn.delete(note_path)
   end
-  -- Remove the corresponding #include line from index.typ
-  if vim.fn.filereadable(index_path) == 1 then
+  -- Remove the corresponding #include line from link.typ
+  if vim.fn.filereadable(link_path) == 1 then
     local include_line = '#include "note/' .. note_id .. '.typ"'
-    local index_lines = vim.fn.readfile(index_path)
+    local link_lines = vim.fn.readfile(link_path)
     local new_lines = {}
-    for _, line in ipairs(index_lines) do
+    for _, line in ipairs(link_lines) do
       if line ~= include_line then
         table.insert(new_lines, line)
       end
     end
-    vim.fn.writefile(new_lines, index_path)
+    vim.fn.writefile(new_lines, link_path)
   end
+
+  refresh_tinymist()
 end
 
 local function extract_note_ids(filepath)
