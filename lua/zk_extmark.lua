@@ -104,7 +104,12 @@ function M.setup(opts)
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave", "TextChanged" }, {
     group = group,
     pattern = "*.typ",
-    callback = function()
+    callback = function(ev)
+      -- Fix: 切换 Buffer (BufEnter) 或 保存文件 (BufWritePost) 时清空缓存
+      -- 这样能确保读取到其他文件最新的标题修改，同时保留 TextChanged 时的性能
+      if ev.event == "BufEnter" or ev.event == "BufWritePost" then
+        config.cache = {}
+      end
       M.refresh_extmarks()
     end,
   })

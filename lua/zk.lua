@@ -760,6 +760,127 @@ function M.search_done()
   M.search_by_tag("done")
 end
 
+-- Identify notes that are not referenced by any OTHER note
+-- (References in index.typ are ignored, self-references are ignored)
+function M.find_orphans()
+  local root = vim.fn.expand("~/wiki")
+  local note_dir = root .. "/note"
+
+  -- 1. Catalog all existing notes
+  local file_paths = vim.fn.globpath(note_dir, "*.typ", false, true)
+  local all_notes = {} -- Map: id -> { path, title }
+  local referenced_ids = {} -- Set: id -> true
+
+  for _, filepath in ipairs(file_paths) do
+    local id = vim.fn.fnamemodify(filepath, ":t:r")
+    if id:match("^%%d+$") then
+      -- Extract title for display purposes
+      local lines = vim.fn.readfile(filepath, "", 5) -- Read header only
+      local title = "Untitled"
+      if #lines >= 4 then
+        local heading = lines[4]
+        local match = heading:match("^=%%s*(.-)%%s*<")
+        if match and match ~= "" then
+          title = match
+        else
+          title = heading:gsub("^=%%s*", "")
+        end
+      end
+      all_notes[id] = {
+        id = id,
+        path = filepath,
+        title = title,
+      }
+    end
+  end
+
+  -- 2. Scan all notes for outgoing references
+  for _, source_path in ipairs(file_paths) do
+    local source_id = vim.fn.fnamemodify(source_path, ":t:r")
+    -- Read file content
+    if vim.fn.filereadable(source_path) == 1 then
+      local lines = vim.fn.readfile(source_path)
+      for _, line in ipairs(lines) do
+        -- Regex to find @1234567890 patterns
+        for target_id in line:gmatch("@(%%d+)") do
+          -- A note referencing itself doesn't count as a "connection"
+          if target_id ~= source_id then
+            referenced_ids[target_id] = true
+          end
+        end
+      end
+    end
+  end
+
+  -- 3. Filter for orphans (Exists in all_notes but NOT in referenced_ids)
+  local orphans = {}
+  for id, note in pairs(all_notes) do
+    if not referenced_ids[id] then
+      table.insert(orphans, note)
+    end
+  end
+
+  -- Sort by ID (time) descending
+  table.sort(orphans, function(a, b)
+    return a.id > b.id
+  end)
+
+  return orphans
+end
+
+-- Telescope picker for Orphan Notes
+function M.search_orphans()
+  local has_telescope, _ = pcall(require, "telescope.builtin")
+  if not has_telescope then
+    vim.notify("Telescope not found", vim.log.levels.ERROR)
+    return
+  end
+
+  local orphans = M.find_orphans()
+  if #orphans == 0 then
+    vim.notify("No orphan notes found! Good job linking!", vim.log.levels.INFO)
+    return
+  end
+
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+
+  local root = vim.fn.expand("~/wiki")
+
+  pickers
+    .new({}, {
+      prompt_title = "ZK Orphan Notes (" .. #orphans .. ")",
+      finder = finders.new_table({
+        results = orphans,
+        entry_maker = function(entry)
+          return {
+            value = entry,
+            display = string.format("[%%s] %%s", entry.id, entry.title),
+            ordinal = entry.id .. " " .. entry.title,
+            filename = entry.path,
+            lnum = 4, -- Approximate jump to title
+            col = 1,
+          }
+        end,
+      }),
+      sorter = conf.generic_sorter({}),
+      previewer = conf.file_previewer({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local selection = action_state.get_selected_entry()
+          vim.cmd("cd " .. vim.fn.fnameescape(root))
+          vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
+        end)
+        return true
+      end,
+    })
+    :find()
+end
+
 -- Search for any tag (interactive)
 function M.search_tag_prompt()
   vim.ui.input({ prompt = "Enter tag name: " }, function(input)
@@ -973,6 +1094,8 @@ vim.api.nvim_create_user_command("Zk", function(opts)
     M.search_todo()
   elseif arg == "done" then
     M.search_done()
+  elseif arg == "orphans" then
+    M.search_orphans()
   elseif arg == "tag" then
     M.search_tag_prompt()
   elseif arg == "summary" then
@@ -984,7 +1107,7 @@ end, {
   desc = "ZK note actions",
   nargs = 1,
   complete = function(arg_lead, _, _)
-    local opts = { "new", "export", "search", "todo", "done", "tag", "summary" }
+    local opts = { "new", "export", "search", "todo", "done", "orphans", "tag", "summary" }
     return vim.tbl_filter(function(opt)
       return vim.startswith(opt, arg_lead)
     end, opts)
@@ -1012,6 +1135,12 @@ vim.keymap.set(
   { noremap = true, silent = false, desc = "[Z]ettel [S]tartup Summary" }
 )
 vim.keymap.set("n", "zt", M.search_todo, { noremap = true, silent = false, desc = "[Z]ettel [T]ODO Search" })
+vim.keymap.set(
+  "n",
+  "<leader>fo",
+  M.search_orphans,
+  { noremap = true, silent = false, desc = "[F]ind [O]rphan Zettels" }
+)
 vim.keymap.set("n", "zr", function()
   local note_id = vim.fn.expand("<cword>")
   if note_id and note_id:match("^%d+$") then
