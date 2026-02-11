@@ -1,3 +1,4 @@
+local zk = require("zk")
 local function md_block_spec(ai_type, id, opts)
   local parser = vim.treesitter.get_parser(0, "markdown")
   if not parser then
@@ -222,29 +223,10 @@ return {
         end
 
         local note_filename = vim.fn.fnamemodify(deleted_path, ":t")
-        local wiki_root = vim.fn.expand("~/wiki")
-        local index_path = wiki_root .. "/index.typ"
-
-        if vim.fn.filereadable(index_path) == 0 then
-          return
-        end
-
-        local lines = vim.fn.readfile(index_path)
-        local new_lines = {}
-        local target_pattern = '#include "note/' .. note_filename .. '"'
-        local changed = false
-
-        for _, line in ipairs(lines) do
-          if line:find(target_pattern, 1, true) then
-            changed = true
-            vim.notify("ZK: Removed " .. note_filename .. " from index.typ", vim.log.levels.INFO)
-          else
-            table.insert(new_lines, line)
-          end
-        end
-
-        if changed then
-          vim.fn.writefile(new_lines, index_path)
+        local note_id = note_filename:match("^(%d+)")
+        if note_id then
+          zk.remove_note(note_id)
+          vim.notify("ZK: Removed " .. note_filename .. " from link.typ", vim.log.levels.INFO)
         end
       end,
     })
