@@ -173,14 +173,21 @@ function M.auto_update_tag()
     new_tag = "#tag.todo"
   end
 
-  -- Check current tag
+  -- Check current tag and archived status
   local current_tag = nil
+  local has_archived = tag_line:match("#tag%.archived")
+
   if tag_line:match("#tag%.done") then
     current_tag = "#tag.done"
   elseif tag_line:match("#tag%.wip") then
     current_tag = "#tag.wip"
   elseif tag_line:match("#tag%.todo") then
     current_tag = "#tag.todo"
+  end
+
+  -- If archived tag exists, treat incomplete todos as done
+  if has_archived and new_tag ~= "#tag.done" then
+    new_tag = "#tag.done"
   end
 
   -- Update if needed
