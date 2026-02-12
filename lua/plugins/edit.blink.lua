@@ -2,6 +2,25 @@ require("util.rime_blinks")
 local rime_ls = require("util.rime_ls")
 vim.g.rime_enabled = true
 
+local function get_zk_preview(id)
+  local note_path = vim.fn.expand("~/wiki/note/" .. id .. ".typ")
+
+  -- Check if file exists to avoid errors
+  if vim.fn.filereadable(note_path) == 0 then
+    return nil
+  end
+
+  -- Read only the first 15 lines to allow for fast preview without lagging
+  local lines = vim.fn.readfile(note_path, "", 15)
+  if not lines or #lines == 0 then
+    return nil
+  end
+
+  -- Join lines and optionally format them
+  -- We wrap it in a typst code block for syntax highlighting in the float
+  return "```typst\n" .. table.concat(lines, "\n") .. "\n...\n```"
+end
+
 function _G.rime_ls_disabled(context)
   if not vim.g.rime_enabled then
     return true
@@ -466,21 +485,35 @@ return {
             --- @param ctx blink.cmp.Context
             --- @param items blink.cmp.CompletionItem[]
             transform_items = function(ctx, items)
-              local kind = require("blink.cmp.types").CompletionItemKind
               local is_typst = vim.bo.filetype == "typst"
 
               for _, item in ipairs(items) do
                 if is_typst then
-                  if item.kind == kind.Field then
-                    item.score_offset = (item.score_offset or 0) + 10
-                  end
-
-                  if item.kind == kind.Reference then
+                  -- Check if this is a reference
+                  if item.kind == require("blink.cmp.types").CompletionItemKind.Reference then
+                    -- 1. Title Replacement Logic (From Note 2602082130)
                     local title = (item.labelDetails and item.labelDetails.description) or item.detail
 
-                    if title and item.label:match("^%d%d%d%d%d%d%d%d%d%d") then
+                    -- Detect ZK ID Pattern (yyMMddHHmm)
+                    -- Using the capture group to extract ID for file lookup
+                    local id = item.label:match("^(%d%d%d%d%d%d%d%d%d%d)")
+
+                    if id and title then
+                      -- Apply the filter text fix you already have
                       local current_filter = item.filterText or item.label
                       item.filterText = title
+
+                      -- 2. NEW: Documentation Injection Logic (From Note 2602112232)
+                      -- Only load if documentation is missing to avoid overwriting LSP info if it exists later
+                      if not item.documentation then
+                        local preview_content = get_zk_preview(id)
+                        if preview_content then
+                          item.documentation = {
+                            kind = "markdown",
+                            value = preview_content,
+                          }
+                        end
+                      end
                     end
                   end
                 end
