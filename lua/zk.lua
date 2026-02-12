@@ -333,6 +333,22 @@ local function extract_note_ids(filepath)
   return ids
 end
 
+-- Check if a note is marked as root
+local function is_root_note(filepath)
+  if vim.fn.filereadable(filepath) == 0 then
+    return false
+  end
+  local lines = vim.fn.readfile(filepath)
+  -- Check line 5 (index 5 in Lua) for the #tag.root tag
+  if #lines >= 5 then
+    local tag_line = lines[5]
+    if tag_line:match("#tag%.root") then
+      return true
+    end
+  end
+  return false
+end
+
 -- Read note content without the first 3 lines (imports)
 local function read_note_content(filepath)
   if vim.fn.filereadable(filepath) == 0 then
@@ -349,6 +365,7 @@ local function read_note_content(filepath)
 end
 
 -- Recursively collect all linked notes with depth tracking
+-- Stops recursion at root notes (doesn't traverse beyond them)
 local function collect_linked_notes(start_id, visited, depth)
   visited = visited or {}
   depth = depth or 0
@@ -365,21 +382,29 @@ local function collect_linked_notes(start_id, visited, depth)
   -- Add current note
   local content = read_note_content(note_path)
   if content then
+    -- Check if this note is a root node
+    local is_root = is_root_note(note_path)
+
     -- First collect all referenced notes (they go before current note)
-    local referenced_ids = extract_note_ids(note_path)
-    for ref_id, _ in pairs(referenced_ids) do
-      -- Recursively collect linked notes with increased depth
-      local sub_notes = collect_linked_notes(ref_id, visited, depth + 1)
-      for _, note in ipairs(sub_notes) do
-        table.insert(result, note)
+    -- But only if this is NOT a root node (root nodes don't traverse backward)
+    if not is_root then
+      local referenced_ids = extract_note_ids(note_path)
+      for ref_id, _ in pairs(referenced_ids) do
+        -- Recursively collect linked notes with increased depth
+        local sub_notes = collect_linked_notes(ref_id, visited, depth + 1)
+        for _, note in ipairs(sub_notes) do
+          table.insert(result, note)
+        end
       end
     end
+
     -- Then add current note (so it comes after its dependencies)
     table.insert(result, {
       id = start_id,
       path = note_path,
       content = content,
       depth = depth,
+      is_root = is_root,
     })
   end
 
