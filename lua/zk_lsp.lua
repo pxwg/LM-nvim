@@ -275,6 +275,10 @@ local function create_server_cmd(root_dir)
               codeActionProvider = true, -- 支持 CodeAction
               textDocumentSync = 1,
             },
+            serverInfo = {
+              name = "zk-lsp",
+              version = "0.0.1",
+            },
           })
         elseif method == "textDocument/references" then
           local status, result = pcall(find_references, params, root_dir)
