@@ -5,7 +5,12 @@ local api = vim.api
 -- 0. 状态管理 (State & Index)
 --------------------------------------------------------------------------------
 
--- M.index[id] = { archived = boolean, alt_id = string|nil }
+-- M.index[id] = {
+--   archived = boolean,
+--   legacy = boolean,        -- 新增：是否为 legacy
+--   alt_id = string|nil,     -- archived 的替代链接
+--   evo_id = string|nil      -- legacy 的演进链接
+-- }
 M.index = {}
 
 local function parse_note_header(filepath)
@@ -14,24 +19,30 @@ local function parse_note_header(filepath)
   end
   -- 只读取前10行，提高性能
   local lines = vim.fn.readfile(filepath, "", 10)
-  local info = { archived = false, alt_id = nil, id = nil }
+  local info = { archived = false, legacy = false, alt_id = nil, evo_id = nil, id = nil }
 
-  for _, line in ipairs(lines) do
-    -- 提取ID: = Title <ID>
-    local id = line:match("^=%s*.-%s*<(%d+)>")
-    if id then
-      info.id = id
-    end
-
-    -- 提取Archived状态
-    if line:match("#tag%.archived") then
-      info.archived = true
-    end
-
-    -- 提取Alternative Link
-    local alt = line:match("#alternative_link%s*%(%s*<(%d+)>%s*%)")
-    if alt then
-      info.alt_id = alt
+  for i, line in ipairs(lines) do
+    if i == 4 then
+      local id = line:match("^=%s*.-%s*<(%d+)>")
+      if id then
+        info.id = id
+      end
+    elseif i == 5 then
+      if line:match("#tag%.archived") then
+        info.archived = true
+      end
+      if line:match("#tag%.legacy") then
+        info.legacy = true
+      end
+    elseif i == 6 then
+      local evo = line:match("#evolution_link%s*%(%s*<(%d+)>%s*%)")
+      if evo then
+        info.evo_id = evo
+      end
+      local alt = line:match("#alternative_link%s*%(%s*<(%d+)>%s*%)")
+      if alt then
+        info.alt_id = alt
+      end
     end
   end
 
@@ -39,11 +50,18 @@ local function parse_note_header(filepath)
 end
 
 local function refresh_index(root_dir)
+  -- 显式重置索引，确保状态纯净
+  M.index = {}
   local notes = vim.fn.globpath(root_dir .. "/note", "*.typ", false, true)
   for _, filepath in ipairs(notes) do
     local info = parse_note_header(filepath)
     if info then
-      M.index[info.id] = { archived = info.archived, alt_id = info.alt_id }
+      M.index[info.id] = {
+        archived = info.archived,
+        legacy = info.legacy,
+        alt_id = info.alt_id,
+        evo_id = info.evo_id,
+      }
     end
   end
 end
@@ -99,7 +117,7 @@ local function find_references(params, root_dir)
   return locations
 end
 
--- 生成诊断 (Check for archived references)
+-- 生成诊断 (Check for archived or legacy references)
 local function get_diagnostics(uri)
   local bufnr = vim.uri_to_bufnr(uri)
   if not api.nvim_buf_is_valid(bufnr) then
@@ -119,6 +137,8 @@ local function get_diagnostics(uri)
       end
 
       local note_info = M.index[ref_id]
+
+      -- Case 1: Archived (Warning) - 优先级最高
       if note_info and note_info.archived then
         local msg = "Note @" .. ref_id .. " is archived."
         if note_info.alt_id then
@@ -133,10 +153,43 @@ local function get_diagnostics(uri)
           severity = 2, -- Warning
           message = msg,
           source = "zk-lsp",
-          -- 将新ID存入data，供CodeAction使用
-          data = { old_id = ref_id, new_id = note_info.alt_id },
+          data = { type = "archived", old_id = ref_id, new_id = note_info.alt_id },
         })
+
+      -- Case 2: Legacy (Info) - 带自动抑制机制
+      elseif note_info and note_info.legacy then
+        local should_warn = true
+
+        -- 检查抑制机制：如果紧跟着 evolution_link 指向的 ID，则不报警
+        -- 场景：@old @new (其中 @new 是 @old 的 evo_id)
+        if note_info.evo_id then
+          local next_text = line:sub(end_col + 1)
+          -- 匹配紧随其后的 @ID (允许空格)
+          local next_ref_id = next_text:match("^%s*@(%d+)")
+          if next_ref_id and next_ref_id == note_info.evo_id then
+            should_warn = false
+          end
+        end
+
+        if should_warn then
+          local msg = "Note @" .. ref_id .. " is legacy."
+          if note_info.evo_id then
+            msg = msg .. " Newer insights: @" .. note_info.evo_id
+          end
+
+          table.insert(diagnostics, {
+            range = {
+              start = { line = lnum - 1, character = start_col - 1 },
+              ["end"] = { line = lnum - 1, character = end_col },
+            },
+            severity = 3, -- Information
+            message = msg,
+            source = "zk-lsp",
+            data = { type = "legacy", old_id = ref_id, new_id = note_info.evo_id },
+          })
+        end
       end
+
       cur_pos = end_col + 1
     end
   end
@@ -150,7 +203,11 @@ local function get_code_actions(params)
 
   for _, diag in ipairs(diagnostics) do
     if diag.source == "zk-lsp" and diag.data and diag.data.new_id then
+      local old_text = "@" .. diag.data.old_id
       local new_text = "@" .. diag.data.new_id
+
+      -- Action 1: Strong Replace (适用于 Archived 和 Legacy)
+      -- @old -> @new
       table.insert(actions, {
         title = "Fix: Replace with " .. new_text,
         kind = "quickfix",
@@ -165,6 +222,26 @@ local function get_code_actions(params)
           },
         },
       })
+
+      -- Action 2: Weak Append (仅适用于 Legacy)
+      -- @old -> @old @new
+      if diag.data.type == "legacy" then
+        local append_text = old_text .. " " .. new_text
+        table.insert(actions, {
+          title = "Fix: Append new insight (" .. old_text .. " " .. new_text .. ")",
+          kind = "quickfix",
+          edit = {
+            changes = {
+              [params.textDocument.uri] = {
+                {
+                  range = diag.range,
+                  newText = append_text,
+                },
+              },
+            },
+          },
+        })
+      end
     end
   end
   return actions
@@ -225,7 +302,12 @@ local function create_server_cmd(root_dir)
           if filepath:match("/note/") then
             local info = parse_note_header(filepath)
             if info then
-              M.index[info.id] = { archived = info.archived, alt_id = info.alt_id }
+              M.index[info.id] = {
+                archived = info.archived,
+                legacy = info.legacy,
+                alt_id = info.alt_id,
+                evo_id = info.evo_id,
+              }
             end
           end
           -- 重新发布当前文件的诊断
