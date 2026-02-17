@@ -5,12 +5,6 @@ local api = vim.api
 -- 0. 状态管理 (State & Index)
 --------------------------------------------------------------------------------
 
--- M.index[id] = {
---   archived = boolean,
---   legacy = boolean,        -- 新增：是否为 legacy
---   alt_id = string|nil,     -- archived 的替代链接
---   evo_id = string|nil      -- legacy 的演进链接
--- }
 M.index = {}
 
 local function parse_note_header(filepath)
@@ -53,15 +47,21 @@ local function refresh_index(root_dir)
   -- 显式重置索引，确保状态纯净
   M.index = {}
   local notes = vim.fn.globpath(root_dir .. "/note", "*.typ", false, true)
-  for _, filepath in ipairs(notes) do
-    local info = parse_note_header(filepath)
-    if info then
-      M.index[info.id] = {
-        archived = info.archived,
-        legacy = info.legacy,
-        alt_id = info.alt_id,
-        evo_id = info.evo_id,
-      }
+  -- globpath 可能返回空字符串或包含错误的字符串（如果是 split 模式），增加类型检查
+  if type(notes) == "string" and notes ~= "" then
+    -- 如果 globpath 返回的是换行符分隔的字符串（取决于版本和参数），这里简单处理 list 情况
+    -- 上面 globpath 第4个参数是 true，所以 notes 应该是一个 list
+  elseif type(notes) == "table" then
+    for _, filepath in ipairs(notes) do
+      local info = parse_note_header(filepath)
+      if info then
+        M.index[info.id] = {
+          archived = info.archived,
+          legacy = info.legacy,
+          alt_id = info.alt_id,
+          evo_id = info.evo_id,
+        }
+      end
     end
   end
 end
@@ -71,7 +71,12 @@ end
 --------------------------------------------------------------------------------
 
 local function get_all_notes(root_dir)
-  return vim.fn.globpath(root_dir .. "/note", "*.typ", false, true)
+  -- 增加容错，防止目录不存在时 globpath 报错
+  local path = root_dir .. "/note"
+  if vim.fn.isdirectory(path) == 0 then
+    return {}
+  end
+  return vim.fn.globpath(path, "*.typ", false, true)
 end
 
 -- 查找引用 (保持不变)
@@ -264,6 +269,14 @@ local function create_server_cmd(root_dir)
       })
     end
 
+    -- 辅助：封装 LSP 错误
+    local function lsp_error_response(err_msg)
+      return {
+        code = -32000, -- JSON-RPC Server Error
+        message = tostring(err_msg),
+      }
+    end
+
     return {
       request = function(method, params, handler)
         if method == "initialize" then
@@ -282,10 +295,19 @@ local function create_server_cmd(root_dir)
           })
         elseif method == "textDocument/references" then
           local status, result = pcall(find_references, params, root_dir)
-          handler(status and nil or result, status and result or nil)
+          if status then
+            handler(nil, result)
+          else
+            -- 关键修正：返回符合 LSP 规范的错误对象，防止 Telescope 崩溃
+            handler(lsp_error_response(result), nil)
+          end
         elseif method == "textDocument/codeAction" then
           local status, result = pcall(get_code_actions, params)
-          handler(status and nil or result, status and result or nil)
+          if status then
+            handler(nil, result)
+          else
+            handler(lsp_error_response(result), nil)
+          end
         elseif method == "shutdown" then
           handler(nil, nil)
         else
