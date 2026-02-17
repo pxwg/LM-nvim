@@ -247,6 +247,150 @@ function M.toggle_todo()
   end
 end
 
+local function extract_pdf_path(file_field)
+  if not file_field or file_field == "" then
+    return nil
+  end
+
+  for path in file_field:gmatch("([^;]+)") do
+    local trimmed = path:gsub("^%s+", ""):gsub("%s+$", "")
+    if trimmed:match("%.pdf$") then
+      return trimmed
+    end
+  end
+
+  return nil
+end
+
+local function extract_html_path(file_field)
+  if not file_field or file_field == "" then
+    return nil
+  end
+
+  for path in file_field:gmatch("([^;]+)") do
+    local trimmed = path:gsub("^%s+", ""):gsub("%s+$", "")
+    if trimmed:match("%.html$") or trimmed:match("%.htm$") then
+      return trimmed
+    end
+  end
+
+  return nil
+end
+
+local function find_bib_asset_for_key(bib_path, key)
+  if vim.fn.filereadable(bib_path) == 0 then
+    return nil
+  end
+
+  local lines = vim.fn.readfile(bib_path)
+  local in_entry = false
+  local entry_lines = {}
+
+  for _, line in ipairs(lines) do
+    if not in_entry then
+      if line:match("^@%w+%s*{%s*" .. key .. "%s*,") then
+        in_entry = true
+        entry_lines = { line }
+      end
+    else
+      table.insert(entry_lines, line)
+      if line:match("^}%s*$") then
+        local entry_text = table.concat(entry_lines, " ")
+        local file_field = entry_text:match("file%s*=%s*{(.-)}") or entry_text:match('file%s*=%s*"(.-)"')
+        local url_field = entry_text:match("url%s*=%s*{(.-)}") or entry_text:match('url%s*=%s*"(.-)"')
+        return {
+          pdf_path = extract_pdf_path(file_field),
+          html_path = extract_html_path(file_field),
+          url = url_field,
+        }
+      end
+    end
+  end
+
+  return nil
+end
+
+local function find_citation_at_cursor(line, col)
+  if not line then
+    return nil
+  end
+
+  local cursor_col = (col or 0) + 1
+  local search_start = 1
+  local last_key
+  local last_end
+
+  while true do
+    local start_idx, end_idx = line:find("@([%w_:%-]+)", search_start)
+    if not start_idx then
+      break
+    end
+
+    local key = line:sub(start_idx + 1, end_idx)
+
+    if cursor_col >= start_idx and cursor_col <= end_idx then
+      return key, end_idx
+    end
+
+    if cursor_col > end_idx then
+      last_key = key
+      last_end = end_idx
+      search_start = end_idx + 1
+    else
+      break
+    end
+  end
+
+  return last_key, last_end
+end
+
+function M.open_pdf_at_cursor()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+
+  if not line then
+    vim.notify("No line under cursor", vim.log.levels.WARN)
+    return
+  end
+
+  local cite_key, cite_end = find_citation_at_cursor(line, col)
+  if not cite_key or not cite_end then
+    vim.notify("No citation key found under cursor", vim.log.levels.WARN)
+    return
+  end
+
+  local page = line:match("p%.?%s*(%d+)", cite_end + 1)
+
+  local root = vim.fn.expand("~/wiki")
+  local bib_path = root .. "/zotero-ref.bib"
+  local assets = find_bib_asset_for_key(bib_path, cite_key)
+
+  if not assets then
+    vim.notify("No citation entry found for @" .. cite_key, vim.log.levels.WARN)
+    return
+  end
+
+  if assets.pdf_path then
+    local encoded_path = assets.pdf_path:gsub(" ", "%%20")
+    local clear_path = "'" .. assets.pdf_path .. "'"
+    local skim_url = clear_path
+    if page then
+      skim_url = "skim:///" .. encoded_path .. "#page=" .. page
+      vim.fn.jobstart({ "open", skim_url }, { detach = true })
+    end
+    vim.fn.jobstart("open -a Skim " .. clear_path, { detach = true })
+    return
+  end
+
+  local html_target = assets.url or assets.html_path
+  if not html_target or html_target == "" then
+    vim.notify("No PDF or HTML link found for @" .. cite_key, vim.log.levels.WARN)
+    return
+  end
+
+  vim.fn.jobstart({ "open", html_target }, { detach = true })
+end
+
 local function note_paths(id)
   local root = vim.fn.expand("~/wiki")
   local note_dir = root .. "/note"
@@ -816,6 +960,20 @@ function M.search_done()
   M.search_by_tag("done")
 end
 
+-- Open a random note from ~/wiki/note/
+function M.random_note()
+  local root = vim.fn.expand("~/wiki")
+  local note_dir = root .. "/note"
+  local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
+  if #notes == 0 then
+    vim.notify("No notes found!", vim.log.levels.INFO)
+    return
+  end
+  local idx = math.random(1, #notes)
+  vim.cmd("cd " .. vim.fn.fnameescape(root))
+  vim.cmd("edit " .. vim.fn.fnameescape(notes[idx]))
+end
+
 -- Identify notes that are not referenced by any OTHER note
 -- (References in index.typ are ignored, self-references are ignored)
 function M.find_orphans()
@@ -1156,6 +1314,8 @@ vim.api.nvim_create_user_command("Zk", function(opts)
     M.search_tag_prompt()
   elseif arg == "summary" then
     M.show_startup_summary()
+  elseif arg == "random" then
+    M.random_note()
   else
     vim.notify("Unknown Zk command: " .. arg, vim.log.levels.ERROR)
   end
@@ -1163,7 +1323,7 @@ end, {
   desc = "ZK note actions",
   nargs = 1,
   complete = function(arg_lead, _, _)
-    local opts = { "new", "export", "search", "todo", "done", "orphans", "tag", "summary" }
+    local opts = { "new", "export", "search", "todo", "done", "orphans", "tag", "summary", "random" }
     return vim.tbl_filter(function(opt)
       return vim.startswith(opt, arg_lead)
     end, opts)
@@ -1191,6 +1351,12 @@ vim.keymap.set(
   { noremap = true, silent = false, desc = "[Z]ettel [S]tartup Summary" }
 )
 vim.keymap.set("n", "zt", M.search_todo, { noremap = true, silent = false, desc = "[Z]ettel [T]ODO Search" })
+vim.keymap.set(
+  "n",
+  "<leader>zo",
+  M.open_pdf_at_cursor,
+  { noremap = true, silent = false, desc = "[Z]ettel [O]pen PDF at page" }
+)
 vim.keymap.set(
   "n",
   "<leader>fo",
