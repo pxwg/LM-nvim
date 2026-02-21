@@ -152,13 +152,30 @@ function M.auto_update_tag()
 
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
-  -- Check line 5 (index 5 in Lua) for the tag
-  if #lines < 5 then
+  -- Find the line index of the import line
+  local import_idx = nil
+  for i, line in ipairs(lines) do
+    if line:match('^#import%s+"../include%.typ":%s*%*') then
+      import_idx = i
+      break
+    end
+  end
+
+  if not import_idx then
     return
   end
 
-  local tag_line = lines[5]
-  local tag_line_idx = 4 -- 0-indexed for nvim_buf_set_lines
+  -- The tag line is 4 lines after the import line (0-based for nvim_buf_set_lines)
+  local tag_line_idx = import_idx + 3
+  if #lines < tag_line_idx + 1 then
+    return
+  end
+
+  local tag_line = lines[tag_line_idx + 1] -- Lua is 1-based
+  -- Defensive: if tag_line is nil, abort
+  if not tag_line then
+    return
+  end
 
   -- Determine what the tag should be based on todo counts
   local new_tag = nil
@@ -399,7 +416,7 @@ local function note_paths(id)
   return root, note_dir, note_path, index_path
 end
 
-function M.new_note()
+function M.new_note(with_metadata)
   local id = os.date("%y%m%d%H%M")
   local root, note_dir, note_path, index_path = note_paths(id)
   local link_path = root .. "/link.typ"
@@ -407,20 +424,37 @@ function M.new_note()
   vim.fn.mkdir(note_dir, "p")
 
   if vim.fn.filereadable(note_path) == 0 then
-    local lines = {
-      '#import "../include.typ": *',
-      "#show: zettel",
-      "",
-      "=  <" .. id .. ">",
-      "#tag.",
-      "",
-    }
+    local lines
+    if with_metadata then
+      lines = {
+        "/* Metadata:",
+        "Aliases: ",
+        "Abstract: ",
+        "Keyword: ",
+        "*/",
+        '#import "../include.typ": *',
+        "#show: zettel",
+        "",
+        "=  <" .. id .. ">",
+        "#tag.",
+        "",
+      }
+    else
+      lines = {
+        '#import "../include.typ": *',
+        "#show: zettel",
+        "",
+        "=  <" .. id .. ">",
+        "#tag.",
+        "",
+      }
+    end
     vim.fn.writefile(lines, note_path)
   end
 
   -- Append #include to link.typ if not present
   if vim.fn.filereadable(link_path) == 1 then
-    local include_line = '#include "note/' .. id .. '.typ"'
+    local include_line = "#zk_entry(" .. id .. ', "note/' .. id .. '.typ"'
     local link_lines = vim.fn.readfile(link_path)
     local exists = false
     for _, line in ipairs(link_lines) do
@@ -438,10 +472,29 @@ function M.new_note()
   vim.cmd("cd " .. vim.fn.fnameescape(root))
   vim.cmd("edit " .. vim.fn.fnameescape(note_path))
 
-  local target_line = math.min(4, vim.api.nvim_buf_line_count(0))
+  -- Position cursor based on whether metadata is included
+  local target_line
+  if with_metadata then
+    -- Position at title line (line 9 with metadata)
+    target_line = 9
+  else
+    -- Position at title line (line 4 without metadata)
+    target_line = 4
+  end
+  target_line = math.min(target_line, vim.api.nvim_buf_line_count(0))
   vim.api.nvim_win_set_cursor(0, { target_line, 2 })
 
   refresh_tinymist()
+end
+
+-- Create note with metadata template
+function M.new_note_with_metadata()
+  M.new_note(true)
+end
+
+-- Create note without metadata (default)
+function M.new_note_simple()
+  M.new_note(false)
 end
 
 -- Remove a note and update index.typ accordingly
@@ -715,239 +768,11 @@ function M.search_by_tag(tag)
     :find()
 end
 
--- Enhanced search with multi-mode support (title, combined title+tag filter)
+-- Enhanced search with multi-mode support using zk_telescope module
+-- Supports title, alias, keyword, abstract, and tag search modes
 function M.search_title()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
-  local root = vim.fn.expand("~/wiki")
-  local note_dir = root .. "/note"
-  local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
-  local all_results = {}
-
-  for _, note_path in ipairs(notes) do
-    if vim.fn.filereadable(note_path) == 1 then
-      local lines = vim.fn.readfile(note_path)
-      local title = "Untitled"
-      local tags = {}
-
-      -- Extract title from line 4
-      if #lines >= 4 then
-        local heading_line = lines[4]
-        local match = heading_line:match("^=%s*(.-)%s*<")
-        if match and match ~= "" then
-          title = match
-        else
-          title = heading_line:gsub("^=%s*", "")
-        end
-      end
-
-      -- Extract tags from line 5
-      if #lines >= 5 then
-        local tag_line = lines[5]
-        for tag in tag_line:gmatch("#tag%.([%w_]+)") do
-          table.insert(tags, tag)
-        end
-      end
-
-      local note_id = vim.fn.fnamemodify(note_path, ":t:r")
-      table.insert(all_results, {
-        filename = note_path,
-        lnum = 4,
-        col = 1,
-        text = title,
-        id = note_id,
-        tags = tags,
-      })
-    end
-  end
-
-  if #all_results == 0 then
-    vim.notify("No notes found", vim.log.levels.INFO)
-    return
-  end
-
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
-
-  -- Search mode: "title" (default), "tag_filter"
-  local search_mode = "title"
-  local mode_indicator = "[TITLE]"
-  local selected_tag = nil
-  local tag_filter_indicator = ""
-
-  local function get_filtered_results()
-    if search_mode == "tag_filter" and selected_tag then
-      local filtered = {}
-      for _, result in ipairs(all_results) do
-        for _, tag in ipairs(result.tags) do
-          if tag == selected_tag then
-            table.insert(filtered, result)
-            break
-          end
-        end
-      end
-      return filtered
-    end
-    return all_results
-  end
-
-  local function make_entry(entry)
-    local tag_display = #entry.tags > 0 and (" #" .. table.concat(entry.tags, " #")) or ""
-    return {
-      value = entry,
-      display = string.format("[%s] %s%s", entry.id, entry.text, tag_display),
-      ordinal = entry.text .. " " .. entry.id .. " " .. table.concat(entry.tags, " "),
-      filename = entry.filename,
-      lnum = entry.lnum,
-      col = entry.col,
-    }
-  end
-
-  local function refresh_picker(prompt_bufnr)
-    local current_picker = action_state.get_current_picker(prompt_bufnr)
-    if current_picker then
-      local filtered_results = get_filtered_results()
-      local new_finder = finders.new_table({
-        results = filtered_results,
-        entry_maker = make_entry,
-      })
-      current_picker:refresh(new_finder, { reset_prompt = false })
-    end
-  end
-
-  local function update_title(prompt_bufnr)
-    local current_picker = action_state.get_current_picker(prompt_bufnr)
-    if current_picker then
-      local title = "ZK Note Search " .. mode_indicator .. tag_filter_indicator
-      current_picker.prompt_border:change_title(title)
-    end
-  end
-
-  pickers
-    .new({}, {
-      prompt_title = "ZK Note Search " .. mode_indicator .. tag_filter_indicator,
-      finder = finders.new_table({
-        results = get_filtered_results(),
-        entry_maker = make_entry,
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          vim.cmd("cd " .. vim.fn.fnameescape(root))
-          vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-        end)
-
-        -- Ctrl-t: enter tag filter mode - open new picker with tag selection
-        map("i", "<C-t>", function()
-          actions.close(prompt_bufnr)
-
-          local all_tags = {}
-          for _, result in ipairs(all_results) do
-            for _, tag in ipairs(result.tags) do
-              all_tags[tag] = true
-            end
-          end
-
-          local tag_list = {}
-          for tag, _ in pairs(all_tags) do
-            table.insert(tag_list, tag)
-          end
-          table.sort(tag_list)
-
-          if #tag_list == 0 then
-            vim.notify("No tags found", vim.log.levels.INFO)
-            return
-          end
-
-          -- Open a new picker for tag selection
-          pickers
-            .new({}, {
-              prompt_title = "Select tag to filter",
-              finder = finders.new_table({
-                results = tag_list,
-              }),
-              sorter = conf.generic_sorter({}),
-              attach_mappings = function(tag_prompt_bufnr, tag_map)
-                actions.select_default:replace(function()
-                  actions.close(tag_prompt_bufnr)
-                  local tag_selection = action_state.get_selected_entry()
-                  if tag_selection then
-                    -- Reopen the main search with tag filter
-                    selected_tag = tag_selection.value
-                    search_mode = "tag_filter"
-                    tag_filter_indicator = " (tag: " .. selected_tag .. ")"
-
-                    pickers
-                      .new({}, {
-                        prompt_title = "ZK Note Search [TITLE]" .. tag_filter_indicator,
-                        finder = finders.new_table({
-                          results = get_filtered_results(),
-                          entry_maker = make_entry,
-                        }),
-                        sorter = conf.generic_sorter({}),
-                        previewer = conf.file_previewer({}),
-                        attach_mappings = function(new_prompt_bufnr, new_map)
-                          actions.select_default:replace(function()
-                            actions.close(new_prompt_bufnr)
-                            local selection = action_state.get_selected_entry()
-                            vim.cmd("cd " .. vim.fn.fnameescape(root))
-                            vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-                          end)
-
-                          -- Ctrl-t: toggle tag filter off
-                          new_map("i", "<C-t>", function()
-                            actions.close(new_prompt_bufnr)
-                            selected_tag = nil
-                            search_mode = "title"
-                            tag_filter_indicator = ""
-                            M.search_title()
-                          end)
-
-                          -- Ctrl-c: clear filter and restart
-                          new_map("i", "<C-c>", function()
-                            actions.close(new_prompt_bufnr)
-                            selected_tag = nil
-                            search_mode = "title"
-                            tag_filter_indicator = ""
-                            M.search_title()
-                          end)
-
-                          return true
-                        end,
-                      })
-                      :find()
-                  end
-                end)
-                return true
-              end,
-            })
-            :find()
-        end)
-
-        -- Ctrl-c: clear tag filter
-        map("i", "<C-c>", function()
-          selected_tag = nil
-          search_mode = "title"
-          mode_indicator = "[TITLE]"
-          tag_filter_indicator = ""
-          update_title(prompt_bufnr)
-          refresh_picker(prompt_bufnr)
-        end)
-
-        return true
-      end,
-    })
-    :find()
+  local zk_telescope = require("zk_telescope")
+  zk_telescope.search_with_filters()
 end
 
 -- Search for TODO notes
@@ -1299,11 +1124,22 @@ end
 vim.api.nvim_create_user_command("Zk", function(opts)
   local arg = opts.args
   if arg == "new" then
-    M.new_note()
+    M.new_note(false) -- Default: no metadata
+  elseif arg == "newm" or arg == "new-metadata" then
+    M.new_note_with_metadata()
   elseif arg == "export" then
     M.export_for_ai()
   elseif arg == "search" then
     M.search_title()
+  elseif arg == "alias" then
+    local zk_telescope = require("zk_telescope")
+    zk_telescope.search_alias()
+  elseif arg == "keyword" then
+    local zk_telescope = require("zk_telescope")
+    zk_telescope.search_keyword()
+  elseif arg == "abstract" then
+    local zk_telescope = require("zk_telescope")
+    zk_telescope.search_abstract()
   elseif arg == "todo" then
     M.search_todo()
   elseif arg == "done" then
@@ -1323,7 +1159,22 @@ end, {
   desc = "ZK note actions",
   nargs = 1,
   complete = function(arg_lead, _, _)
-    local opts = { "new", "export", "search", "todo", "done", "orphans", "tag", "summary", "random" }
+    local opts = {
+      "new",
+      "newm",
+      "new-metadata",
+      "export",
+      "search",
+      "alias",
+      "keyword",
+      "abstract",
+      "todo",
+      "done",
+      "orphans",
+      "tag",
+      "summary",
+      "random",
+    }
     return vim.tbl_filter(function(opt)
       return vim.startswith(opt, arg_lead)
     end, opts)
@@ -1340,7 +1191,12 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
-vim.keymap.set("n", "zn", M.new_note, { noremap = true, silent = false, desc = "[Z]ettel [N]ew" })
+vim.keymap.set(
+  "n",
+  "zn",
+  M.new_note_with_metadata,
+  { noremap = true, silent = false, desc = "[Z]ettel [N]ew with [M]etadata" }
+)
 vim.keymap.set("n", "zs", M.search_title, { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
 vim.keymap.set("n", "<leader>fz", M.search_title, { noremap = true, silent = false, desc = "[F]ind [Z]ettel" })
 vim.keymap.set("n", "ze", M.export_for_ai, { noremap = true, silent = false, desc = "[Z]ettel [E]xport for AI" })

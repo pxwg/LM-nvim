@@ -122,6 +122,45 @@ local function find_references(params, root_dir)
   return locations
 end
 
+-- -- 反向链接文件查询 (Backward Link File Query)
+-- local function find_note_definition(params, root_dir)
+--   local uri = params.textDocument.uri
+--   local row = params.position.line
+--   local bufnr = vim.uri_to_bufnr(uri)
+--
+--   local lines = api.nvim_buf_get_lines(bufnr, row, row + 1, false)
+--   if #lines == 0 then
+--     return {}
+--   end
+--
+--   -- 尝试从 @ID 或 <ID> 格式提取笔记 ID
+--   local id = lines[1]:match("@(%d+)") or lines[1]:match("<(%d+)>")
+--   if not id then
+--     id = vim.fn.expand("<cword>")
+--     if not id:match("^%d+$") then
+--       return {}
+--     end
+--   end
+--
+--   -- 查找对应的笔记文件
+--   local note_filepath = root_dir .. "/note/" .. id .. ".typ"
+--   if vim.fn.filereadable(note_filepath) == 0 then
+--     return {}
+--   end
+--
+--   -- 笔记的标题应该在第四行（0-indexed 为第3行）
+--   -- 光标应该移动到标题处
+--   return {
+--     {
+--       uri = vim.uri_from_fname(note_filepath),
+--       range = {
+--         start = { line = 3, character = 0 },
+--         ["end"] = { line = 3, character = 0 },
+--       },
+--     },
+--   }
+-- end
+
 -- 生成诊断 (Check for archived or legacy references)
 local function get_diagnostics(uri)
   local bufnr = vim.uri_to_bufnr(uri)
@@ -286,6 +325,7 @@ local function create_server_cmd(root_dir)
             capabilities = {
               referencesProvider = true,
               codeActionProvider = true, -- 支持 CodeAction
+              definitionProvider = true, -- 支持 Definition (反向链接)
               textDocumentSync = 1,
             },
             serverInfo = {
@@ -308,6 +348,13 @@ local function create_server_cmd(root_dir)
           else
             handler(lsp_error_response(result), nil)
           end
+        -- elseif method == "textDocument/definition" then
+        --   local status, result = pcall(find_note_definition, params, root_dir)
+        --   if status then
+        --     handler(nil, result)
+        --   else
+        --     handler(lsp_error_response(result), nil)
+        --   end
         elseif method == "shutdown" then
           handler(nil, nil)
         else
