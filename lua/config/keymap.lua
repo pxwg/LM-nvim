@@ -157,19 +157,19 @@ map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent 
 if vim.g.picker == "telescope" then
   map("n", "gd", function()
     local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_definitions theme=cursor cwd=%s", cwd))
+    vim.cmd(string.format("Telescope lsp_definitions cwd=%s", cwd))
   end, { desc = "Goto [D]efinition" })
   map("n", "gr", function()
     local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_references theme=cursor cwd=%s", cwd))
+    vim.cmd(string.format("Telescope lsp_references cwd=%s", cwd))
   end, { desc = "[R]eferences", nowait = true })
   map("n", "gi", function()
     local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_implementations theme=cursor cwd=%s", cwd))
+    vim.cmd(string.format("Telescope lsp_implementations cwd=%s", cwd))
   end, { desc = "Goto [I]mplementation" })
   map("n", "gy", function()
     local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_type_definitions theme=cursor cwd=%s", cwd))
+    vim.cmd(string.format("Telescope lsp_type_definitions cwd=%s", cwd))
   end, { desc = "Goto T[y]pe Definition" })
 end
 -- map("n", "gr", "<cmd>Trouble lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
@@ -707,21 +707,21 @@ vim.api.nvim_set_keymap("n", "<leader>gz", "", {
 })
 
 -- HACK: Attach rime and dictionary manually
-map("n", "<leader>aa", function()
-  vim.cmd("AvanteAsk")
-  local rime = require("util.rime_ls")
-  local bufnr = vim.api.nvim_get_current_buf()
-  if vim.bo[bufnr].filetype == "AvanteInput" then
-    rime.attach_rime_to_buffer(bufnr)
-    vim.api.nvim_buf_set_keymap(
-      bufnr,
-      "n",
-      "q",
-      ":AvanteToggle<CR>",
-      { noremap = true, silent = true, desc = "AvanteToggle" }
-    )
-  end
-end, { desc = "AvanteAsk" })
+-- map("n", "<leader>aa", function()
+--   vim.cmd("AvanteAsk")
+--   local rime = require("util.rime_ls")
+--   local bufnr = vim.api.nvim_get_current_buf()
+--   if vim.bo[bufnr].filetype == "AvanteInput" then
+--     rime.attach_rime_to_buffer(bufnr)
+--     vim.api.nvim_buf_set_keymap(
+--       bufnr,
+--       "n",
+--       "q",
+--       ":AvanteToggle<CR>",
+--       { noremap = true, silent = true, desc = "AvanteToggle" }
+--     )
+--   end
+-- end, { desc = "AvanteAsk" })
 
 local adjust_ui_for_window_size = require("util.sidenote").adjust_ui_for_window_size
 

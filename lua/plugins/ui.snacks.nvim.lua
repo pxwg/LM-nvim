@@ -8,6 +8,13 @@ return {
       max_size = 1024 * 1024 * 10, -- 10MB
       line_length = 1000,
     },
+    input = {
+      -- enabled = false,
+      enabled = true,
+      -- This is the default, but I set it to false because I don't want
+      -- the input to be rendered in a floating window, I want it to be
+      -- rendered inline in the buffer
+    },
     ---@class snacks.image.Config
     image = {
       -- enabled = false,

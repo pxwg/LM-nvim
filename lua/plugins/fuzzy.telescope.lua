@@ -1,3 +1,9 @@
+local borderchars = {
+  prompt = { " ", " ", " ", " ", " ", " ", " ", " " },
+  results = { " ", " ", " ", " ", " ", " ", " ", " " },
+  preview = { " ", " ", " ", " ", " ", " ", " ", " " },
+}
+
 return {
   {
     "prochri/telescope-all-recent.nvim",
@@ -8,7 +14,7 @@ return {
     dependencies = {
       "nvim-telescope/telescope.nvim",
       "kkharji/sqlite.lua",
-      "stevearc/dressing.nvim",
+      "nvim-telescope/telescope-ui-select.nvim",
     },
     opts = {},
   },
@@ -48,8 +54,6 @@ return {
           require("telescope.builtin").find_files({
             cwd = require("util.cwd_attach").cwd(),
             layout_strategy = "horizontal",
-            layout_config = { width = 0.5 },
-            theme = "cursor",
           })
         end,
         desc = "Find Files (cwd)",
@@ -174,8 +178,9 @@ return {
     configs = function()
       -- require("telescope").setup(require("plugins.fuzzy.telescope").opts())
       require("telescope").load_extension("fzf")
-      -- require("telescope").load_extension("file_browser")
-      -- require("telescope").load_extension("all_recent")
+      require("telescope").load_extension("ui-select")
+      require("telescope").load_extension("file_browser")
+      require("telescope").load_extension("all_recent")
     end,
     opts = function()
       if vim.g.started_by_firenvim or vim.g.neovide or vim.fn.has("gui") ~= 0 then
@@ -208,6 +213,7 @@ return {
             case_mode = "smart_case", -- or "ignore_case" or "respect_case"
             -- the default case_mode is "smart_case"
           },
+          ["ui-select"] = {},
         },
         defaults = {
           preview = {
@@ -216,12 +222,18 @@ return {
             hilight_limit = false,
           },
           sorting_strategy = "ascending",
-          -- file_previewer = image_preview.file_previewer,
-          -- buffer_previewer_maker = image_preview.buffer_previewer_maker,
-          -- layout_strategy = "flex",
-          layout_config = { height = 0.3, width = 0.7 },
-          -- borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
-
+          layout_strategy = "horizontal",
+          layout_config = {
+            prompt_position = "top",
+            width = 0.85,
+            height = 0.85,
+            horizontal = { preview_width = 0.65 },
+          },
+          borderchars = borderchars,
+          lsp_code_actions = {
+            theme = "cursor",
+            borderchars = borderchars,
+          },
           -- prompt_prefix = " ",
           prompt_prefix = "  ",
           selection_caret = " ",

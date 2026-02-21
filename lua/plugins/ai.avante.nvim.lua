@@ -137,7 +137,7 @@ local opts = {
 return {
   "yetone/avante.nvim",
   event = "VeryLazy",
-  enabled = vim.g.avante_enabled or false,
+  enabled = false,
   -- lazy = false,
   version = false,
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
