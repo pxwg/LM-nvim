@@ -366,9 +366,9 @@ return {
           },
         },
         menu = {
-          auto_show = function(ctx)
-            return ctx.mode ~= "cmdline"
-          end,
+          -- auto_show = function(ctx)
+          --   return ctx.mode ~= "cmdline"
+          -- end,
           draw = {
             columns = { { "kind_icon", "label", "label_description", gap = 1 }, { "kind" } },
           },
@@ -629,7 +629,7 @@ return {
           -- Default is false for cmdline, true for cmdwin (command-line window)
           menu = {
             auto_show = function(ctx, _)
-              return ctx.mode == "cmdwin"
+              return true
             end,
           },
           -- Displays a preview of the selected item on the current line

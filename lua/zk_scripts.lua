@@ -454,7 +454,7 @@ function M.new_note(with_metadata)
 
   -- Append #include to link.typ if not present
   if vim.fn.filereadable(link_path) == 1 then
-    local include_line = "#zk_entry(" .. id .. ', "note/' .. id .. '.typ"'
+    local include_line = '#zk_entry("' .. id .. '", "note/' .. id .. '.typ")'
     local link_lines = vim.fn.readfile(link_path)
     local exists = false
     for _, line in ipairs(link_lines) do
@@ -507,7 +507,7 @@ function M.remove_note(note_id)
   end
   -- Remove the corresponding #include line from link.typ
   if vim.fn.filereadable(link_path) == 1 then
-    local include_line = '#include "note/' .. note_id .. '.typ"'
+    local include_line = '#zk_entry "' .. note_id .. '", "note/' .. note_id .. '.typ"'
     local link_lines = vim.fn.readfile(link_path)
     local new_lines = {}
     for _, line in ipairs(link_lines) do

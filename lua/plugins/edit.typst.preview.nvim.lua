@@ -41,7 +41,7 @@ return {
       -- 仅监听 note 目录下的 typ 文件 (根据你的 ZK 结构调整)
       pattern = "*/note/*.typ",
       callback = function(ev)
-        local root = vim.fn.getcwd()
+        local root = vim.fn.expand("~/wiki/")
         -- 获取文件名作为 ID (例如 2602181239.typ -> 2602181239)
         local filename = vim.fn.fnamemodify(ev.file, ":t")
         local id = filename:gsub("%.typ$", "")

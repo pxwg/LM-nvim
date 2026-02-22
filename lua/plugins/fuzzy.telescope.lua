@@ -14,7 +14,16 @@ return {
     dependencies = {
       "nvim-telescope/telescope.nvim",
       "kkharji/sqlite.lua",
-      "nvim-telescope/telescope-ui-select.nvim",
+      {
+        "stevearc/dressing.nvim",
+        opts = {
+          select = {
+            telescope = {
+              borderchars = borderchars,
+            },
+          },
+        },
+      },
     },
     opts = {},
   },
@@ -178,9 +187,8 @@ return {
     configs = function()
       -- require("telescope").setup(require("plugins.fuzzy.telescope").opts())
       require("telescope").load_extension("fzf")
-      require("telescope").load_extension("ui-select")
-      require("telescope").load_extension("file_browser")
-      require("telescope").load_extension("all_recent")
+      -- require("telescope").load_extension("file_browser")
+      -- require("telescope").load_extension("all_recent")
     end,
     opts = function()
       if vim.g.started_by_firenvim or vim.g.neovide or vim.fn.has("gui") ~= 0 then
@@ -213,7 +221,6 @@ return {
             case_mode = "smart_case", -- or "ignore_case" or "respect_case"
             -- the default case_mode is "smart_case"
           },
-          ["ui-select"] = {},
         },
         defaults = {
           preview = {
