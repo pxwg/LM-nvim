@@ -675,14 +675,8 @@ function M.export_for_ai()
   vim.notify("Exported " .. #notes .. " notes to buffer and clipboard", vim.log.levels.INFO)
 end
 
--- Search for notes with specific tags using Telescope
+-- Search for notes with specific tags using Snacks.picker
 function M.search_by_tag(tag)
-  local has_telescope, telescope = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
   local root = vim.fn.expand("~/wiki")
   local note_dir = root .. "/note"
 
@@ -714,7 +708,6 @@ function M.search_by_tag(tag)
           table.insert(results, {
             filename = note_path,
             lnum = 5,
-            col = 1,
             text = title,
             id = note_id,
           })
@@ -728,44 +721,26 @@ function M.search_by_tag(tag)
     return
   end
 
-  -- Use Telescope's quickfix list display
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
+  local items = vim.tbl_map(function(entry)
+    return {
+      text = "[" .. entry.id .. "] " .. entry.text,
+      file = entry.filename,
+      pos = { 5, 0 },
+    }
+  end, results)
 
-  pickers
-    .new({}, {
-      prompt_title = "Notes with #tag." .. tag,
-      finder = finders.new_table({
-        results = results,
-        entry_maker = function(entry)
-          return {
-            value = entry,
-            display = string.format("[%s] %s", entry.id, entry.text),
-            ordinal = entry.text .. " " .. entry.id,
-            filename = entry.filename,
-            lnum = entry.lnum,
-            col = entry.col,
-          }
-        end,
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-
-          local root = vim.fn.expand("~/wiki")
-          vim.cmd("cd " .. vim.fn.fnameescape(root))
-          vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-        end)
-        return true
-      end,
-    })
-    :find()
+  Snacks.picker.pick({
+    title = "Notes with #tag." .. tag,
+    items = items,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        local wiki_root = vim.fn.expand("~/wiki")
+        vim.cmd("cd " .. vim.fn.fnameescape(wiki_root))
+        vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+      end
+    end,
+  })
 end
 
 -- Enhanced search with multi-mode support using zk_telescope module
@@ -867,57 +842,35 @@ function M.find_orphans()
   return orphans
 end
 
--- Telescope picker for Orphan Notes
+-- Snacks.picker for Orphan Notes
 function M.search_orphans()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
   local orphans = M.find_orphans()
   if #orphans == 0 then
     vim.notify("No orphan notes found! Good job linking!", vim.log.levels.INFO)
     return
   end
 
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
-
   local root = vim.fn.expand("~/wiki")
 
-  pickers
-    .new({}, {
-      prompt_title = "ZK Orphan Notes (" .. #orphans .. ")",
-      finder = finders.new_table({
-        results = orphans,
-        entry_maker = function(entry)
-          return {
-            value = entry,
-            display = string.format("[%%s] %%s", entry.id, entry.title),
-            ordinal = entry.id .. " " .. entry.title,
-            filename = entry.path,
-            lnum = 4, -- Approximate jump to title
-            col = 1,
-          }
-        end,
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          vim.cmd("cd " .. vim.fn.fnameescape(root))
-          vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-        end)
-        return true
-      end,
-    })
-    :find()
+  local items = vim.tbl_map(function(entry)
+    return {
+      text = "[" .. entry.id .. "] " .. entry.title,
+      file = entry.path,
+      pos = { 4, 0 },
+    }
+  end, orphans)
+
+  Snacks.picker.pick({
+    title = "ZK Orphan Notes (" .. #orphans .. ")",
+    items = items,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        vim.cmd("cd " .. vim.fn.fnameescape(root))
+        vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+      end
+    end,
+  })
 end
 
 -- Search for any tag (interactive)

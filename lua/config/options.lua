@@ -1,6 +1,6 @@
 local autocmd = vim.api.nvim_create_autocmd
--- @type "telescope" | "fzf"
-vim.g.picker = "telescope"
+-- @type "telescope" | "fzf" | "snacks"
+vim.g.picker = "snacks"
 vim.g.mini_file_opened = false
 vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"

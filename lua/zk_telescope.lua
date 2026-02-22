@@ -142,68 +142,49 @@ local function get_all_notes()
   return all_notes
 end
 
--- Create entry maker function for telescope picker
-local function make_entry_factory(active_modes)
-  return function(entry)
-    local display_parts = { entry.title }
-
-    -- Show aliases if alias mode is active
-    if active_modes.alias and #entry.aliases > 0 then
-      table.insert(display_parts, "(" .. table.concat(entry.aliases, ", ") .. ")")
-    end
-
-    -- Show abstract if abstract mode is active
-    if active_modes.abstract and entry.abstract ~= "" then
-      table.insert(display_parts, '"' .. entry.abstract .. '"')
-    end
-
-    -- Show keywords if keyword mode is active
-    if active_modes.keyword and #entry.keywords > 0 then
-      table.insert(display_parts, "{" .. table.concat(entry.keywords, ", ") .. "}")
-    end
-
-    local display = table.concat(display_parts, " ")
-
-    -- Build ordinal based on active modes
-    local ordinal_parts = { entry.id }
-
+-- Build picker items from notes for the given active_modes
+local function make_items(notes, active_modes)
+  return vim.tbl_map(function(note)
+    local ordinal_parts = { note.id }
     if active_modes.title then
-      table.insert(ordinal_parts, entry.title)
+      table.insert(ordinal_parts, note.title)
     end
-
     if active_modes.alias then
-      table.insert(ordinal_parts, table.concat(entry.aliases, " "))
+      table.insert(ordinal_parts, table.concat(note.aliases, " "))
     end
-
     if active_modes.abstract then
-      table.insert(ordinal_parts, entry.abstract)
+      table.insert(ordinal_parts, note.abstract)
     end
-
     if active_modes.keyword then
-      table.insert(ordinal_parts, table.concat(entry.keywords, " "))
+      table.insert(ordinal_parts, table.concat(note.keywords, " "))
     end
-
-    local ordinal = table.concat(ordinal_parts, " ")
-
     return {
-      value = entry,
-      display = display,
-      ordinal = ordinal,
-      filename = entry.path,
-      lnum = 4,
-      col = 1,
+      text = table.concat(ordinal_parts, " "),
+      file = note.path,
+      pos = { 4, 0 },
+      _note = note,
     }
-  end
+  end, notes)
 end
 
--- Main Telescope search function with multiple filter modes
-function M.search_with_filters()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
+-- Build display highlight list for a note item given active modes
+local function format_note_item(item, active_modes)
+  local note = item._note
+  local parts = { note.title }
+  if active_modes.alias and #note.aliases > 0 then
+    table.insert(parts, "(" .. table.concat(note.aliases, ", ") .. ")")
   end
+  if active_modes.abstract and note.abstract ~= "" then
+    table.insert(parts, '"' .. note.abstract .. '"')
+  end
+  if active_modes.keyword and #note.keywords > 0 then
+    table.insert(parts, "{" .. table.concat(note.keywords, ", ") .. "}")
+  end
+  return { { table.concat(parts, " "), "SnacksPickerLabel" } }
+end
 
+-- Main Snacks picker search with multiple filter modes
+function M.search_with_filters()
   local all_notes = get_all_notes()
 
   if #all_notes == 0 then
@@ -211,20 +192,13 @@ function M.search_with_filters()
     return
   end
 
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
-
-  -- Multiple modes can be active at once
   local active_modes = {
     title = true,
     alias = false,
     keyword = false,
     abstract = false,
   }
-  local active_tag_filter = nil -- Selected tag filter
+  local active_tag_filter = nil
   local active_filters = {}
   local root = vim.fn.expand("~/wiki")
 
@@ -237,11 +211,9 @@ function M.search_with_filters()
     end
     local mode_str = #modes > 0 and table.concat(modes, "+") or "NONE"
     local filter_str = ""
-
     if active_tag_filter then
       filter_str = " [TAG: " .. active_tag_filter .. "]"
     end
-
     if #active_filters > 0 then
       if filter_str ~= "" then
         filter_str = filter_str .. " "
@@ -254,7 +226,6 @@ function M.search_with_filters()
   local function apply_filters(notes)
     local filtered = notes
 
-    -- Apply tag filter first
     if active_tag_filter then
       local tag_filtered = {}
       for _, note in ipairs(filtered) do
@@ -268,13 +239,11 @@ function M.search_with_filters()
       filtered = tag_filtered
     end
 
-    -- Apply keyword filters
     if #active_filters > 0 then
       local keyword_filtered = {}
       for _, note in ipairs(filtered) do
         local matches = true
         for _, filter in ipairs(active_filters) do
-          -- Filter format: "keyword:value"
           local filter_type, filter_value = filter:match("([^:]+):(.+)")
           if filter_type == "keyword" then
             local has_keyword = false
@@ -287,7 +256,6 @@ function M.search_with_filters()
             matches = matches and has_keyword
           end
         end
-
         if matches then
           table.insert(keyword_filtered, note)
         end
@@ -302,181 +270,130 @@ function M.search_with_filters()
     return apply_filters(all_notes)
   end
 
-  local function open_picker(initial_notes)
-    pickers
-      .new({}, {
-        prompt_title = "ZK Search [" .. get_mode_indicator() .. "]",
-        finder = finders.new_table({
-          results = initial_notes,
-          entry_maker = make_entry_factory(active_modes),
-        }),
-        sorter = conf.generic_sorter({}),
-        previewer = conf.file_previewer({}),
-        attach_mappings = function(prompt_bufnr, map)
-          -- Open selected note
-          actions.select_default:replace(function()
-            actions.close(prompt_bufnr)
-            local selection = action_state.get_selected_entry()
-            if selection then
-              vim.cmd("cd " .. vim.fn.fnameescape(root))
-              vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-            end
-          end)
-
-          -- Toggle individual modes
-          map("i", "<C-t>", function()
-            active_modes.title = not active_modes.title
-            actions.close(prompt_bufnr)
-            open_picker(get_filtered_results())
-          end)
-
-          map("i", "<C-s>", function()
-            active_modes.alias = not active_modes.alias
-            actions.close(prompt_bufnr)
-            open_picker(get_filtered_results())
-          end)
-
-          map("i", "<C-k>", function()
-            active_modes.keyword = not active_modes.keyword
-            actions.close(prompt_bufnr)
-            open_picker(get_filtered_results())
-          end)
-
-          map("i", "<C-a>", function()
-            active_modes.abstract = not active_modes.abstract
-            actions.close(prompt_bufnr)
-            open_picker(get_filtered_results())
-          end)
-
-          -- <C-g>: Select tag filter
-          map("i", "<C-g>", function()
-            actions.close(prompt_bufnr)
-
-            -- Collect all tags from all notes
-            local all_tags = {}
-            for _, note in ipairs(all_notes) do
-              for _, tag in ipairs(note.tags) do
-                all_tags[tag] = true
-              end
-            end
-
-            local tag_options = {}
-            for tag, _ in pairs(all_tags) do
-              table.insert(tag_options, tag)
-            end
-
-            if #tag_options == 0 then
-              vim.notify("No tags available", vim.log.levels.INFO)
-              open_picker(get_filtered_results())
-              return
-            end
-
-            -- Display tag selection
-            pickers
-              .new({}, {
-                prompt_title = "Select tag to filter",
-                finder = finders.new_table({
-                  results = tag_options,
-                  entry_maker = function(tag)
-                    return {
-                      value = tag,
-                      display = tag,
-                      ordinal = tag,
-                    }
-                  end,
-                }),
-                sorter = conf.generic_sorter({}),
-                attach_mappings = function(tag_prompt_bufnr, _tag_map)
-                  actions.select_default:replace(function()
-                    actions.close(tag_prompt_bufnr)
-                    local selection = action_state.get_selected_entry()
-                    if selection then
-                      active_tag_filter = selection.value
-                    end
-                    open_picker(get_filtered_results())
-                  end)
-                  return true
-                end,
-              })
-              :find()
-          end)
-
-          -- <C-f>: Add keyword filter
-          map("i", "<C-f>", function()
-            actions.close(prompt_bufnr)
-
-            -- Collect all keywords from all notes
-            local filter_options = {}
-            local all_keywords = {}
-            for _, note in ipairs(all_notes) do
-              for _, keyword in ipairs(note.keywords) do
-                all_keywords[keyword] = true
-              end
-            end
-            for keyword, _ in pairs(all_keywords) do
-              table.insert(filter_options, keyword)
-            end
-
-            if #filter_options == 0 then
-              vim.notify("No keywords available", vim.log.levels.INFO)
-              open_picker(get_filtered_results())
-              return
-            end
-
-            -- Display keyword selection
-            pickers
-              .new({}, {
-                prompt_title = "Select keyword to filter",
-                finder = finders.new_table({
-                  results = filter_options,
-                  entry_maker = function(keyword)
-                    return {
-                      value = keyword,
-                      display = keyword,
-                      ordinal = keyword,
-                    }
-                  end,
-                }),
-                sorter = conf.generic_sorter({}),
-                attach_mappings = function(filter_prompt_bufnr, _filter_map)
-                  actions.select_default:replace(function()
-                    actions.close(filter_prompt_bufnr)
-                    local selection = action_state.get_selected_entry()
-                    if selection then
-                      local filter_str = "keyword:" .. selection.value
-                      -- Check if filter already exists
-                      local already_exists = false
-                      for _, f in ipairs(active_filters) do
-                        if f == filter_str then
-                          already_exists = true
-                          break
-                        end
-                      end
-
-                      if not already_exists then
-                        table.insert(active_filters, filter_str)
-                      end
-                    end
-                    open_picker(get_filtered_results())
-                  end)
-                  return true
-                end,
-              })
-              :find()
-          end)
-
-          -- <C-r>: Clear all filters
-          map("i", "<C-r>", function()
-            active_filters = {}
-            active_tag_filter = nil
-            actions.close(prompt_bufnr)
-            open_picker(get_filtered_results())
-          end)
-
-          return true
+  local function open_picker(notes)
+    Snacks.picker.pick({
+      title = "ZK Search [" .. get_mode_indicator() .. "]",
+      items = make_items(notes, active_modes),
+      format = function(item)
+        return format_note_item(item, active_modes)
+      end,
+      confirm = function(picker, item)
+        picker:close()
+        if item then
+          vim.cmd("cd " .. vim.fn.fnameescape(root))
+          vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+        end
+      end,
+      win = {
+        input = {
+          keys = {
+            ["<C-t>"] = { "toggle_title", mode = { "n", "i" } },
+            ["<C-s>"] = { "toggle_alias", mode = { "n", "i" } },
+            ["<C-k>"] = { "toggle_keyword", mode = { "n", "i" } },
+            ["<C-a>"] = { "toggle_abstract", mode = { "n", "i" } },
+            ["<C-g>"] = { "select_tag", mode = { "n", "i" } },
+            ["<C-f>"] = { "select_keyword_filter", mode = { "n", "i" } },
+            ["<C-r>"] = { "clear_filters", mode = { "n", "i" } },
+          },
+        },
+      },
+      actions = {
+        toggle_title = function(picker)
+          active_modes.title = not active_modes.title
+          picker:close()
+          open_picker(get_filtered_results())
         end,
-      })
-      :find()
+        toggle_alias = function(picker)
+          active_modes.alias = not active_modes.alias
+          picker:close()
+          open_picker(get_filtered_results())
+        end,
+        toggle_keyword = function(picker)
+          active_modes.keyword = not active_modes.keyword
+          picker:close()
+          open_picker(get_filtered_results())
+        end,
+        toggle_abstract = function(picker)
+          active_modes.abstract = not active_modes.abstract
+          picker:close()
+          open_picker(get_filtered_results())
+        end,
+        select_tag = function(picker)
+          picker:close()
+          local all_tags = {}
+          for _, note in ipairs(all_notes) do
+            for _, tag in ipairs(note.tags) do
+              all_tags[tag] = true
+            end
+          end
+          local tag_options = {}
+          for tag, _ in pairs(all_tags) do
+            table.insert(tag_options, { text = tag })
+          end
+          if #tag_options == 0 then
+            vim.notify("No tags available", vim.log.levels.INFO)
+            open_picker(get_filtered_results())
+            return
+          end
+          Snacks.picker.pick({
+            title = "Select tag to filter",
+            items = tag_options,
+            confirm = function(sub_picker, item)
+              sub_picker:close()
+              if item then
+                active_tag_filter = item.text
+              end
+              open_picker(get_filtered_results())
+            end,
+          })
+        end,
+        select_keyword_filter = function(picker)
+          picker:close()
+          local all_keywords = {}
+          for _, note in ipairs(all_notes) do
+            for _, keyword in ipairs(note.keywords) do
+              all_keywords[keyword] = true
+            end
+          end
+          local filter_options = {}
+          for keyword, _ in pairs(all_keywords) do
+            table.insert(filter_options, { text = keyword })
+          end
+          if #filter_options == 0 then
+            vim.notify("No keywords available", vim.log.levels.INFO)
+            open_picker(get_filtered_results())
+            return
+          end
+          Snacks.picker.pick({
+            title = "Select keyword to filter",
+            items = filter_options,
+            confirm = function(sub_picker, item)
+              sub_picker:close()
+              if item then
+                local filter_str = "keyword:" .. item.text
+                local already_exists = false
+                for _, f in ipairs(active_filters) do
+                  if f == filter_str then
+                    already_exists = true
+                    break
+                  end
+                end
+                if not already_exists then
+                  table.insert(active_filters, filter_str)
+                end
+              end
+              open_picker(get_filtered_results())
+            end,
+          })
+        end,
+        clear_filters = function(picker)
+          active_filters = {}
+          active_tag_filter = nil
+          picker:close()
+          open_picker(get_filtered_results())
+        end,
+      },
+    })
   end
 
   open_picker(get_filtered_results())
@@ -489,15 +406,7 @@ end
 
 -- Search by alias
 function M.search_alias()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
   local all_notes = get_all_notes()
-
-  -- Filter notes that have aliases
   local notes_with_aliases = {}
   for _, note in ipairs(all_notes) do
     if #note.aliases > 0 then
@@ -510,48 +419,27 @@ function M.search_alias()
     return
   end
 
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
   local root = vim.fn.expand("~/wiki")
-
-  pickers
-    .new({}, {
-      prompt_title = "ZK Search by Alias",
-      finder = finders.new_table({
-        results = notes_with_aliases,
-        entry_maker = make_entry_factory("alias"),
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, _map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            vim.cmd("cd " .. vim.fn.fnameescape(root))
-            vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+  local active_modes = { title = false, alias = true, keyword = false, abstract = false }
+  Snacks.picker.pick({
+    title = "ZK Search by Alias",
+    items = make_items(notes_with_aliases, active_modes),
+    format = function(item)
+      return format_note_item(item, active_modes)
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        vim.cmd("cd " .. vim.fn.fnameescape(root))
+        vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+      end
+    end,
+  })
 end
 
 -- Search by keywords
 function M.search_keyword()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
   local all_notes = get_all_notes()
-
-  -- Filter notes that have keywords
   local notes_with_keywords = {}
   for _, note in ipairs(all_notes) do
     if #note.keywords > 0 then
@@ -564,48 +452,27 @@ function M.search_keyword()
     return
   end
 
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
   local root = vim.fn.expand("~/wiki")
-
-  pickers
-    .new({}, {
-      prompt_title = "ZK Search by Keyword",
-      finder = finders.new_table({
-        results = notes_with_keywords,
-        entry_maker = make_entry_factory("keyword"),
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, _map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            vim.cmd("cd " .. vim.fn.fnameescape(root))
-            vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+  local active_modes = { title = false, alias = false, keyword = true, abstract = false }
+  Snacks.picker.pick({
+    title = "ZK Search by Keyword",
+    items = make_items(notes_with_keywords, active_modes),
+    format = function(item)
+      return format_note_item(item, active_modes)
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        vim.cmd("cd " .. vim.fn.fnameescape(root))
+        vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+      end
+    end,
+  })
 end
 
 -- Search by abstract
 function M.search_abstract()
-  local has_telescope, _ = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    vim.notify("Telescope not found", vim.log.levels.ERROR)
-    return
-  end
-
   local all_notes = get_all_notes()
-
-  -- Filter notes that have abstract
   local notes_with_abstract = {}
   for _, note in ipairs(all_notes) do
     if note.abstract ~= "" then
@@ -618,35 +485,22 @@ function M.search_abstract()
     return
   end
 
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
   local root = vim.fn.expand("~/wiki")
-
-  pickers
-    .new({}, {
-      prompt_title = "ZK Search by Abstract",
-      finder = finders.new_table({
-        results = notes_with_abstract,
-        entry_maker = make_entry_factory("abstract"),
-      }),
-      sorter = conf.generic_sorter({}),
-      previewer = conf.file_previewer({}),
-      attach_mappings = function(prompt_bufnr, _map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            vim.cmd("cd " .. vim.fn.fnameescape(root))
-            vim.cmd("edit " .. vim.fn.fnameescape(selection.filename))
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+  local active_modes = { title = false, alias = false, keyword = false, abstract = true }
+  Snacks.picker.pick({
+    title = "ZK Search by Abstract",
+    items = make_items(notes_with_abstract, active_modes),
+    format = function(item)
+      return format_note_item(item, active_modes)
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        vim.cmd("cd " .. vim.fn.fnameescape(root))
+        vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+      end
+    end,
+  })
 end
 
 return M

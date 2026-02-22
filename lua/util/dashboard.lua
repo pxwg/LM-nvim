@@ -36,16 +36,16 @@ local function set_keymaps(picker)
   local opts = { noremap = true, silent = true }
   local mappings = {
     c = picker == "fzf" and ':lua require("fzf-lua").files({ cwd = "~/.config/nvim" })<cr>'
-      or ':lua require("telescope.builtin").find_files({ cwd = "~/.config/nvim" })<cr>',
+      or ':lua Snacks.picker.files({ cwd = "~/.config/nvim" })<cr>',
     f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>'
-      or ':lua require("telescope.builtin").find_files()<cr>',
-    g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ':lua require("telescope.builtin").live_grep()<cr>',
+      or ':lua Snacks.picker.files()<cr>',
+    g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ':lua Snacks.picker.grep()<cr>',
     w = ":edit ~/personal-wiki/index.md<cr>",
     s = ':lua require("persistence").load({ last = true })<cr>',
     l = ":Lazy<cr>",
     r = picker == "fzf"
         and ':lua require("fzf-lua").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>'
-      or ':lua require("telescope.builtin").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>',
+      or ':lua Snacks.picker.recent()<cr>',
     q = ":q<cr>",
     p = [[:lua vim.loop.chdir(vim.fn.expand("~/Desktop/physics/notes"))<cr>]],
   }

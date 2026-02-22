@@ -154,23 +154,11 @@ map(
 --- LSP dictionary
 map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
 -- Lsp-telescope
-if vim.g.picker == "telescope" then
-  map("n", "gd", function()
-    local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_definitions cwd=%s", cwd))
-  end, { desc = "Goto [D]efinition" })
-  map("n", "gr", function()
-    local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_references cwd=%s", cwd))
-  end, { desc = "[R]eferences", nowait = true })
-  map("n", "gi", function()
-    local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_implementations cwd=%s", cwd))
-  end, { desc = "Goto [I]mplementation" })
-  map("n", "gy", function()
-    local cwd = vim.fn.getcwd()
-    vim.cmd(string.format("Telescope lsp_type_definitions cwd=%s", cwd))
-  end, { desc = "Goto T[y]pe Definition" })
+if vim.g.picker == "snacks" then
+  map("n", "gd", function() Snacks.picker.lsp_definitions() end, { desc = "Goto [D]efinition" })
+  map("n", "gr", function() Snacks.picker.lsp_references() end, { desc = "[R]eferences", nowait = true })
+  map("n", "gi", function() Snacks.picker.lsp_implementations() end, { desc = "Goto [I]mplementation" })
+  map("n", "gy", function() Snacks.picker.lsp_type_definitions() end, { desc = "Goto T[y]pe Definition" })
 end
 -- map("n", "gr", "<cmd>Trouble lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
 -- map("n", "gi", "<cmd>Trouble lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })

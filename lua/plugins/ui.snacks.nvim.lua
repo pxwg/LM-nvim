@@ -15,6 +15,7 @@ return {
       -- the input to be rendered in a floating window, I want it to be
       -- rendered inline in the buffer
     },
+    picker = { enabled = true },
     ---@class snacks.image.Config
     image = {
       -- enabled = false,
@@ -60,5 +61,66 @@ return {
         -- Go 1 dir above and check `sudo du -sh ./* | sort -hr | head -n 5`
       },
     },
+  },
+  keys = {
+    { "<leader>,", function() Snacks.picker.buffers() end, desc = "Switch Buffer" },
+    {
+      "<leader>/",
+      function() Snacks.picker.grep({ cwd = require("util.cwd_attach").cwd() }) end,
+      desc = "[G]rep (Root Dir)",
+    },
+    { "<leader>:", function() Snacks.picker.command_history() end, desc = "Command History" },
+    {
+      "<leader><space>",
+      function() Snacks.picker.files({ cwd = require("util.cwd_attach").cwd() }) end,
+      desc = "Find Files (cwd)",
+    },
+    { "<leader>fb", function() Snacks.picker.buffers() end, desc = "[B]uffers" },
+    {
+      "<leader>fc",
+      function() Snacks.picker.files({ cwd = "~/.config/nvim" }) end,
+      desc = "Find [C]onfig File",
+    },
+    {
+      "<leader>ff",
+      function() Snacks.picker.files({ cwd = require("util.cwd_attach").cwd() }) end,
+      desc = "Find [F]iles (cwd)",
+    },
+    { "<leader>fF", function() Snacks.picker.files() end, desc = "Find [F]iles (Root Dir)" },
+    { "<leader>fg", function() Snacks.picker.git_files() end, desc = "Find [G]it Files" },
+    { "<leader>fr", function() Snacks.picker.recent() end, desc = "[R]ecent" },
+    {
+      "<leader>fR",
+      function() Snacks.picker.recent({ filter = { cwd = true } }) end,
+      desc = "[R]ecent (cwd)",
+    },
+    { "<leader>gc", function() Snacks.picker.git_log() end, desc = "Git [C]ommits" },
+    { "<leader>gs", function() Snacks.picker.git_status() end, desc = "Git [S]tatus" },
+    { "<leader>sf", function() Snacks.picker.lines() end, desc = "[F]uzzy Find in Buffer" },
+    { "<leader>sd", function() Snacks.picker.diagnostics_buffer() end, desc = "[D]iagnostics (Buffer)" },
+    { "<leader>sD", function() Snacks.picker.diagnostics() end, desc = "Workspace [D]iagnostics" },
+    {
+      "<leader>sg",
+      function() Snacks.picker.grep({ cwd = vim.fn.expand("%:p:h") }) end,
+      desc = "[G]rep (cwd)",
+    },
+    { "<leader>sG", function() Snacks.picker.grep() end, desc = "[G]rep (Root Dir)" },
+    { "<leader>sH", function() Snacks.picker.highlights() end, desc = "Search [H]ighlight Groups" },
+    { "<leader>sj", function() Snacks.picker.jumps() end, desc = "[J]umplist" },
+    { "<leader>so", function() Snacks.picker.vim_options() end, desc = "[O]ptions" },
+    { "<leader>ss", function() Snacks.picker.grep_word() end, desc = "[S]tring (Root Dir)" },
+    {
+      "<leader>sS",
+      function() Snacks.picker.grep_word({ cwd = vim.fn.expand("%:p:h") }) end,
+      desc = "[S]tring (cwd)",
+    },
+    { "<leader>ss", function() Snacks.picker.grep_word() end, mode = "v", desc = "[S]election (Root Dir)" },
+    {
+      "<leader>sS",
+      function() Snacks.picker.grep_word({ cwd = vim.fn.expand("%:p:h") }) end,
+      mode = "v",
+      desc = "[S]election (cwd)",
+    },
+    { "<leader>uC", function() Snacks.picker.colorschemes() end, desc = "[C]olorscheme with Preview" },
   },
 }
