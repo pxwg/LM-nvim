@@ -128,7 +128,7 @@ local function parse_note(filepath)
   }
 end
 
--- Get all notes
+-- Get all notes, sorted by date (most recent first)
 local function get_all_notes()
   local root = vim.fn.expand("~/wiki")
   local note_dir = root .. "/note"
@@ -142,13 +142,20 @@ local function get_all_notes()
     end
   end
 
+  -- Sort by ID descending (IDs are YYMMDDHHMM format, lexicographically newer = higher)
+  table.sort(all_notes, function(a, b)
+    return a.id > b.id
+  end)
+
   return all_notes
 end
 
 -- Build picker items from notes for the given active_modes
 local function make_items(notes, active_modes)
-  return vim.tbl_map(function(note)
-    local ordinal_parts = { note.id }
+  local n = #notes
+  local items = {}
+  for i, note in ipairs(notes) do
+    local ordinal_parts = {}
     if active_modes.title then
       table.insert(ordinal_parts, note.title)
     end
@@ -156,18 +163,33 @@ local function make_items(notes, active_modes)
       table.insert(ordinal_parts, table.concat(note.aliases, " "))
     end
     if active_modes.abstract then
-      table.insert(ordinal_parts, note.abstract)
+      -- Truncate to first 200 chars to avoid over-matching on long abstracts
+      table.insert(ordinal_parts, note.abstract:sub(1, 200))
     end
     if active_modes.keyword then
       table.insert(ordinal_parts, table.concat(note.keywords, " "))
     end
-    return {
+    -- Fallback: always include title so items remain searchable
+    if #ordinal_parts == 0 then
+      table.insert(ordinal_parts, note.title)
+    end
+    -- Recency bonus: newer notes (earlier in desc-sorted list) get a higher score_add.
+    -- Range 0–20, small enough not to dominate fuzzy score but meaningful as a tiebreaker.
+    local recency_bonus = n > 1 and (n - i) / (n - 1) * 20 or 20
+    table.insert(items, {
       text = table.concat(ordinal_parts, " "),
+      -- Expose individual fields for targeted search: type "title:foo", "keyword:bar", etc.
+      title = note.title,
+      alias = #note.aliases > 0 and table.concat(note.aliases, " ") or nil,
+      keyword = #note.keywords > 0 and table.concat(note.keywords, " ") or nil,
+      abstract = note.abstract ~= "" and note.abstract or nil,
       file = note.path,
       pos = { note.title_line, 0 },
       _note = note,
-    }
-  end, notes)
+      score_add = recency_bonus,
+    })
+  end
+  return items
 end
 
 -- Build display highlight list for a note item given active modes
@@ -175,7 +197,7 @@ local function format_note_item(item, active_modes)
   local note = item._note
   local ret = {}
   ret[#ret + 1] = { "󰈙 ", "SnacksPickerIcon", virtual = true }
-  ret[#ret + 1] = { note.title, "Normal" }
+  ret[#ret + 1] = { note.title, "SnacksPickerFile" }
   if active_modes.alias and #note.aliases > 0 then
     ret[#ret + 1] = { "  ", virtual = true }
     ret[#ret + 1] = { table.concat(note.aliases, ", "), "SnacksPickerDimmed" }
@@ -351,8 +373,11 @@ function M.search_with_filters()
           end
           Snacks.picker.pick({
             title = "Select tag to filter",
-            preview = false,
+            layout = "select",
             items = tag_options,
+            format = function(item)
+              return { { item.text, "SnacksPickerFile" } }
+            end,
             confirm = function(sub_picker, item)
               sub_picker:close()
               if item then
@@ -381,8 +406,11 @@ function M.search_with_filters()
           end
           Snacks.picker.pick({
             title = "Select keyword to filter",
-            preview = false,
+            layout = "select",
             items = filter_options,
+            format = function(item)
+              return { { item.text, "SnacksPickerFile" } }
+            end,
             confirm = function(sub_picker, item)
               sub_picker:close()
               if item then

@@ -535,6 +535,12 @@ map("v", "<CR>", function()
 end)
 
 map("n", "<Tab>", function()
+  -- NES: sidekick next-edit suggestion (loaded via VeryLazy, safe to pcall)
+  local ok, sk = pcall(require, "sidekick")
+  if ok and sk.nes_jump_or_apply() then
+    return
+  end
+  -- Existing behavior
   if vim.bo.filetype == "markdown" then
     local success = require("util.markdown_link").goto_next_link()
     if not success then
