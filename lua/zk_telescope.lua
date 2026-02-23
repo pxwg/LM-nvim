@@ -114,6 +114,8 @@ local function parse_note(filepath)
   -- Extract metadata (aliases, abstract, keywords)
   local metadata = extract_metadata(filepath)
 
+  local title_line = import_idx + 3
+
   return {
     id = note_id,
     path = filepath,
@@ -122,6 +124,7 @@ local function parse_note(filepath)
     aliases = metadata.aliases,
     abstract = metadata.abstract,
     keywords = metadata.keywords,
+    title_line = title_line,
   }
 end
 
@@ -161,7 +164,7 @@ local function make_items(notes, active_modes)
     return {
       text = table.concat(ordinal_parts, " "),
       file = note.path,
-      pos = { 4, 0 },
+      pos = { note.title_line, 0 },
       _note = note,
     }
   end, notes)
@@ -170,17 +173,28 @@ end
 -- Build display highlight list for a note item given active modes
 local function format_note_item(item, active_modes)
   local note = item._note
-  local parts = { note.title }
+  local ret = {}
+  ret[#ret + 1] = { "󰈙 ", "SnacksPickerIcon", virtual = true }
+  ret[#ret + 1] = { note.title, "Normal" }
   if active_modes.alias and #note.aliases > 0 then
-    table.insert(parts, "(" .. table.concat(note.aliases, ", ") .. ")")
+    ret[#ret + 1] = { "  ", virtual = true }
+    ret[#ret + 1] = { table.concat(note.aliases, ", "), "SnacksPickerDimmed" }
   end
   if active_modes.abstract and note.abstract ~= "" then
-    table.insert(parts, '"' .. note.abstract .. '"')
+    ret[#ret + 1] = { "  ", virtual = true }
+    local abs = note.abstract:sub(1, 60) .. (note.abstract:len() > 60 and "…" or "")
+    ret[#ret + 1] = { abs, "SnacksPickerComment" }
   end
   if active_modes.keyword and #note.keywords > 0 then
-    table.insert(parts, "{" .. table.concat(note.keywords, ", ") .. "}")
+    ret[#ret + 1] = { "  ", virtual = true }
+    for i, kw in ipairs(note.keywords) do
+      if i > 1 then
+        ret[#ret + 1] = { " ", virtual = true }
+      end
+      ret[#ret + 1] = { "[" .. kw .. "]", "SnacksPickerSpecial" }
+    end
   end
-  return { { table.concat(parts, " "), "SnacksPickerLabel" } }
+  return ret
 end
 
 -- Main Snacks picker search with multiple filter modes
@@ -337,6 +351,7 @@ function M.search_with_filters()
           end
           Snacks.picker.pick({
             title = "Select tag to filter",
+            preview = false,
             items = tag_options,
             confirm = function(sub_picker, item)
               sub_picker:close()
@@ -366,6 +381,7 @@ function M.search_with_filters()
           end
           Snacks.picker.pick({
             title = "Select keyword to filter",
+            preview = false,
             items = filter_options,
             confirm = function(sub_picker, item)
               sub_picker:close()
