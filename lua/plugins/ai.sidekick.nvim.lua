@@ -1,7 +1,17 @@
 return {
   "folke/sidekick.nvim",
   event = "VeryLazy",
-  opts = {},
+  opts = function()
+    return {
+      cli = {
+        tools = {
+          ["claude-wiki"] = {
+            cmd = { "claude", "--add-dir", vim.fn.expand("~/wiki") },
+          },
+        },
+      },
+    }
+  end,
   keys = {
     {
       "<c-.>",
@@ -72,6 +82,17 @@ return {
         require("sidekick.cli").toggle({ name = "claude", focus = true })
       end,
       desc = "Sidekick Toggle Claude",
+    },
+    -- Open Claude with wiki directory added
+    {
+      "<leader>aw",
+      function()
+        require("sidekick.cli").toggle({
+          name = "claude-wiki",
+          focus = true,
+        })
+      end,
+      desc = "Sidekick Toggle Claude with Wiki",
     },
   },
 }
