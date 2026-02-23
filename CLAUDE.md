@@ -68,3 +68,12 @@ Create a new file in `lua/plugins/` following the `{category}.{plugin-name}.lua`
 ## Mason
 
 LSP servers and formatters are managed by Mason (`<leader>cm` opens Mason UI). No manual installation commands needed — Mason handles tool installation.
+
+## Sidekick.nvim with Wiki Integration
+
+The `sidekick.nvim` plugin is configured with two Claude Code integrations:
+
+- `<leader>ac` - Opens Claude Code normally
+- `<leader>aw` - Opens Claude Code with `~/wiki/` directory added via `--add-dir` flag
+
+This enables Claude Code to access the Zettelkasten note system when working on tasks related to the wiki.
