@@ -500,8 +500,13 @@ return {
 
                     if id and title then
                       -- Apply the filter text fix you already have
-                      local current_filter = item.filterText or item.label
                       item.filterText = title
+
+                      -- Show title in the completion list while preserving the id label
+                      item.label = title
+                      item.labelDetails = vim.tbl_extend("force", item.labelDetails or {}, {
+                        description = id,
+                      })
 
                       -- 2. NEW: Documentation Injection Logic (From Note 2602112232)
                       -- Only load if documentation is missing to avoid overwriting LSP info if it exists later
