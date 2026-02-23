@@ -76,6 +76,33 @@ local function check_todo_status()
   return has_todos, completed_count, incomplete_count
 end
 
+-- Helper function to find the index of the import line and calculate title/tag positions
+local function find_note_structure(lines)
+  local import_idx = nil
+  for i, line in ipairs(lines) do
+    if line:match('^#import%s+"../include%.typ":%s*%*') then
+      import_idx = i
+      break
+    end
+  end
+
+  if not import_idx then
+    return nil
+  end
+
+  -- The structure after import line is:
+  -- import_idx: #import line
+  -- import_idx + 1: #show: zettel
+  -- import_idx + 2: empty line
+  -- import_idx + 3: title line (= Title <id>)
+  -- import_idx + 4: tag line (#tag.xxx)
+  return {
+    import_idx = import_idx,
+    title_idx = import_idx + 3,
+    tag_idx = import_idx + 4,
+  }
+end
+
 -- Fallback function without Treesitter
 -- Returns: (has_todos, completed_count, incomplete_count)
 local function check_todo_status_fallback()
@@ -152,26 +179,18 @@ function M.auto_update_tag()
 
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
-  -- Find the line index of the import line
-  local import_idx = nil
-  for i, line in ipairs(lines) do
-    if line:match('^#import%s+"../include%.typ":%s*%*') then
-      import_idx = i
-      break
-    end
-  end
-
-  if not import_idx then
+  -- Find the structure (import, title, tag positions)
+  local structure = find_note_structure(lines)
+  if not structure then
     return
   end
 
-  -- The tag line is 4 lines after the import line (0-based for nvim_buf_set_lines)
-  local tag_line_idx = import_idx + 3
+  local tag_line_idx = structure.tag_idx - 1 -- Convert to 0-based for nvim_buf_set_lines
   if #lines < tag_line_idx + 1 then
     return
   end
 
-  local tag_line = lines[tag_line_idx + 1] -- Lua is 1-based
+  local tag_line = lines[structure.tag_idx] -- Use 1-based index
   -- Defensive: if tag_line is nil, abort
   if not tag_line then
     return
@@ -473,14 +492,12 @@ function M.new_note(with_metadata)
   vim.cmd("cd " .. vim.fn.fnameescape(root))
   vim.cmd("edit " .. vim.fn.fnameescape(note_path))
 
-  -- Position cursor based on whether metadata is included
-  local target_line
-  if with_metadata then
-    -- Position at title line (line 9 with metadata)
-    target_line = 9
-  else
-    -- Position at title line (line 4 without metadata)
-    target_line = 4
+  -- Find title line dynamically using note structure
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local structure = find_note_structure(lines)
+  local target_line = 1
+  if structure then
+    target_line = structure.title_idx
   end
   target_line = math.min(target_line, vim.api.nvim_buf_line_count(0))
   vim.api.nvim_win_set_cursor(0, { target_line, 2 })
@@ -688,14 +705,14 @@ function M.search_by_tag(tag)
   for _, note_path in ipairs(notes) do
     if vim.fn.filereadable(note_path) == 1 then
       local lines = vim.fn.readfile(note_path)
-      -- Check line 5 (index 5 in Lua) for the tag
-      if #lines >= 5 then
-        local tag_line = lines[5]
-        if tag_line:match("#tag%." .. tag) then
-          -- Extract title from line 4 (the heading)
+      local structure = find_note_structure(lines)
+      if structure then
+        local tag_line = lines[structure.tag_idx]
+        if tag_line and tag_line:match("#tag%." .. tag) then
+          -- Extract title from title line
           local title = "Untitled"
-          if #lines >= 4 then
-            local heading_line = lines[4]
+          local heading_line = lines[structure.title_idx]
+          if heading_line then
             -- Match pattern like "= Title <id>"
             local match = heading_line:match("^=%s*(.-)%s*<")
             if match and match ~= "" then
@@ -708,7 +725,7 @@ function M.search_by_tag(tag)
           local note_id = vim.fn.fnamemodify(note_path, ":t:r")
           table.insert(results, {
             filename = note_path,
-            lnum = 5,
+            lnum = structure.tag_idx,
             text = title,
             id = note_id,
           })
@@ -726,7 +743,7 @@ function M.search_by_tag(tag)
     return {
       text = "[" .. entry.id .. "] " .. entry.text,
       file = entry.filename,
-      pos = { 5, 0 },
+      pos = { entry.lnum, 0 },
     }
   end, results)
 
@@ -788,17 +805,20 @@ function M.find_orphans()
 
   for _, filepath in ipairs(file_paths) do
     local id = vim.fn.fnamemodify(filepath, ":t:r")
-    if id:match("^%%d+$") then
+    if id:match("^%d+$") then
       -- Extract title for display purposes
-      local lines = vim.fn.readfile(filepath, "", 5) -- Read header only
+      local lines = vim.fn.readfile(filepath)
+      local structure = find_note_structure(lines)
       local title = "Untitled"
-      if #lines >= 4 then
-        local heading = lines[4]
-        local match = heading:match("^=%%s*(.-)%%s*<")
-        if match and match ~= "" then
-          title = match
-        else
-          title = heading:gsub("^=%%s*", "")
+      if structure then
+        local heading = lines[structure.title_idx]
+        if heading then
+          local match = heading:match("^=%s*(.-)%s*<")
+          if match and match ~= "" then
+            title = match
+          else
+            title = heading:gsub("^=%s*", "")
+          end
         end
       end
       all_notes[id] = {
@@ -817,7 +837,7 @@ function M.find_orphans()
       local lines = vim.fn.readfile(source_path)
       for _, line in ipairs(lines) do
         -- Regex to find @1234567890 patterns
-        for target_id in line:gmatch("@(%%d+)") do
+        for target_id in line:gmatch("@(%d+)") do
           -- A note referencing itself doesn't count as a "connection"
           if target_id ~= source_id then
             referenced_ids[target_id] = true
@@ -853,11 +873,18 @@ function M.search_orphans()
 
   local root = vim.fn.expand("~/wiki")
 
+  -- Find title line for positioning
+  local function get_title_line(path)
+    local lines = vim.fn.readfile(path)
+    local structure = find_note_structure(lines)
+    return structure and structure.title_idx or 1
+  end
+
   local items = vim.tbl_map(function(entry)
     return {
       text = "[" .. entry.id .. "] " .. entry.title,
       file = entry.path,
-      pos = { 4, 0 },
+      pos = { get_title_line(entry.path), 0 },
     }
   end, orphans)
 
@@ -895,15 +922,15 @@ local function get_notes_by_tags(tags)
   for _, note_path in ipairs(notes) do
     if vim.fn.filereadable(note_path) == 1 then
       local lines = vim.fn.readfile(note_path)
-      -- Check line 5 (index 5 in Lua) for the tag
-      if #lines >= 5 then
-        local tag_line = lines[5]
+      local structure = find_note_structure(lines)
+      if structure then
+        local tag_line = lines[structure.tag_idx]
         for _, tag in ipairs(tags) do
-          if tag_line:match("#tag%." .. tag) then
-            -- Extract title from line 4 (the heading)
+          if tag_line and tag_line:match("#tag%." .. tag) then
+            -- Extract title from title line
             local title = "Untitled"
-            if #lines >= 4 then
-              local heading_line = lines[4]
+            local heading_line = lines[structure.title_idx]
+            if heading_line then
               -- Match pattern like "= Title <id>"
               local match = heading_line:match("^=%s*(.-)%s*<")
               if match and match ~= "" then
