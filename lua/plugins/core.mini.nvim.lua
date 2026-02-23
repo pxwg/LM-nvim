@@ -115,6 +115,7 @@ return {
         u = MiniAi.gen_spec.function_call(), -- u for "Usage"
         U = MiniAi.gen_spec.function_call({ name_pattern = "[%w_]" }), -- without dot in function name
         e = MiniAi.gen_spec.treesitter({ a = "@math.outer", i = "@math.inner" }),
+        r = MiniAi.gen_spec.treesitter({ a = "@reference.outer", i = "@reference.outer" }),
         b = md_block_spec,
       },
     })

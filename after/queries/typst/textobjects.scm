@@ -1,5 +1,8 @@
 ; extends
 
+; Label references (@xxxx)
+(ref) @reference.outer
+
 ((math
   "$"
   (_) @_start
