@@ -1,5 +1,13 @@
 local M = {}
 
+-- Excuting a LSP command for zk-lsp
+local function excute_command_zk_lsp(cmd, arg)
+  local clients = vim.lsp.get_clients({ name = "zk-lsp" })
+  for _, client in ipairs(clients) do
+    client.exec_cmd({ command = cmd, arguments = arg })
+  end
+end
+
 -- Refreshing Tinymist LSP client to recognize new notes
 local function refresh_tinymist()
   local clients = vim.lsp.get_clients({ name = "tinymist" })
@@ -436,61 +444,9 @@ local function note_paths(id)
 end
 
 function M.new_note(with_metadata)
-  local id = os.date("%y%m%d%H%M")
-  local root, note_dir, note_path, index_path = note_paths(id)
-  local link_path = root .. "/link.typ"
-
-  vim.fn.mkdir(note_dir, "p")
-
-  if vim.fn.filereadable(note_path) == 0 then
-    local lines
-    if with_metadata then
-      lines = {
-        "/* Metadata:",
-        "Aliases: ",
-        "Abstract: ",
-        "Keyword: ",
-        "Generated: true",
-        "*/",
-        '#import "../include.typ": *',
-        "#show: zettel",
-        "",
-        "=  <" .. id .. ">",
-        "#tag.",
-        "",
-      }
-    else
-      lines = {
-        '#import "../include.typ": *',
-        "#show: zettel",
-        "",
-        "=  <" .. id .. ">",
-        "#tag.",
-        "",
-      }
-    end
-    vim.fn.writefile(lines, note_path)
-  end
-
-  -- Append #include to link.typ if not present
-  if vim.fn.filereadable(link_path) == 1 then
-    local include_line = '#zk_entry("' .. id .. '", "note/' .. id .. '.typ")'
-    local link_lines = vim.fn.readfile(link_path)
-    local exists = false
-    for _, line in ipairs(link_lines) do
-      if line == include_line then
-        exists = true
-        break
-      end
-    end
-    if not exists then
-      table.insert(link_lines, include_line)
-      vim.fn.writefile(link_lines, link_path)
-    end
-  end
-
-  vim.cmd("cd " .. vim.fn.fnameescape(root))
-  vim.cmd("edit " .. vim.fn.fnameescape(note_path))
+  local metadata = "" and not with_metadata or "--metadata"
+  local note_path = vim.fn.system("zk-lsp", { "new", metadata })
+  vim.cmd("edit " .. note_path)
 
   -- Find title line dynamically using note structure
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
@@ -517,25 +473,7 @@ end
 
 -- Remove a note and update index.typ accordingly
 function M.remove_note(note_id)
-  local root, note_dir, note_path, index_path = note_paths(note_id)
-  local link_path = root .. "/link.typ"
-  -- Delete the note file if it exists
-  if vim.fn.filereadable(note_path) == 1 then
-    vim.fn.delete(note_path)
-  end
-  -- Remove the corresponding #include line from link.typ
-  if vim.fn.filereadable(link_path) == 1 then
-    local include_line = '#zk_entry("' .. note_id .. '", "note/' .. note_id .. '.typ")'
-    local link_lines = vim.fn.readfile(link_path)
-    local new_lines = {}
-    for _, line in ipairs(link_lines) do
-      if line ~= include_line then
-        table.insert(new_lines, line)
-      end
-    end
-    vim.fn.writefile(new_lines, link_path)
-  end
-
+  vim.fn.system("zk-lsp", { "remove", note_id })
   refresh_tinymist()
 end
 
