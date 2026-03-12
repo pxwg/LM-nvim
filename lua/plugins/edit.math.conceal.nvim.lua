@@ -23,6 +23,20 @@ return {
     main = "math-conceal",
     opts = {
       ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown" },
+      image_conceal = {
+        enabled = false,
+        ft = { "typst" },
+        typst = {
+          typst_binary = "typst",
+          ppi = 300,
+          math_baseline_pt = 11,
+          styling_type = "colorscheme",
+          color = nil,
+          header = "",
+          compiler_args = {},
+          conceal_in_normal = false,
+        },
+      },
       enabled = true,
       conceal = {
         "greek",

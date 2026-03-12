@@ -277,9 +277,9 @@ function M.toggle_todo()
     vim.api.nvim_buf_set_lines(0, row - 1, row, false, { new_line })
 
     -- Auto-check and update tag after toggling
-    vim.schedule(function()
-      M.auto_update_tag()
-    end)
+    -- vim.schedule(function()
+    --   M.auto_update_tag()
+    -- end)
   else
     -- Insert new todo item with proper indentation
     local indent_match = line:match("^(%s*)")
@@ -444,8 +444,7 @@ local function note_paths(id)
 end
 
 function M.new_note(with_metadata)
-  local metadata = "" and not with_metadata or "--metadata"
-  local note_path = vim.fn.system("zk-lsp", { "new", metadata })
+  local note_path = vim.fn.system({ "zk-lsp", "new" })
   vim.cmd("edit " .. note_path)
 
   -- Find title line dynamically using note structure
@@ -473,7 +472,7 @@ end
 
 -- Remove a note and update index.typ accordingly
 function M.remove_note(note_id)
-  vim.fn.system("zk-lsp", { "remove", note_id })
+  vim.fn.system({ "zk-lsp", "remove", note_id })
   refresh_tinymist()
 end
 
@@ -1101,13 +1100,13 @@ end, {
 })
 
 -- Auto-update tag on buffer write (save)
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*/note/*.typ",
-  callback = function()
-    M.auto_update_tag()
-  end,
-  desc = "Auto-update ZK note tags based on todo completion status",
-})
+-- vim.api.nvim_create_autocmd("BufWritePre", {
+--   pattern = "*/note/*.typ",
+--   callback = function()
+--     M.auto_update_tag()
+--   end,
+--   desc = "Auto-update ZK note tags based on todo completion status",
+-- })
 
 vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
 vim.keymap.set(

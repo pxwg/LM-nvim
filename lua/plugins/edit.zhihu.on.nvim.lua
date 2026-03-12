@@ -125,17 +125,18 @@ end
 
 -- Typst utilities
 local function get_typst_title(content)
-  if not content or content == "" then
+  if not content or content == "" or type(content) ~= "string" then
     return nil
   end
   local parser = vim.treesitter.get_string_parser(content, "typst")
   if not parser then
     return nil
   end
-  local tree = parser:parse()[1]
-  if not tree then
+  local tree_list = parser:parse()
+  if not tree_list or #tree_list == 0 then
     return nil
   end
+  local tree = tree_list[1]
   local query_str = [[ (let pattern: (ident) @cmd (#eq? @cmd "title") value: (string) @title) ]]
   local query = vim.treesitter.query.parse("typst", query_str)
   for id, node in query:iter_captures(tree:root(), content, 0, -1) do
@@ -223,7 +224,7 @@ local function typst_converter(content)
   else
     output.content = "Error: " .. result
   end
-  return output.content
+  return output
 end
 
 -- Markdown to Typst converter function
@@ -318,6 +319,7 @@ return {
   "pxwg/zhihu.nvim",
   main = "zhihu",
   dev = true,
+  event = "VeryLazy",
 
   config = function()
     require("zhihu").setup({
@@ -329,7 +331,7 @@ return {
             ["in"] = typst_converter,
             ["out"] = markdown_to_typst,
           },
-          title = get_typst_title,
+          -- title = get_typst_title,
         },
         -- tex = {
         --   type = "markdown",
@@ -353,6 +355,7 @@ return {
         path = vim.api.nvim_buf_get_name(0),
         title = get_typst_title(0) or "Untitled",
       }
+      print(vim.inspect(content_input))
 
       local result = typst_converter(content_input)
       if result.content:match("^Error:") then

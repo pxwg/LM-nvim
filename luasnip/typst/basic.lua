@@ -186,25 +186,7 @@ return {
   ),
 
   -- Integral
-  s(
-    { trig = "int", snippetType = "autosnippet" },
-    c(1, {
-      sn(nil, {
-        t("integral_("),
-        i(1, "-infinity"),
-        t(")^("),
-        i(2, "infinity"),
-        t(") "),
-        i(3),
-        t(" dif "),
-        i(4, "x"),
-        t(" "),
-        i(0),
-      }),
-      sn(nil, { t("integral "), i(1), t(" dif "), i(2, "x"), t(" "), i(0) }),
-    }),
-    { condition = in_math }
-  ),
+  s({ trig = "int", snippetType = "autosnippet" }, fmta("integral", {}), { condition = in_math }),
 
   -- nth root
   s(

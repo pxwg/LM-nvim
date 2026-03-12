@@ -56,7 +56,7 @@ return {
   ),
   s(
     { trig = "hbar", snippetType = "autosnippet", wordTrig = true, priority = 1005 },
-    t("planck.reduce "),
+    t("planck"),
     { condition = in_math }
   ),
   s(

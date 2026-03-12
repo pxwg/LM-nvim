@@ -26,8 +26,8 @@ return {
     image = {
       -- enabled = false,
       math = {
-        enabled = true,
-        -- enabled = true,
+        -- enabled = false,
+        enabled = false,
         typst = {
           tpl = [[
         #set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))
@@ -50,7 +50,7 @@ return {
         -- only used if `opts.inline` is disabled
         enabled = true,
         float = false,
-        inline = true,
+        -- inline = true,
         -- Sets the size of the image
         -- max_width = 60,
         -- max_width = vim.g.neovim_mode == "skitty" and 20 or 50,
@@ -124,6 +124,20 @@ return {
         Snacks.picker.files()
       end,
       desc = "Find [F]iles (Root Dir)",
+    },
+    {
+      "<leader>fs",
+      function()
+        Snacks.picker.lsp_symbols()
+      end,
+      desc = "Find [S]ymbols (Buffer)",
+    },
+    {
+      "<leader>fS",
+      function()
+        Snacks.picker.lsp_workspace_symbols()
+      end,
+      desc = "Find [S]ymbols",
     },
     {
       "<leader>fg",

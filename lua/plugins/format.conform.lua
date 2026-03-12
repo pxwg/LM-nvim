@@ -47,6 +47,7 @@ return {
         args = { "--input", "-" },
         stdin = true,
       }, -- HACK: a hacky way to avoid trailing blank lines
+      ["zk-lsp"] = { command = "zk-lsp", args = { "format" }, stdin = true },
       ["tex-fmt"] = {
         command = "tex-fmt",
         args = { "--nowrap", "--stdin" },
@@ -79,7 +80,7 @@ return {
         }
       end,
       yml = { "yq" },
-      typst = { "typstyle", "autocorrect", "trimlines", "injected" },
+      typst = { "typstyle", "autocorrect", "trimlines", "injected", "zk-lsp" },
       arduino = { "clang_format" },
       typescript = { "prettier" },
       astro = { "prettier" },

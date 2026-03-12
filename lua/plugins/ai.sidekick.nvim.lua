@@ -8,6 +8,9 @@ return {
           ["claude-wiki"] = {
             cmd = { "claude", "--add-dir", vim.fn.expand("~/wiki") },
           },
+          ["claude-ds"] = {
+            cmd = { "claude-ds" },
+          },
         },
       },
     }
