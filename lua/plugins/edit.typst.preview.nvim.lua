@@ -27,9 +27,9 @@ return {
       return vim.fn.getcwd()
     end,
     -- [新增 1] 强制所有预览都编译 index.typ
-    get_main_file = function(path)
-      return vim.fn.getcwd() .. "/index.typ"
-    end,
+    -- get_main_file = function(path)
+    --   return vim.fn.getcwd() .. "/index.typ"
+    -- end,
   },
   -- [新增 2] 使用 config 函数添加自动命令
   config = function(_, opts)

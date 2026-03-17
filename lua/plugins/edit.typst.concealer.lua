@@ -32,6 +32,13 @@ return {
         it
       }
     ]],
+    render_paths = {
+      exclude = {
+        function(path)
+          return path == vim.fs.normalize("~/wiki/link.typ") or path == vim.fs.normalize("~/wiki/index.typ")
+        end,
+      },
+    },
   },
   ft = "typst",
 }

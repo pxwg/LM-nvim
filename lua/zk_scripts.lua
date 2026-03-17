@@ -1,11 +1,23 @@
 local M = {}
+local zk_cli = require("zk_cli")
 
--- Excuting a LSP command for zk-lsp
-local function excute_command_zk_lsp(cmd, arg)
+-- Execute a workspace/executeCommand on zk-lsp, returns true if dispatched
+local function execute_command_zk_lsp(cmd, args, callback)
   local clients = vim.lsp.get_clients({ name = "zk-lsp" })
-  for _, client in ipairs(clients) do
-    client.exec_cmd({ command = cmd, arguments = arg })
+  if #clients == 0 then
+    return false
   end
+  for _, client in ipairs(clients) do
+    client:request("workspace/executeCommand", {
+      command = cmd,
+      arguments = args or {},
+    }, function(err, result)
+      if callback then
+        callback(err, result)
+      end
+    end)
+  end
+  return true
 end
 
 -- Refreshing Tinymist LSP client to recognize new notes
@@ -84,31 +96,18 @@ local function check_todo_status()
   return has_todos, completed_count, incomplete_count
 end
 
--- Helper function to find the index of the import line and calculate title/tag positions
+-- Helper function to find title and tag positions by scanning for the first heading
+-- Heading format: "= Title <id>"
 local function find_note_structure(lines)
-  local import_idx = nil
   for i, line in ipairs(lines) do
-    if line:match('^#import%s+"../include%.typ":%s*%*') then
-      import_idx = i
-      break
+    if line:match("^=%s+.+%s+<%d+>") then
+      return {
+        title_idx = i,
+        tag_idx = i + 1,
+      }
     end
   end
-
-  if not import_idx then
-    return nil
-  end
-
-  -- The structure after import line is:
-  -- import_idx: #import line
-  -- import_idx + 1: #show: zettel
-  -- import_idx + 2: empty line
-  -- import_idx + 3: title line (= Title <id>)
-  -- import_idx + 4: tag line (#tag.xxx)
-  return {
-    import_idx = import_idx,
-    title_idx = import_idx + 3,
-    tag_idx = import_idx + 4,
-  }
+  return nil
 end
 
 -- Fallback function without Treesitter
@@ -444,18 +443,16 @@ local function note_paths(id)
 end
 
 function M.new_note(with_metadata)
-  local note_path = vim.fn.system({ "zk-lsp", "new" })
+  local note_path = vim.fn.system({ "zk-lsp", "new", "--wiki-root", "./" })
   vim.cmd("edit " .. note_path)
 
-  -- Find title line dynamically using note structure
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local structure = find_note_structure(lines)
-  local target_line = 1
-  if structure then
-    target_line = structure.title_idx
-  end
-  target_line = math.min(target_line, vim.api.nvim_buf_line_count(0))
-  vim.api.nvim_win_set_cursor(0, { target_line, 2 })
+  vim.schedule(function()
+    -- Jump to the first "= Title <id>" heading line
+    local line = vim.fn.search([[^= \S.\{-} <\d\+>]], "nw")
+    if line > 0 then
+      vim.api.nvim_win_set_cursor(0, { line, 2 })
+    end
+  end)
 
   refresh_tinymist()
 end
@@ -498,26 +495,25 @@ local function is_root_note(filepath)
     return false
   end
   local lines = vim.fn.readfile(filepath)
-  -- Check line 5 (index 5 in Lua) for the #tag.root tag
-  if #lines >= 5 then
-    local tag_line = lines[5]
-    if tag_line:match("#tag%.root") then
-      return true
-    end
+  local structure = find_note_structure(lines)
+  if not structure then
+    return false
   end
-  return false
+  local tag_line = lines[structure.tag_idx]
+  return tag_line ~= nil and tag_line:match("#tag%.root") ~= nil
 end
 
--- Read note content without the first 3 lines (imports)
+-- Read note content starting from the title line (skipping preamble)
 local function read_note_content(filepath)
   if vim.fn.filereadable(filepath) == 0 then
     return nil
   end
 
   local lines = vim.fn.readfile(filepath)
-  -- Skip first 3 lines (#import, #show, empty line)
+  local structure = find_note_structure(lines)
+  local start = structure and structure.title_idx or 1
   local content = {}
-  for i = 4, #lines do
+  for i = start, #lines do
     table.insert(content, lines[i])
   end
   return table.concat(content, "\n")
@@ -570,18 +566,56 @@ local function collect_linked_notes(start_id, visited, depth)
   return result
 end
 
--- Export current note and all linked notes for AI context
+-- Open export text in a scratch buffer and copy to clipboard
+local function open_export_buffer(export_text, note_id)
+  local export_lines = vim.split(export_text, "\n", { plain = true })
+  vim.cmd("new")
+  local buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, export_lines)
+  vim.bo[buf].buftype = "nofile"
+  vim.bo[buf].bufhidden = "wipe"
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].filetype = "markdown"
+  vim.api.nvim_buf_set_name(buf, "ZK Export: " .. note_id)
+  vim.fn.setreg("+", export_text)
+end
+
+-- Export current note context via zk-lsp (zk.exportContext), with Lua fallback
 function M.export_for_ai()
   local current_file = vim.fn.expand("%:p")
   local current_id = vim.fn.expand("%:t:r")
 
-  -- Validate it's a note file
   if not current_file:match("/note/%d+%.typ$") then
     vim.notify("Not a ZK note file", vim.log.levels.WARN)
     return
   end
 
-  -- Collect all linked notes
+  -- Try zk-lsp first
+  local dispatched = execute_command_zk_lsp("zk.exportContext", { current_id, 5, true }, function(err, result)
+    if err then
+      vim.notify("zk-lsp exportContext error: " .. vim.inspect(err), vim.log.levels.WARN)
+      return
+    end
+    if type(result) == "string" and result ~= "" then
+      vim.schedule(function()
+        open_export_buffer(result, current_id)
+        vim.notify("Exported context via zk-lsp to buffer and clipboard", vim.log.levels.INFO)
+      end)
+    else
+      vim.schedule(function()
+        vim.notify("zk-lsp returned no content, falling back to Lua export", vim.log.levels.INFO)
+        M._export_for_ai_fallback(current_id)
+      end)
+    end
+  end)
+
+  if not dispatched then
+    M._export_for_ai_fallback(current_id)
+  end
+end
+
+-- Lua fallback export (used when zk-lsp is not available)
+function M._export_for_ai_fallback(current_id)
   local notes = collect_linked_notes(current_id)
 
   if #notes == 0 then
@@ -589,7 +623,6 @@ function M.export_for_ai()
     return
   end
 
-  -- Build the export content
   local export_lines = {
     "# ZK Notes Export for AI Context",
     "# Root Note: " .. current_id,
@@ -602,7 +635,6 @@ function M.export_for_ai()
     table.insert(export_lines, "## Note: " .. note.id)
     table.insert(export_lines, "## Path: " .. note.path)
     table.insert(export_lines, "")
-    -- Split content by newlines and add each line separately
     for line in note.content:gmatch("[^\n]*") do
       table.insert(export_lines, line)
     end
@@ -611,63 +643,24 @@ function M.export_for_ai()
     table.insert(export_lines, "")
   end
 
-  -- Create a new buffer with the export
   local export_text = table.concat(export_lines, "\n")
-
-  -- Create a new scratch buffer
-  vim.cmd("new")
-  local buf = vim.api.nvim_get_current_buf()
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, export_lines)
-  vim.bo[buf].buftype = "nofile"
-  vim.bo[buf].bufhidden = "wipe"
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].filetype = "markdown"
-  vim.api.nvim_buf_set_name(buf, "ZK Export: " .. current_id)
-
-  -- Copy to clipboard
-  vim.fn.setreg("+", export_text)
-
-  vim.notify("Exported " .. #notes .. " notes to buffer and clipboard", vim.log.levels.INFO)
+  open_export_buffer(export_text, current_id)
+  vim.notify("Exported " .. #notes .. " notes to buffer and clipboard (Lua fallback)", vim.log.levels.INFO)
 end
 
 -- Search for notes with specific tags using Snacks.picker
 function M.search_by_tag(tag)
   local root = vim.fn.expand("~/wiki")
-  local note_dir = root .. "/note"
-
-  -- Get all .typ files in note directory
-  local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
   local results = {}
 
-  for _, note_path in ipairs(notes) do
-    if vim.fn.filereadable(note_path) == 1 then
-      local lines = vim.fn.readfile(note_path)
-      local structure = find_note_structure(lines)
-      if structure then
-        local tag_line = lines[structure.tag_idx]
-        if tag_line and tag_line:match("#tag%." .. tag) then
-          -- Extract title from title line
-          local title = "Untitled"
-          local heading_line = lines[structure.title_idx]
-          if heading_line then
-            -- Match pattern like "= Title <id>"
-            local match = heading_line:match("^=%s*(.-)%s*<")
-            if match and match ~= "" then
-              title = match
-            else
-              -- Fallback: just remove leading "= "
-              title = heading_line:gsub("^=%s*", "")
-            end
-          end
-          local note_id = vim.fn.fnamemodify(note_path, ":t:r")
-          table.insert(results, {
-            filename = note_path,
-            lnum = structure.tag_idx,
-            text = title,
-            id = note_id,
-          })
-        end
-      end
+  for _, note in ipairs(zk_cli.list_notes({ include_references = true })) do
+    if vim.tbl_contains(note.tags, tag) then
+      table.insert(results, {
+        filename = note.path,
+        lnum = note.title_line,
+        text = note.title,
+        id = note.id,
+      })
     end
   end
 
@@ -732,54 +725,20 @@ end
 -- Identify notes that are not referenced by any OTHER note
 -- (References in index.typ are ignored, self-references are ignored)
 function M.find_orphans()
-  local root = vim.fn.expand("~/wiki")
-  local note_dir = root .. "/note"
-
-  -- 1. Catalog all existing notes
-  local file_paths = vim.fn.globpath(note_dir, "*.typ", false, true)
   local all_notes = {} -- Map: id -> { path, title }
   local referenced_ids = {} -- Set: id -> true
 
-  for _, filepath in ipairs(file_paths) do
-    local id = vim.fn.fnamemodify(filepath, ":t:r")
-    if id:match("^%d+$") then
-      -- Extract title for display purposes
-      local lines = vim.fn.readfile(filepath)
-      local structure = find_note_structure(lines)
-      local title = "Untitled"
-      if structure then
-        local heading = lines[structure.title_idx]
-        if heading then
-          local match = heading:match("^=%s*(.-)%s*<")
-          if match and match ~= "" then
-            title = match
-          else
-            title = heading:gsub("^=%s*", "")
-          end
-        end
-      end
-      all_notes[id] = {
-        id = id,
-        path = filepath,
-        title = title,
-      }
-    end
-  end
+  for _, note in ipairs(zk_cli.list_notes()) do
+    all_notes[note.id] = {
+      id = note.id,
+      path = note.path,
+      title = note.title,
+      title_line = note.title_line,
+    }
 
-  -- 2. Scan all notes for outgoing references
-  for _, source_path in ipairs(file_paths) do
-    local source_id = vim.fn.fnamemodify(source_path, ":t:r")
-    -- Read file content
-    if vim.fn.filereadable(source_path) == 1 then
-      local lines = vim.fn.readfile(source_path)
-      for _, line in ipairs(lines) do
-        -- Regex to find @1234567890 patterns
-        for target_id in line:gmatch("@(%d+)") do
-          -- A note referencing itself doesn't count as a "connection"
-          if target_id ~= source_id then
-            referenced_ids[target_id] = true
-          end
-        end
+    for target_id, _ in pairs(note.references or {}) do
+      if target_id ~= note.id then
+        referenced_ids[target_id] = true
       end
     end
   end
@@ -810,18 +769,11 @@ function M.search_orphans()
 
   local root = vim.fn.expand("~/wiki")
 
-  -- Find title line for positioning
-  local function get_title_line(path)
-    local lines = vim.fn.readfile(path)
-    local structure = find_note_structure(lines)
-    return structure and structure.title_idx or 1
-  end
-
   local items = vim.tbl_map(function(entry)
     return {
       text = "[" .. entry.id .. "] " .. entry.title,
       file = entry.path,
-      pos = { get_title_line(entry.path), 0 },
+      pos = { entry.title_line or 1, 0 },
     }
   end, orphans)
 
@@ -849,44 +801,19 @@ end
 
 -- Get all notes with specific tags and format for display
 local function get_notes_by_tags(tags)
-  local root = vim.fn.expand("~/wiki")
-  local note_dir = root .. "/note"
-
-  -- Get all .typ files in note directory
-  local notes = vim.fn.globpath(note_dir, "*.typ", false, true)
   local results = {}
 
-  for _, note_path in ipairs(notes) do
-    if vim.fn.filereadable(note_path) == 1 then
-      local lines = vim.fn.readfile(note_path)
-      local structure = find_note_structure(lines)
-      if structure then
-        local tag_line = lines[structure.tag_idx]
-        for _, tag in ipairs(tags) do
-          if tag_line and tag_line:match("#tag%." .. tag) then
-            -- Extract title from title line
-            local title = "Untitled"
-            local heading_line = lines[structure.title_idx]
-            if heading_line then
-              -- Match pattern like "= Title <id>"
-              local match = heading_line:match("^=%s*(.-)%s*<")
-              if match and match ~= "" then
-                title = match
-              else
-                -- Fallback: just remove leading "= "
-                title = heading_line:gsub("^=%s*", "")
-              end
-            end
-            local note_id = vim.fn.fnamemodify(note_path, ":t:r")
-            table.insert(results, {
-              title = title,
-              id = note_id,
-              tag = tag,
-              path = note_path,
-            })
-            break
-          end
-        end
+  for _, note in ipairs(zk_cli.list_notes()) do
+    for _, tag in ipairs(tags) do
+      if vim.tbl_contains(note.tags, tag) then
+        table.insert(results, {
+          title = note.title,
+          id = note.id,
+          tag = tag,
+          path = note.path,
+          title_line = note.title_line,
+        })
+        break
       end
     end
   end

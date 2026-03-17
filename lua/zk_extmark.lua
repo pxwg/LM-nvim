@@ -22,26 +22,15 @@ local function get_title_from_file(id)
   end
 
   local title = nil
-  local found_import = false
-  local count = 0
-  for _ = 1, 20 do -- 限制最多读取前20行，防止死循环
+  for _ = 1, 20 do -- Limit to first 20 lines for efficiency
     local line = file:read("*line")
     if not line then
       break
     end
-    if not found_import then
-      if line:match('^#import%s+"%.%./include%.typ":%s*%*') then
-        found_import = true
-      end
-    else
-      count = count + 1
-      if count > 5 then
-        break
-      end
-      if line:match("^=%s+") then
-        title = line:gsub("^=%s+", ""):gsub("%s*<.*>$", "")
-        break
-      end
+    local matched_title = line:match("^=%s*(.+)%s*<(%d%d%d%d%d%d%d%d%d%d)>$")
+    if matched_title and line:match("<" .. id .. ">$") then
+      title = line:gsub("^=%s*", ""):gsub("%s*<.*>$", "")
+      break
     end
   end
   file:close()

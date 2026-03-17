@@ -1,7 +1,7 @@
 return {
   name = "zk-lsp",
   cmd = { "zk-lsp" },
+  root_dir = "~/wiki",
   filetypes = { "typst" },
-  root_dir = vim.fn.expand("~/wiki"),
   offset_encoding = "utf-16",
 }

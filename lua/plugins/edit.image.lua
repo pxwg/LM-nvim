@@ -2,7 +2,8 @@ return {
   {
     "3rd/image.nvim",
     -- enabled = not vim.g.started_by_firenvim,
-    enabled = vim.fn.has("mac") == 1,
+    -- enabled = vim.fn.has("mac") == 1,
+    enabled = false,
     events = "VeryLazy",
     config = function()
       if not vim.g.started_by_firenvim then
