@@ -1,4 +1,3 @@
-require("util.lazyfile").lazy_file()
 return {
   "jmbuhr/otter.nvim",
   enabled = false,

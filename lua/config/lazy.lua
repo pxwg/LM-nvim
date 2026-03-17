@@ -89,7 +89,6 @@ local autocmd = vim.api.nvim_create_autocmd
 
 -- set relativenumber when entering hello file type and unset when leaving
 require("mini.hues").setup({ background = "#11262d", foreground = "#c0c8cc", saturation = "lowmedium" })
--- vim.api.nvim_set_hl(0, "Normal", { bg = "#11262d" })
 vim.api.nvim_set_hl(0, "@typ_inline_dollar.typst", { link = "Comment" })
 vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
 
@@ -144,9 +143,3 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 -- The LSP completion handler is now managed through completion plugins like nvim-cmp
 -- If you're using nvim-cmp, this manual handler configuration is not needed
 -- require("util.current_function")
-local luarocks_path = vim.fn.expand("~/.luarocks/share/lua/5.1/?.lua")
-local luarocks_cpath = vim.fn.expand("~/.luarocks/lib/lua/5.1/?.so")
-
--- 添加到 package.path 和 package.cpath
-package.path = package.path .. ";" .. luarocks_path
-package.cpath = package.cpath .. ";" .. luarocks_cpath

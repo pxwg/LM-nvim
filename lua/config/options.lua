@@ -65,37 +65,55 @@ vim.g.copilot_chat_enabled = true
 vim.o.title = false
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
 -- vim.opt.virtualedit = "all"
-function Get_git_branch()
-  local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD 2>/dev/null")
-  if vim.v.shell_error ~= 0 then
-    return ""
-  end
-  return "[" .. branch:gsub("\n", "") .. "]"
-end
-
-vim.o.statusline = "%f %m %r %h %w %=%{v:lua.Get_git_branch()} %y %p%% %l:%c"
+vim.o.statusline = "%f %m %r %h %w %= %y %p%% %l:%c"
 vim.opt.matchpairs:append("$:$")
 
 vim.lsp.enable({
   "dictionary",
-  "harper_ls",
-  "html_lsp",
-  "ltex",
-  -- "lua_ls",
-  "emmylua_ls",
-  "pyright",
   "rime_ls",
-  "rust_analyzer",
-  "texlab",
-  "tinymist",
-  "ts_query_ls",
-  "vtsls",
-  "wolfram_lsp",
-  "clangd",
-  "astro-ls",
-  "sourcekit-lsp",
-  "arduino",
-  "zk-lsp",
+})
+
+local lsp_by_ft = {
+  arduino = { "arduino" },
+  astro = { "astro-ls" },
+  c = { "clangd" },
+  cpp = { "clangd" },
+  html = { "html_lsp" },
+  javascript = { "vtsls" },
+  javascriptreact = { "vtsls" },
+  lua = { "emmylua_ls" },
+  markdown = { "harper_ls", "ltex" },
+  objc = { "clangd" },
+  objcpp = { "clangd" },
+  python = { "pyright" },
+  rust = { "rust_analyzer" },
+  swift = { "sourcekit-lsp" },
+  tex = { "harper_ls", "ltex", "texlab" },
+  plaintex = { "harper_ls", "ltex", "texlab" },
+  typst = { "harper_ls", "ltex", "tinymist", "zk-lsp" },
+  typescript = { "vtsls" },
+  typescriptreact = { "vtsls" },
+  wolfram = { "wolfram_lsp" },
+  xml = { "html_lsp" },
+  yaml = { "ts_query_ls" },
+}
+
+local enabled_lsp = {}
+
+vim.api.nvim_create_autocmd("FileType", {
+  callback = function(args)
+    local servers = lsp_by_ft[args.match]
+    if not servers then
+      return
+    end
+
+    for _, server in ipairs(servers) do
+      if not enabled_lsp[server] then
+        vim.lsp.enable(server)
+        enabled_lsp[server] = true
+      end
+    end
+  end,
 })
 
 autocmd("FileType", {

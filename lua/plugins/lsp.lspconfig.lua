@@ -1,4 +1,3 @@
-require("util.lazyfile").lazy_file()
 return {
   {
     "folke/lazydev.nvim",

@@ -1,4 +1,3 @@
-local zk = require("zk_scripts")
 local function md_block_spec(ai_type, id, opts)
   local parser = vim.treesitter.get_parser(0, "markdown")
   if not parser then

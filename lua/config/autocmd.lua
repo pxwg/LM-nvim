@@ -1,4 +1,3 @@
-local md_hl = require("util.latex_highlight")
 local autocmd = vim.api.nvim_create_autocmd
 
 -- set up rime_ls lsp when enter tex
@@ -100,7 +99,6 @@ autocmd({ "CursorMovedI", "CursorMoved" }, {
   end,
 })
 
--- auto change insert mode
 require("util.math_autochange")
 
 -- -- open rime_ls
@@ -173,7 +171,13 @@ autocmd({ "VimResized" }, {
   end,
 })
 
-require("util.note_md")
+autocmd("FileType", {
+  pattern = "markdown",
+  once = true,
+  callback = function()
+    require("util.note_md")
+  end,
+})
 
 vim.api.nvim_create_autocmd("User", {
   pattern = "TelescopePreviewerLoaded",
@@ -415,15 +419,13 @@ autocmd("BufLeave", {
   end,
 })
 
-local adjust_ui_for_window_size = require("util.sidenote").adjust_ui_for_window_size
-
 local augroup = vim.api.nvim_create_augroup("WindowResizeUI", { clear = true })
 
 vim.api.nvim_create_autocmd({ "VimResized" }, {
   group = augroup,
   callback = function()
     vim.schedule(function()
-      adjust_ui_for_window_size()
+      require("util.sidenote").adjust_ui_for_window_size()
     end)
   end,
 })
@@ -432,7 +434,7 @@ vim.api.nvim_create_autocmd({ "VimEnter" }, {
   group = augroup,
   callback = function()
     vim.schedule(function()
-      adjust_ui_for_window_size()
+      require("util.sidenote").adjust_ui_for_window_size()
     end)
   end,
 })
@@ -450,7 +452,13 @@ vim.api.nvim_create_user_command("ConcealFold", function()
   vim.wo.concealcursor = "nv"
 end, {})
 
-require("zk_scripts")
+vim.api.nvim_create_autocmd("CmdUndefined", {
+  pattern = "Zk",
+  once = true,
+  callback = function()
+    require("zk_scripts")
+  end,
+})
 -- require("zk_lsp").setup({
 --   filetypes = { "typst" },
 --   root_dir = vim.fn.expand("~/wiki"),

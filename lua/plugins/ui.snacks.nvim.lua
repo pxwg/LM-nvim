@@ -2,7 +2,7 @@ return {
   "folke/snacks.nvim",
   event = "VeryLazy",
   opts = {
-    profiler = { enabled = true },
+    profiler = { enabled = false },
     bigfiles = {
       enabled = true,
       max_size = 1024 * 1024 * 10, -- 10MB

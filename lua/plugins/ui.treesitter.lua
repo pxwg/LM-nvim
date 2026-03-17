@@ -2,12 +2,12 @@ return {
   "nvim-treesitter/nvim-treesitter",
   dependencies = {
     {
-      { "nvim-treesitter/nvim-treesitter-textobjects", event = { "LazyFile", "VeryLazy" } },
+      { "nvim-treesitter/nvim-treesitter-textobjects", event = "LazyFile" },
     },
   },
   -- enabled = false,
   lazy = vim.fn.argc(-1) == 0,
-  event = { "LazyFile", "VeryLazy" },
+  event = "LazyFile",
   version = false, -- last release is way too old and doesn't work on Windows
   build = ":TSUpdate",
   opts = {},
