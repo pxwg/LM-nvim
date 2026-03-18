@@ -12,8 +12,12 @@ local active_refreshes = 0
 local MAX_NOTE_INFO_ATTEMPTS = 3
 local MAX_CONCURRENT_REFRESHES = 4
 
+local function home_dir()
+  return uv.os_homedir() or os.getenv("HOME") or "~"
+end
+
 local function wiki_root()
-  return vim.fn.expand("~/wiki")
+  return vim.fs.normalize(home_dir() .. "/wiki")
 end
 
 local function cache_path()
@@ -40,6 +44,46 @@ local function state_equals(a, b)
   return a and b and a.mtime == b.mtime and a.size == b.size
 end
 
+local function resolve_file_path(path, cwd)
+  if type(path) ~= "string" or path == "" then
+    return nil
+  end
+
+  if path:match("^%w+://") then
+    return nil
+  end
+
+  local base = path
+  if not path:match("^/") then
+    local root = type(cwd) == "string" and cwd ~= "" and cwd or uv.cwd() or "."
+    base = root .. "/" .. path
+  end
+
+  return vim.fs.normalize(base)
+end
+
+local function read_lines(path)
+  local fd = uv.fs_open(path, "r", 438)
+  if not fd then
+    return nil
+  end
+
+  local stat = uv.fs_fstat(fd)
+  if not stat or not stat.size then
+    uv.fs_close(fd)
+    return nil
+  end
+
+  local data = uv.fs_read(fd, stat.size, 0)
+  uv.fs_close(fd)
+  if type(data) ~= "string" then
+    return nil
+  end
+
+  data = data:gsub("\r\n", "\n")
+  return vim.split(data, "\n", { plain = true })
+end
+
 local function title_line_from_lines(lines)
   for i, line in ipairs(lines) do
     if line:match("^=%s+.+%s+<%d+>%s*$") then
@@ -61,11 +105,14 @@ end
 
 local function local_note_info(id, path, opts)
   opts = opts or {}
-  if vim.fn.filereadable(path) == 0 then
+  if not uv.fs_stat(path) then
     return nil
   end
 
-  local lines = vim.fn.readfile(path)
+  local lines = read_lines(path)
+  if not lines then
+    return nil
+  end
   local title_line = title_line_from_lines(lines)
   local title = "Untitled"
   local heading = lines[title_line] or ""
@@ -343,6 +390,19 @@ end
 function M.note_info(id, opts)
   opts = opts or {}
   local path = wiki_root() .. "/note/" .. id .. ".typ"
+  if vim.in_fast_event() then
+    local cached = note_info_cache[id]
+    if cached then
+      return cached
+    end
+
+    local fallback = local_note_info(id, path, { include_references = opts.include_references })
+    if fallback then
+      note_info_cache[id] = fallback
+    end
+    return fallback
+  end
+
   local cached = not opts.refresh and get_cached_note(id, path, {
     include_references = opts.include_references,
   })
@@ -399,6 +459,21 @@ function M.note_info(id, opts)
   end
 
   return nil
+end
+
+function M.note_info_by_file(path, opts)
+  opts = opts or {}
+  local resolved = resolve_file_path(path, opts.cwd)
+  if not resolved then
+    return nil
+  end
+
+  local id = resolved:match("/note/(%d+)%.typ$")
+  if not id then
+    return nil
+  end
+
+  return M.note_info(id, opts)
 end
 
 function M.list_notes(opts)

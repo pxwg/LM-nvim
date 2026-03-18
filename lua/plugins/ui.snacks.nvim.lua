@@ -1,3 +1,123 @@
+local function enrich_zk_note_item(item)
+  if type(item) ~= "table" or type(item.file) ~= "string" then
+    return nil
+  end
+
+  local note = require("zk_cli").note_info_by_file(item.file, {
+    cwd = item.cwd,
+    async = true,
+    silent = true,
+  })
+  if not note then
+    return nil
+  end
+
+  item.title = item.title or note.title
+  item._zk_note_title = note.title
+  item._zk_note_path = note.path
+
+  if type(item.text) == "string" and item.text ~= "" and not item._zk_note_text_augmented then
+    item.text = note.title .. " " .. item.text
+    item._zk_note_text_augmented = true
+  end
+
+  return note
+end
+
+local function patch_snacks_picker_filename_formatter()
+  local format = require("snacks.picker.format")
+  if format._zk_note_title_patched then
+    return
+  end
+  format._zk_note_title_patched = true
+
+  local original_filename = format.filename
+  local uv = vim.uv or vim.loop
+
+  format.filename = function(item, picker)
+    local note = enrich_zk_note_item(item)
+    if not note or not item.file then
+      return original_filename(item, picker)
+    end
+
+    local ret = {}
+    local path = Snacks.picker.util.path(item) or item.file
+
+    if picker.opts.icons.files.enabled ~= false then
+      local name, cat = path, (item.dir and "directory" or "file")
+      if item.buf and vim.api.nvim_buf_is_loaded(item.buf) and vim.bo[item.buf].buftype ~= "" then
+        name = vim.bo[item.buf].filetype
+        cat = "filetype"
+      end
+      local icon, hl = Snacks.util.icon(name, cat, {
+        fallback = picker.opts.icons.files,
+      })
+      if item.buftype == "terminal" then
+        icon, hl = " ", "Special"
+      end
+      if item.dir and item.open then
+        icon = picker.opts.icons.files.dir_open
+      end
+      icon = Snacks.picker.util.align(icon, picker.opts.formatters.file.icon_width or 2)
+      ret[#ret + 1] = { icon, hl, virtual = true }
+    end
+
+    local base_hl = item.dir and "SnacksPickerDirectory" or "SnacksPickerFile"
+    local function is(prop)
+      local current = item
+      while current do
+        if current[prop] then
+          return true
+        end
+        current = current.parent
+      end
+      return false
+    end
+
+    if is("ignored") then
+      base_hl = "SnacksPickerPathIgnored"
+    elseif item.filename_hl then
+      base_hl = item.filename_hl
+    elseif is("hidden") then
+      base_hl = "SnacksPickerPathHidden"
+    end
+
+    ret[#ret + 1] = { note.title, base_hl, field = "text" }
+
+    local rel = Snacks.picker.util.truncpath(
+      path,
+      math.max(20, picker.opts.formatters.file.min_width or 20),
+      { cwd = picker:cwd(), kind = picker.opts.formatters.file.truncate }
+    )
+    ret[#ret + 1] = { " ", virtual = true }
+    ret[#ret + 1] = { rel, "SnacksPickerDir", field = "file" }
+
+    if item.pos and item.pos[1] > 0 then
+      ret[#ret + 1] = { ":", "SnacksPickerDelim" }
+      ret[#ret + 1] = { tostring(item.pos[1]), "SnacksPickerRow" }
+      if item.pos[2] > 0 then
+        ret[#ret + 1] = { ":", "SnacksPickerDelim" }
+        ret[#ret + 1] = { tostring(item.pos[2]), "SnacksPickerCol" }
+      end
+    end
+    ret[#ret + 1] = { " " }
+
+    if item.type == "link" then
+      local real = uv.fs_realpath(item.file)
+      local broken = not real
+      real = real or uv.fs_readlink(item.file)
+      if real then
+        ret[#ret + 1] = { "-> ", "SnacksPickerDelim" }
+        ret[#ret + 1] =
+          { Snacks.picker.util.truncpath(real, 20), broken and "SnacksPickerLinkBroken" or "SnacksPickerLink" }
+        ret[#ret + 1] = { " " }
+      end
+    end
+
+    return ret
+  end
+end
+
 return {
   "folke/snacks.nvim",
   event = "VeryLazy",
@@ -21,6 +141,9 @@ return {
         frecency = true,
         history_bonus = true,
       },
+      transform = function(item)
+        enrich_zk_note_item(item)
+      end,
     },
     ---@class snacks.image.Config
     image = {
@@ -68,6 +191,10 @@ return {
       },
     },
   },
+  config = function(_, opts)
+    require("snacks").setup(opts)
+    patch_snacks_picker_filename_formatter()
+  end,
   keys = {
     {
       "<leader>,",

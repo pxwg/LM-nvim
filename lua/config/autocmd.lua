@@ -452,13 +452,7 @@ vim.api.nvim_create_user_command("ConcealFold", function()
   vim.wo.concealcursor = "nv"
 end, {})
 
-vim.api.nvim_create_autocmd("CmdUndefined", {
-  pattern = "Zk",
-  once = true,
-  callback = function()
-    require("zk_scripts")
-  end,
-})
+require("zk_scripts")
 -- require("zk_lsp").setup({
 --   filetypes = { "typst" },
 --   root_dir = vim.fn.expand("~/wiki"),
