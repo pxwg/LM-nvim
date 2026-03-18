@@ -141,6 +141,40 @@ return {
         frecency = true,
         history_bonus = true,
       },
+      sources = {
+        files = {
+          matcher = {
+            frecency = true,
+            history_bonus = true,
+            sort_empty = true,
+          },
+          sort = { fields = { "score:desc", "idx" } },
+        },
+        git_files = {
+          matcher = {
+            frecency = true,
+            history_bonus = true,
+            sort_empty = true,
+          },
+          sort = { fields = { "score:desc", "idx" } },
+        },
+        recent = {
+          matcher = {
+            frecency = false,
+            history_bonus = false,
+            sort_empty = false,
+          },
+        },
+        smart = {
+          matcher = {
+            frecency = true,
+            history_bonus = true,
+            sort_empty = true,
+            cwd_bonus = true,
+          },
+          sort = { fields = { "score:desc", "idx" } },
+        },
+      },
       transform = function(item)
         enrich_zk_note_item(item)
       end,
