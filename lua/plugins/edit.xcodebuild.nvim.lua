@@ -1,6 +1,7 @@
 return {
   "wojciech-kulik/xcodebuild.nvim",
-  event = "VeryLazy",
+  -- event = "VeryLazy",
+  enabled = false,
   dependencies = {
     "nvim-telescope/telescope.nvim",
     "MunifTanjim/nui.nvim",
