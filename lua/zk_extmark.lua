@@ -22,14 +22,10 @@ local function get_title_from_file(id)
   end
 
   local title = nil
-  for _ = 1, 20 do -- Limit to first 20 lines for efficiency
-    local line = file:read("*line")
-    if not line then
-      break
-    end
-    local matched_title = line:match("^=%s*(.+)%s*<(%d%d%d%d%d%d%d%d%d%d)>$")
-    if matched_title and line:match("<" .. id .. ">$") then
-      title = line:gsub("^=%s*", ""):gsub("%s*<.*>$", "")
+  for line in file:lines() do
+    local heading_title, heading_id = line:match("^=%s*(.-)%s*<(%d%d%d%d%d%d%d%d%d%d)>%s*$")
+    if heading_id == id then
+      title = heading_title
       break
     end
   end
