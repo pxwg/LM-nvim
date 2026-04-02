@@ -15,6 +15,9 @@ end
 return {
   "PartyWumpus/typst-concealer",
   -- enabled = false,
+  enabled = function()
+    return not require("util.vscode").is_vscode()
+  end,
   dev = true,
   opts = {
     compiler_args = {

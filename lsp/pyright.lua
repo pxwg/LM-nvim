@@ -1,5 +1,4 @@
-local pyright_capabilities = vim.lsp.protocol.make_client_capabilities()
-pyright_capabilities = require("blink.cmp").get_lsp_capabilities(pyright_capabilities)
+local pyright_capabilities = require("util.lsp_capabilities").make()
 
 return {
   name = "pyright",

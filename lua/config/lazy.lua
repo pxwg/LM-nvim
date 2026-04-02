@@ -1,5 +1,7 @@
 -- add lua path
 
+vim.g.vscode_mode = require("util.vscode").is_vscode()
+
 vim.env.PATH = vim.env.PATH .. ":" .. vim.fn.expand("~/.local/share/nvim/mason/bin/")
 package.path = package.path .. ";" .. "/Users/pxwg-dogggie/.luarocks/share/lua/5.1/?/init.lua"
 package.path = package.path .. ";" .. "/Users/pxwg-dogggie/.luarocks/share/lua/5.1/?.lua"
@@ -86,28 +88,31 @@ require("lazy").setup({
 })
 
 local autocmd = vim.api.nvim_create_autocmd
+local IS_VSCODE = vim.g.vscode_mode
 
 -- set relativenumber when entering hello file type and unset when leaving
-require("mini.hues").setup({ background = "#11262d", foreground = "#c0c8cc", saturation = "lowmedium" })
-vim.api.nvim_set_hl(0, "@typ_inline_dollar.typst", { link = "Comment" })
-vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
+if not IS_VSCODE then
+  require("mini.hues").setup({ background = "#11262d", foreground = "#c0c8cc", saturation = "lowmedium" })
+  vim.api.nvim_set_hl(0, "@typ_inline_dollar.typst", { link = "Comment" })
+  vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
 
-autocmd("UIEnter", {
-  callback = function()
-    vim.cmd("setlocal relativenumber")
-    vim.cmd("setlocal number")
-  end,
-})
+  autocmd("UIEnter", {
+    callback = function()
+      vim.cmd("setlocal relativenumber")
+      vim.cmd("setlocal number")
+    end,
+  })
 
-autocmd("FileType", {
-  pattern = "hello",
-  callback = function()
-    vim.cmd("setlocal norelativenumber")
-    vim.cmd("setlocal nonumber")
-  end,
-})
+  autocmd("FileType", {
+    pattern = "hello",
+    callback = function()
+      vim.cmd("setlocal norelativenumber")
+      vim.cmd("setlocal nonumber")
+    end,
+  })
 
-require("util.dashboard")
+  require("util.dashboard")
+end
 -- autocmd("BufLeave", {
 --   callback = function()
 --     if vim.bo.filetype == "hello" then
@@ -128,10 +133,12 @@ vim.api.nvim_create_autocmd("User", {
     -- require("util.statusline")
     require("config.keymap")
     require("config.autocmd")
-    require("util.history_search")
-    local hs = require("util.hammerspoon")
-    if hs.hammerspoon_enabled() then
-      hs.hammerspoon_load()
+    if not IS_VSCODE then
+      require("util.history_search")
+      local hs = require("util.hammerspoon")
+      if hs.hammerspoon_enabled() then
+        hs.hammerspoon_load()
+      end
     end
   end,
 })
@@ -143,3 +150,32 @@ map({ "n", "v" }, "k", "gk", { silent = true })
 -- The LSP completion handler is now managed through completion plugins like nvim-cmp
 -- If you're using nvim-cmp, this manual handler configuration is not needed
 -- require("util.current_function")
+if vim.g.vscode then
+  local im_select_path = "/opt/homebrew/bin/macism"
+
+  local en_im = "com.apple.keylayout.ABC"
+
+  local zh_im = "im.rime.inputmethod.Squirrel.Hans"
+
+  local function switch_im(im_code)
+    vim.fn.jobstart({ im_select_path, im_code }, { detach = true })
+  end
+
+  local im_augroup = vim.api.nvim_create_augroup("VSCodeIMSelect", { clear = true })
+
+  autocmd("InsertLeave", {
+    group = im_augroup,
+    pattern = "*",
+    callback = function()
+      switch_im(en_im)
+    end,
+  })
+
+  autocmd("InsertEnter", {
+    group = im_augroup,
+    pattern = "*",
+    callback = function()
+      switch_im(zh_im)
+    end,
+  })
+end

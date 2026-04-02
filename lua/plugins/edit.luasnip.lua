@@ -1,6 +1,9 @@
 return {
   {
     "L3MON4D3/LuaSnip",
+    enabled = function()
+      return not require("util.vscode").is_vscode()
+    end,
     event = "InsertEnter",
     config = function()
       require("luasnip").config.set_config({

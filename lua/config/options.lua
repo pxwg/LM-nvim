@@ -1,4 +1,5 @@
 local autocmd = vim.api.nvim_create_autocmd
+local IS_VSCODE = require("util.vscode").is_vscode()
 -- @type "telescope" | "fzf" | "snacks"
 vim.g.picker = "snacks"
 vim.g.mini_file_opened = false
@@ -68,10 +69,12 @@ vim.o.title = false
 vim.o.statusline = "%f %m %r %h %w %= %y %p%% %l:%c"
 vim.opt.matchpairs:append("$:$")
 
-vim.lsp.enable({
-  "dictionary",
-  "rime_ls",
-})
+if not IS_VSCODE then
+  vim.lsp.enable({
+    "dictionary",
+    "rime_ls",
+  })
+end
 
 local lsp_by_ft = {
   arduino = { "arduino" },

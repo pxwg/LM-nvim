@@ -30,7 +30,7 @@ return {
   },
   cmd = { "tinymist" },
   filetypes = { "typst" },
-  capabilities = require("blink.cmp").get_lsp_capabilities(vim.lsp.protocol.make_client_capabilities()),
+  capabilities = require("util.lsp_capabilities").make(),
   on_attach = tinymist_on_attach,
   settings = {
     tinymist = {

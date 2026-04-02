@@ -1,10 +1,13 @@
 local map = vim.keymap.set
+local IS_VSCODE = require("util.vscode").is_vscode()
 local cn = require("util.autocorrect")
 local fit = require("util.fit")
 local hs = require("util.hammerspoon")
 local nt_file = require("util.note_file_index")
 
-require("util.fast_keymap")
+if not IS_VSCODE then
+  require("util.fast_keymap")
+end
 
 -- windows with hammerspoon function
 local function save_and_delete_last_line()
@@ -97,23 +100,27 @@ function ClNeovim()
 end
 
 -- move between windows
-map("n", "<C-j>", "<C-w>j", { silent = true })
-map("n", "<C-k>", "<C-w>k", { silent = true })
+if not IS_VSCODE then
+  map("n", "<C-j>", "<C-w>j", { silent = true })
+  map("n", "<C-k>", "<C-w>k", { silent = true })
+  map("n", "<C-l>", "<C-w>l", { silent = true })
+  map("n", "<C-h>", "<C-w>h", { silent = true })
 
-if vim.fn.has("linux") then
-  map("n", "<F2>", "<C-w>h", { silent = true, desc = "Move to down window" })
-  map("n", "<F3>", "<C-w>l", { silent = true, desc = "Move to up window" })
+  if vim.fn.has("linux") then
+    map("n", "<F2>", "<C-w>h", { silent = true, desc = "Move to down window" })
+    map("n", "<F3>", "<C-w>l", { silent = true, desc = "Move to up window" })
+  end
+
+  --split
+  map("n", "<C-w>v", "", {
+    noremap = true,
+    silent = true,
+    callback = function()
+      vim.cmd("vsplit")
+      vim.cmd("wincmd l")
+    end,
+  })
 end
-
---split
-map("n", "<C-w>v", "", {
-  noremap = true,
-  silent = true,
-  callback = function()
-    vim.cmd("vsplit")
-    vim.cmd("wincmd l")
-  end,
-})
 
 -- move lines
 map({ "n", "v" }, "L", "$", { silent = true })
@@ -122,13 +129,15 @@ map({ "n", "v" }, "j", "gj", { silent = true })
 map({ "n", "v" }, "k", "gk", { silent = true })
 
 --save
-map({ "n", "v", "i" }, "<C-s>", function()
+map(IS_VSCODE and { "n", "v" } or { "n", "v", "i" }, "<C-s>", function()
   -- save_and_delete_last_line()
   -- vim.cmd("stopinsert")
   -- if vim.bo.filetype ~= "markdown" then
   require("conform").format()
   vim.cmd("silent! w")
-  vim.cmd("stopinsert")
+  if not IS_VSCODE then
+    vim.cmd("stopinsert")
+  end
 end, { noremap = true, silent = true })
 
 --better j but can't be used with esc
@@ -136,7 +145,9 @@ end, { noremap = true, silent = true })
 
 --undo and redo
 map({ "n" }, "<C-z>", "u", { silent = true })
-map("i", "<C-z>", "<C-o>u", { silent = true })
+if not IS_VSCODE then
+  map("i", "<C-z>", "<C-o>u", { silent = true })
+end
 
 -- signature_help
 map(
@@ -145,20 +156,45 @@ map(
   "<cmd>lua vim.lsp.buf.signature_help()<CR>",
   { noremap = true, silent = true, desc = "[S]ignature [H]elp" }
 )
-map(
-  { "i" },
-  "<C-d>",
-  "<cmd>lua vim.lsp.buf.signature_help()<CR>",
-  { noremap = true, silent = true, desc = "Show Signature [H]elp" }
-)
---- LSP dictionary
-map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
+if not IS_VSCODE then
+  map(
+    { "i" },
+    "<C-d>",
+    "<cmd>lua vim.lsp.buf.signature_help()<CR>",
+    { noremap = true, silent = true, desc = "Show Signature [H]elp" }
+  )
+  map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
+end
 -- Lsp-telescope
 if vim.g.picker == "snacks" then
-  map("n", "gd", function() Snacks.picker.lsp_definitions() end, { desc = "Goto [D]efinition" })
-  map("n", "gr", function() Snacks.picker.lsp_references() end, { desc = "[R]eferences", nowait = true })
-  map("n", "gi", function() Snacks.picker.lsp_implementations() end, { desc = "Goto [I]mplementation" })
-  map("n", "gy", function() Snacks.picker.lsp_type_definitions() end, { desc = "Goto T[y]pe Definition" })
+  map("n", "gd", function()
+    if not IS_VSCODE then
+      Snacks.picker.lsp_definitions()
+    else
+      vim.lsp.buf.definition()
+    end
+  end, { desc = "Goto [D]efinition" })
+  map("n", "gr", function()
+    if not IS_VSCODE then
+      Snacks.picker.lsp_references()
+    else
+      vim.lsp.buf.references()
+    end
+  end, { desc = "[R]eferences", nowait = true })
+  map("n", "gi", function()
+    if not IS_VSCODE then
+      Snacks.picker.lsp_implementations()
+    else
+      vim.lsp.buf.implementation()
+    end
+  end, { desc = "Goto [I]mplementation" })
+  map("n", "gy", function()
+    if not IS_VSCODE then
+      Snacks.picker.lsp_type_definitions()
+    else
+      vim.lsp.buf.type_definition()
+    end
+  end, { desc = "Goto T[y]pe Definition" })
 end
 -- map("n", "gr", "<cmd>Trouble lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
 -- map("n", "gi", "<cmd>Trouble lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
@@ -604,55 +640,57 @@ end, { desc = "Open markdown links (file or URL)" })
 -- end)
 
 -- smart tab for copilot, inserting and completion via luasnip
-map("i", "<Tab>", function()
-  if vim.bo.filetype == "make" then
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("\t", true, false, true), "n", true)
-  end
-  if vim.fn.pumvisible() == 1 then
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
-  end
-  local success = require("copilot.suggestion").is_visible()
-  local jumpable = require("luasnip").jumpable(1)
-  if jumpable then
-    require("luasnip").jump(1)
-  elseif success then
-    require("copilot.suggestion").accept_line()
-  elseif not success then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
-  else
-    require("copilot.suggestion").accept_line()
-  end
-end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
+if not IS_VSCODE then
+  map("i", "<Tab>", function()
+    if vim.bo.filetype == "make" then
+      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("\t", true, false, true), "n", true)
+    end
+    if vim.fn.pumvisible() == 1 then
+      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
+    end
+    local success = require("copilot.suggestion").is_visible()
+    local jumpable = require("luasnip").jumpable(1)
+    if jumpable then
+      require("luasnip").jump(1)
+    elseif success then
+      require("copilot.suggestion").accept_line()
+    elseif not success then
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
+    else
+      require("copilot.suggestion").accept_line()
+    end
+  end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
 
-map("i", "<CR>", function()
-  if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_below()
-  elseif vim.bo.filetype == "tex" then
-    return require("util.tex_item").insert_item()
-  else
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
-  end
-end, { noremap = true, silent = true, expr = true })
+  map("i", "<CR>", function()
+    if vim.bo.filetype == "markdown" then
+      return nt_file.new_line_below()
+    elseif vim.bo.filetype == "tex" then
+      return require("util.tex_item").insert_item()
+    else
+      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", true)
+    end
+  end, { noremap = true, silent = true, expr = true })
 
-map("n", "o", function()
-  if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_below()
-  elseif vim.bo.filetype == "tex" then
-    require("util.tex_item").insert_item_on_newline(false)
-  else
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
-  end
-end)
+  map("n", "o", function()
+    if vim.bo.filetype == "markdown" then
+      return nt_file.new_line_below()
+    elseif vim.bo.filetype == "tex" then
+      require("util.tex_item").insert_item_on_newline(false)
+    else
+      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("o", true, false, true), "n", true)
+    end
+  end)
 
-map("n", "O", function()
-  if vim.bo.filetype == "markdown" then
-    return nt_file.new_line_above()
-  elseif vim.bo.filetype == "tex" then
-    require("util.tex_item").insert_item_on_newline(true)
-  else
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), "n", true)
-  end
-end)
+  map("n", "O", function()
+    if vim.bo.filetype == "markdown" then
+      return nt_file.new_line_above()
+    elseif vim.bo.filetype == "tex" then
+      require("util.tex_item").insert_item_on_newline(true)
+    else
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), "n", true)
+    end
+  end)
+end
 
 -- keymapping for phonograph.nvim
 map("n", "<leader>pp", function()
@@ -726,4 +764,15 @@ if vim.fn.has("mac") then
     vim.cmd("edit " .. vim.fn.expand("~/personal-wiki/Side_Note.md"))
     vim.cmd("TransparentEnable")
   end, { desc = "[T]o [N]ote" })
+end
+
+if IS_VSCODE then
+  vim.cmd([[
+nmap j gj
+nmap k gk
+nmap <C-j> <C-w>j
+nmap <C-k> <C-w>k
+nmap <C-l> <C-w>l
+nmap <C-h> <C-w>h
+]])
 end

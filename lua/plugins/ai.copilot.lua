@@ -1,5 +1,8 @@
 return {
   "zbirenbaum/copilot.lua",
+  enabled = function()
+    return not require("util.vscode").is_vscode()
+  end,
   cmd = "Copilot",
   build = ":Copilot auth",
   event = "InsertEnter",

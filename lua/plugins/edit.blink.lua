@@ -100,6 +100,9 @@ end
 
 return {
   "saghen/blink.cmp",
+  enabled = function()
+    return not require("util.vscode").is_vscode()
+  end,
   event = "InsertEnter",
   -- event = "UIEnter",
   -- enabled = false,

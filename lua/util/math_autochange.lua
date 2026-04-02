@@ -1,11 +1,17 @@
 local M = {}
 local tex = require("util.latex")
 local typst = require("util.typst")
-_G.rime_toggled = true
-_G.rime_ls_active = true
-_G.rime_math = false
 
--- Debounce function
+-- ==========================================
+-- 1. 共用工具函数
+-- ==========================================
+
+-- 共用的数学环境判断
+local function in_math()
+  return tex.in_mathzone() or typst.in_math()
+end
+
+-- 共用的防抖函数
 local timer = vim.loop.new_timer()
 local function debounce(fn, ms)
   return function(...)
@@ -19,9 +25,91 @@ local function debounce(fn, ms)
   end
 end
 
-local function in_math()
-  return tex.in_mathzone() or typst.in_math()
+-- ==========================================
+-- 2. VSCode + Macism 专属逻辑 (Patch 部分)
+-- ==========================================
+if vim.g.vscode then
+  local im_select_path = "/opt/homebrew/bin/macism"
+  local en_im = "com.apple.keylayout.ABC"
+  local zh_im = "im.rime.inputmethod.Squirrel"
+
+  local function switch_im(im_code)
+    vim.fn.jobstart({ im_select_path, im_code }, { detach = true })
+  end
+
+  local was_in_math = false
+
+  -- VSCode 下检查数学环境的执行器
+  local function vscode_check_math_im()
+    -- 结合 in_math 和原脚本中特有的 in_tikz 检查
+    local currently_in_math = in_math()
+    if vim.bo.filetype == "tex" and tex.in_tikz() then
+      currently_in_math = true
+    end
+
+    if currently_in_math and not was_in_math then
+      switch_im(en_im)
+      was_in_math = true
+    elseif not currently_in_math and was_in_math then
+      switch_im(zh_im)
+      was_in_math = false
+    end
+  end
+
+  local im_augroup = vim.api.nvim_create_augroup("VSCodeMacismMath", { clear = true })
+
+  -- 插入模式下的移动：套用你原来的 debounce 防抖，防止高速移动光标时狂发 jobstart
+  vim.api.nvim_create_autocmd("CursorMovedI", {
+    group = im_augroup,
+    pattern = { "*.tex", "*.typ", "*.md" },
+    callback = debounce(vscode_check_math_im, 100), -- 100ms 防抖
+  })
+
+  -- 离开插入模式：全局强制切回英文，重置状态
+  vim.api.nvim_create_autocmd("InsertLeave", {
+    group = im_augroup,
+    pattern = "*",
+    callback = function()
+      was_in_math = false
+      switch_im(en_im)
+    end,
+  })
+
+  -- 进入插入模式：全局判断初始落点
+  vim.api.nvim_create_autocmd("InsertEnter", {
+    group = im_augroup,
+    pattern = "*",
+    callback = function()
+      local currently_in_math = in_math()
+      if vim.bo.filetype == "tex" and tex.in_tikz() then
+        currently_in_math = true
+      end
+
+      if currently_in_math then
+        was_in_math = true
+        switch_im(en_im)
+      else
+        was_in_math = false
+        switch_im(zh_im)
+      end
+    end,
+  })
+
+  -- 占位暴露的方法，防止外部脚本调用报错
+  M.switch_rime_math = function() end
+  M.force_toggle_rime = function() end
+
+  -- 在这里直接阻断执行，防止加载原生 rime_ls 逻辑
+  return M
 end
+
+-- ==========================================
+-- 3. 原生 Neovim + rime_ls 逻辑 (你原来的代码)
+-- ==========================================
+
+_G.rime_toggled = true
+_G.rime_ls_active = true
+_G.rime_math = false
 
 local function switch_rime_math()
   -- if vim.bo.filetype == "tex" or vim.bo.filetype == "typst" then
@@ -91,11 +179,6 @@ local function toggle_rime_if_in_brackets()
     end
   end
 end
-
--- vim.api.nvim_create_autocmd("CursorMovedI", {
---   pattern = "*.tex",
---   callback = toggle_rime_if_in_brackets,
--- })
 
 vim.api.nvim_create_autocmd({ "CursorMovedI" }, {
   pattern = { "*.tex", "*.typ" },

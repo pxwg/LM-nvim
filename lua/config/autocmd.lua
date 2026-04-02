@@ -1,19 +1,24 @@
 local autocmd = vim.api.nvim_create_autocmd
+local IS_VSCODE = require("util.vscode").is_vscode()
 
 -- set up rime_ls lsp when enter tex
-autocmd("FileType", {
-  pattern = "plaintex",
-  callback = function()
-    vim.cmd("LspStart rime_ls")
-  end,
-})
+if not IS_VSCODE then
+  autocmd("FileType", {
+    pattern = "plaintex",
+    callback = function()
+      vim.cmd("LspStart rime_ls")
+    end,
+  })
+end
 
 -- color preview
-autocmd("BufRead", {
-  callback = function()
-    vim.cmd("ColorizerAttachToBuffer")
-  end,
-})
+if not IS_VSCODE then
+  autocmd("BufRead", {
+    callback = function()
+      vim.cmd("ColorizerAttachToBuffer")
+    end,
+  })
+end
 
 -- -- fzf with frequency
 -- local function log_file_access()
@@ -58,7 +63,9 @@ autocmd("VimLeavePre", {
       if vim.bo[buf].filetype == "neo-tree" or vim.bo[buf].filetype == "copilot-chat" then
         vim.api.nvim_buf_delete(buf, { force = true })
       end
-      vim.cmd("TransparentDisable")
+      if not IS_VSCODE then
+        vim.cmd("TransparentDisable")
+      end
       if vim.fn.has("mac") == 1 then
         -- vim.fn.system("kitty @ set-window-title")
         -- vim.fn.system("hs -c UnTopSidenote()")
@@ -68,38 +75,31 @@ autocmd("VimLeavePre", {
 })
 
 -- Use a more efficient event pattern
-local statusline_update_timer = vim.loop.new_timer()
-autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
-  callback = function()
-    if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" or not vim.g.vscode then
-      -- require("util.statusline").update_hl()
-      -- Debounce cursor movement events
-      if statusline_update_timer then
-        statusline_update_timer:stop()
+if not IS_VSCODE then
+  local statusline_update_timer = vim.loop.new_timer()
+  autocmd({ "InsertEnter", "InsertLeave", "BufEnter", "FocusGained" }, {
+    callback = function()
+      if vim.bo.buftype ~= "terminal" or vim.bo.filetype ~= "checkhealth" or not vim.g.vscode then
+        if statusline_update_timer then
+          statusline_update_timer:stop()
+        end
       end
-    end
-  end,
-})
+    end,
+  })
 
--- Debounced updates for cursor movements
-autocmd({ "CursorMovedI", "CursorMoved" }, {
-  callback = function()
-    if vim.bo.buftype ~= "terminal" or vim.bo.buftype ~= "nofile" then
-      if statusline_update_timer then
-        statusline_update_timer:stop()
-        statusline_update_timer:start(
-          300,
-          0,
-          vim.schedule_wrap(function()
-            -- require("util.statusline").update_hl()
-          end)
-        )
+  autocmd({ "CursorMovedI", "CursorMoved" }, {
+    callback = function()
+      if vim.bo.buftype ~= "terminal" or vim.bo.buftype ~= "nofile" then
+        if statusline_update_timer then
+          statusline_update_timer:stop()
+          statusline_update_timer:start(300, 0, vim.schedule_wrap(function() end))
+        end
       end
-    end
-  end,
-})
+    end,
+  })
 
-require("util.math_autochange")
+  require("util.math_autochange")
+end
 
 -- -- open rime_ls
 -- local job_id = vim.fn.jobstart("rime_ls --listen", {
@@ -128,14 +128,15 @@ require("util.math_autochange")
 -- })
 
 -- avate.nvim
-autocmd("FileType", {
-  pattern = "AvanteInput",
-  callback = function()
-    vim.cmd("LspStart rime_ls")
-    vim.cmd("RenderMarkdown")
-    -- vim.api.nvim_buf_set_keymap(0, "n", "q", ":q<CR>", { noremap = true, silent = true })
-  end,
-})
+if not IS_VSCODE then
+  autocmd("FileType", {
+    pattern = "AvanteInput",
+    callback = function()
+      vim.cmd("LspStart rime_ls")
+      vim.cmd("RenderMarkdown")
+    end,
+  })
+end
 
 autocmd("FileType", {
   pattern = { "Avante", "copilot-chat" },
@@ -457,3 +458,12 @@ require("zk_scripts")
 --   filetypes = { "typst" },
 --   root_dir = vim.fn.expand("~/wiki"),
 -- })
+
+if IS_VSCODE then
+  autocmd("BufWritePost", {
+    pattern = "*",
+    callback = function()
+      require("conform").format()
+    end,
+  })
+end

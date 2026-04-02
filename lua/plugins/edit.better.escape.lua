@@ -1,5 +1,8 @@
 return {
   "max397574/better-escape.nvim",
+  enabled = function()
+    return not require("util.vscode").is_vscode()
+  end,
   event = "InsertEnter",
   -- enabled = false,
 

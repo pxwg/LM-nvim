@@ -87,6 +87,7 @@ return {
     },
   },
   config = function()
+    local IS_VSCODE = require("util.vscode").is_vscode()
     require("mini.icons").setup({})
 
     require("mini.surround").setup({
@@ -119,22 +120,19 @@ return {
       },
     })
 
-    require("mini.pairs").setup({
-      modes = { insert = true, command = true, terminal = false },
-      mappings = {
-        ['"'] = false,
-        ["'"] = false,
-      },
-      -- skip autopair when next character is one of these
-      skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
-      -- skip autopair when the cursor is inside these treesitter nodes
-      skip_ts = { "string" },
-      -- skip autopair when next character is closing pair
-      -- and there are more closing pairs than opening pairs
-      skip_unbalanced = true,
-      -- better deal with markdown code blocks
-      markdown = true,
-    })
+    if not IS_VSCODE then
+      require("mini.pairs").setup({
+        modes = { insert = true, command = true, terminal = false },
+        mappings = {
+          ['"'] = false,
+          ["'"] = false,
+        },
+        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+        skip_ts = { "string" },
+        skip_unbalanced = true,
+        markdown = true,
+      })
+    end
 
     require("mini.files").setup({
       windows = {

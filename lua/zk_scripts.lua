@@ -442,9 +442,22 @@ local function note_paths(id)
   return root, note_dir, note_path, index_path
 end
 
-function M.new_note(with_metadata)
-  local note_path = vim.fn.system({ "zk-lsp", "new", "--wiki-root", "./" })
-  vim.cmd("edit " .. note_path)
+function M.new_note(_with_metadata)
+  local note_path = vim.trim(vim.fn.system({ "zk-lsp", "new", "--wiki-root", "./" }))
+  note_path = note_path:gsub("^%./", "")
+
+  local full_note_path = vim.fs.normalize(vim.fn.expand("~/wiki/" .. note_path))
+
+  if not vim.g.vscode then
+    vim.cmd("edit " .. vim.fn.fnameescape(full_note_path))
+  else
+    require("vscode").eval([[
+      const doc = await vscode.workspace.openTextDocument(args.path)
+      await vscode.window.showTextDocument(doc)
+    ]], {
+      args = { path = full_note_path },
+    })
+  end
 
   vim.schedule(function()
     -- Jump to the first "= Title <id>" heading line
@@ -566,7 +579,7 @@ local function collect_linked_notes(start_id, visited, depth)
   return result
 end
 
-local function open_recent_note_after_remove(removed_path)
+local function find_recent_note_after_remove(removed_path)
   local note_dir = vim.fn.expand("~/wiki/note")
   local note_prefix = vim.fn.fnamemodify(note_dir, ":p")
 
@@ -577,12 +590,108 @@ local function open_recent_note_after_remove(removed_path)
       and file:match("^" .. vim.pesc(note_prefix) .. ".-%.typ$")
       and vim.fn.filereadable(file) == 1
     then
-      vim.cmd("edit " .. vim.fn.fnameescape(file))
-      return true
+      return file
     end
   end
 
-  return false
+  return nil
+end
+
+local function open_file_in_vscode(path)
+  require("vscode").eval([[
+    const doc = await vscode.workspace.openTextDocument(args.path)
+    await vscode.window.showTextDocument(doc)
+  ]], {
+    args = { path = path },
+  })
+end
+
+local function after_remove_note(removed_path)
+  local recent_path = find_recent_note_after_remove(removed_path)
+  if recent_path then
+    if vim.g.vscode then
+      open_file_in_vscode(recent_path)
+    else
+      vim.cmd("edit " .. vim.fn.fnameescape(recent_path))
+    end
+    return
+  end
+
+  local root = vim.fn.expand("~/wiki")
+  local index_path = root .. "/index.typ"
+
+  if vim.g.vscode then
+    open_file_in_vscode(index_path)
+  else
+    vim.cmd("edit " .. vim.fn.fnameescape(index_path))
+  end
+end
+
+local function remove_note_with_confirmation(note_id)
+  if not (note_id and note_id:match("^%d+$")) then
+    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
+    return
+  end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local removed_path = vim.api.nvim_buf_get_name(bufnr)
+
+  local function do_remove()
+    M.remove_note(note_id)
+    vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
+
+    if vim.g.vscode then
+      require("vscode").eval_async([[
+        await vscode.commands.executeCommand("workbench.action.closeActiveEditor")
+      ]], {
+        callback = function(err)
+          if err then
+            vim.notify("Failed to close editor: " .. err, vim.log.levels.ERROR)
+            return
+          end
+          after_remove_note(removed_path)
+        end,
+      })
+    else
+      if vim.api.nvim_buf_is_valid(bufnr) then
+        vim.api.nvim_buf_delete(bufnr, { force = true })
+      end
+      after_remove_note(removed_path)
+    end
+  end
+
+  if vim.g.vscode then
+    require("vscode").eval_async([[
+      const choice = await vscode.window.showWarningMessage(
+        `Remove note ${args.note_id}?`,
+        { modal: true },
+        "Yes"
+      )
+      return choice === "Yes"
+    ]], {
+      args = { note_id = note_id },
+      callback = function(err, confirmed)
+        if err then
+          vim.notify("Failed to confirm note removal: " .. err, vim.log.levels.ERROR)
+          return
+        end
+
+        if confirmed then
+          do_remove()
+        else
+          vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
+        end
+      end,
+    })
+  else
+    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
+      if choice == "Yes" then
+        do_remove()
+      else
+        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
+      end
+    end)
+  end
 end
 
 -- Open export text in a scratch buffer and copy to clipboard
@@ -1085,70 +1194,12 @@ vim.keymap.set(
 )
 vim.keymap.set("n", "zr", function()
   local note_id = vim.fn.expand("<cword>")
-  if note_id and note_id:match("^%d+$") then
-    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
-      if choice == "Yes" then
-        local bufnr = vim.api.nvim_get_current_buf()
-        local removed_path = vim.api.nvim_buf_get_name(bufnr)
-
-        M.remove_note(note_id)
-        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
-
-        if vim.api.nvim_buf_is_valid(bufnr) then
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
-
-        local jumped = open_recent_note_after_remove(removed_path)
-        if not jumped then
-          local root = vim.fn.expand("~/wiki")
-          local index_path = root .. "/index.typ"
-          vim.cmd("edit " .. vim.fn.fnameescape(index_path))
-        end
-
-        -- vim.schedule(function()
-        --   M.show_startup_summary()
-        -- end)
-      else
-        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
-      end
-    end)
-  else
-    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
-  end
+  remove_note_with_confirmation(note_id)
 end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove" })
 
 vim.keymap.set("n", "zR", function()
   local note_id = vim.api.nvim_buf_get_name(0):match("note/(%d+)%.typ$")
-  if note_id and note_id:match("^%d+$") then
-    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
-      if choice == "Yes" then
-        local bufnr = vim.api.nvim_get_current_buf()
-        local removed_path = vim.api.nvim_buf_get_name(bufnr)
-
-        M.remove_note(note_id)
-        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
-
-        if vim.api.nvim_buf_is_valid(bufnr) then
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
-
-        local jumped = open_recent_note_after_remove(removed_path)
-        if not jumped then
-          local root = vim.fn.expand("~/wiki")
-          local index_path = root .. "/index.typ"
-          vim.cmd("edit " .. vim.fn.fnameescape(index_path))
-        end
-
-        -- vim.schedule(function()
-        --   M.show_startup_summary()
-        -- end)
-      else
-        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
-      end
-    end)
-  else
-    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
-  end
+  remove_note_with_confirmation(note_id)
 end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove (Buffer)" })
 
 require("zk_extmark").setup()
