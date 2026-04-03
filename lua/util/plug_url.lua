@@ -143,9 +143,9 @@ local function get_plugin_name()
       if symbol and rest then
         local before_slash, after_slash = string.match(rest, "([^/]+)/(.+)")
         if before_slash and after_slash then
-          vim.highlight.range(0, ns_id, "PluginSymbol", { line, 0 }, { line, #symbol })
-          vim.highlight.range(0, ns_id, "AuthSymbol", { line, #symbol }, { line, #symbol + #before_slash })
-          vim.highlight.range(
+          vim.hl.range(0, ns_id, "PluginSymbol", { line, 0 }, { line, #symbol })
+          vim.hl.range(0, ns_id, "AuthSymbol", { line, #symbol }, { line, #symbol + #before_slash })
+          vim.hl.range(
             0,
             ns_id,
             "NameSymbol",

@@ -60,7 +60,7 @@ A language server for librime
 
   local rime_on_attach = function(client, _)
     local toggle_rime = function()
-      client.request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
+      client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
         if ctx.client_id == client.id then
           vim.g.rime_enabled = result
         end
@@ -109,21 +109,48 @@ A language server for librime
 end
 
 function M.toggle_rime()
-  require("lsp.dictionary").toggle_dictionary()
-  local client = vim.lsp.get_clients({ name = "rime_ls" })[1]
-  if client then
-    client.request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
-      if ctx.client_id == client.id then
-        vim.g.rime_enabled = result
-      end
-    end)
+  local rime_client = vim.lsp.get_clients({ name = "rime_ls" })[1]
+  local dict_client = vim.lsp.get_clients({ name = "dictionary" })[1]
+
+  if vim.g.rime_enabled then
+    -- 当前中文模式 → 切换到英文：rime 关，dict 开
+    if rime_client then
+      rime_client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
+        if ctx.client_id == rime_client.id then
+          vim.g.rime_enabled = result
+        end
+      end)
+    end
+    if dict_client and not vim.g.dict_enabled then
+      dict_client:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
+        if ctx.client_id == dict_client.id then
+          vim.g.dict_enabled = result
+        end
+      end)
+    end
+  else
+    -- 当前英文模式 → 切换到中文：rime 开，dict 关
+    if rime_client then
+      rime_client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
+        if ctx.client_id == rime_client.id then
+          vim.g.rime_enabled = result
+        end
+      end)
+    end
+    if dict_client and vim.g.dict_enabled then
+      dict_client:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
+        if ctx.client_id == dict_client.id then
+          vim.g.dict_enabled = result
+        end
+      end)
+    end
   end
 end
 
 function M.sync_settings()
   local client = vim.lsp.get_clients({ name = "rime_ls" })[1]
   if client then
-    client.request("workspace/executeCommand", { command = "rime-ls.sync-user-data" }, function(_, result, ctx, _)
+    client:request("workspace/executeCommand", { command = "rime-ls.sync-user-data" }, function(_, result, ctx, _)
       if ctx.client_id == client.id then
         vim.g.rime_enabled = result
       end
