@@ -68,12 +68,10 @@ vim.o.title = false
 vim.o.statusline = "%f %m %r %h %w %= %y %p%% %l:%c"
 vim.opt.matchpairs:append("$:$")
 
-if not IS_VSCODE then
-  vim.g.rime_enabled = true
-  vim.g.dict_enabled = true -- dictionary 服务器默认 CMP 开启；on_attach 会将其关闭
-  vim.g.dict_initialized = false
-  vim.lsp.enable({ "dictionary", "rime_ls" })
-end
+vim.g.rime_enabled = true
+vim.g.dict_enabled = true -- dictionary 服务器默认 CMP 开启；on_attach 会将其关闭
+vim.g.dict_initialized = false
+vim.lsp.enable({ "dictionary", "rime_ls" })
 
 local lsp_by_ft = {
   arduino = { "arduino" },
