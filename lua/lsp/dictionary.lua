@@ -34,7 +34,7 @@ end
 function M.toggle_dictionary()
   local client = vim.lsp.get_clients({ name = "dictionary" })[1]
   if client then
-    client.request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
+    client:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
       if ctx.client_id == client.id then
         vim.g.dict_enabled = result
       end

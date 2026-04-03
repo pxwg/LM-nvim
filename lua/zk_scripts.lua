@@ -24,7 +24,7 @@ end
 local function refresh_tinymist()
   local clients = vim.lsp.get_clients({ name = "tinymist" })
   for _, client in ipairs(clients) do
-    client.notify("workspace/didChangeWatchedFiles", {
+    client:notify("workspace/didChangeWatchedFiles", {
       changes = {
         {
           uri = vim.uri_from_fname(vim.fn.expand("~/wiki/link.typ")),

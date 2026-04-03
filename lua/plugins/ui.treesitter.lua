@@ -8,7 +8,8 @@ return {
   -- enabled = false,
   lazy = vim.fn.argc(-1) == 0,
   event = "LazyFile",
-  version = false, -- last release is way too old and doesn't work on Windows
+  branch = "master",
+  -- version = false, -- last release is way too old and doesn't work on Windows
   build = ":TSUpdate",
   opts = {},
   config = function()
@@ -83,7 +84,7 @@ return {
           },
           goto_next_start = { ["]s"] = "@section.outer" },
           goto_previous = {
-            ["[e"] = "math.outer",
+            ["[e"] = "@math.outer",
           },
           goto_previous_start = { ["[s"] = "@section.outer" },
         },
