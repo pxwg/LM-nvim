@@ -156,3 +156,5 @@ if vim.fn.has("linux") == 1 then
   }
   vim.o.clipboard = "unnamedplus"
 end
+
+vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
