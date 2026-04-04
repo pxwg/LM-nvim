@@ -112,7 +112,7 @@ return {
     "Kaiser-Yang/blink-cmp-avante",
     "L3MON4D3/LuaSnip",
     "ribru17/blink-cmp-spell",
-    "zbirenbaum/copilot-cmp",
+    { "HendrikPetertje/copilot-cmp", branch = "fix-deprecated-errors" },
     "zbirenbaum/copilot.lua",
     "dmitmel/cmp-digraphs",
     "hrsh7th/cmp-nvim-lsp",
