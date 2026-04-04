@@ -99,6 +99,8 @@ end
 -- move between windows
 map("n", "<C-j>", "<C-w>j", { silent = true })
 map("n", "<C-k>", "<C-w>k", { silent = true })
+map("n", "<C-h>", "<C-w>h", { silent = true })
+map("n", "<C-l>", "<C-w>l", { silent = true })
 
 if vim.fn.has("linux") then
   map("n", "<F2>", "<C-w>h", { silent = true, desc = "Move to down window" })
@@ -155,10 +157,18 @@ map(
 map("i", "<C-a>", "<cmd>:lua vim.lsp.buf.hover()<CR>", { noremap = true, silent = true, desc = "Show [D]ictionary" })
 -- Lsp-telescope
 if vim.g.picker == "snacks" then
-  map("n", "gd", function() Snacks.picker.lsp_definitions() end, { desc = "Goto [D]efinition" })
-  map("n", "gr", function() Snacks.picker.lsp_references() end, { desc = "[R]eferences", nowait = true })
-  map("n", "gi", function() Snacks.picker.lsp_implementations() end, { desc = "Goto [I]mplementation" })
-  map("n", "gy", function() Snacks.picker.lsp_type_definitions() end, { desc = "Goto T[y]pe Definition" })
+  map("n", "gd", function()
+    Snacks.picker.lsp_definitions()
+  end, { desc = "Goto [D]efinition" })
+  map("n", "gr", function()
+    Snacks.picker.lsp_references()
+  end, { desc = "[R]eferences", nowait = true })
+  map("n", "gi", function()
+    Snacks.picker.lsp_implementations()
+  end, { desc = "Goto [I]mplementation" })
+  map("n", "gy", function()
+    Snacks.picker.lsp_type_definitions()
+  end, { desc = "Goto T[y]pe Definition" })
 end
 -- map("n", "gr", "<cmd>Trouble lsp_references theme=cursor<cr>", { desc = "[R]eferences", nowait = true })
 -- map("n", "gi", "<cmd>Trouble lsp_implementations theme=cursor<cr>", { desc = "Goto [I]mplementation" })
