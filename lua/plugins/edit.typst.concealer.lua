@@ -17,6 +17,8 @@ return {
   -- enabled = false,
   dev = true,
   opts = {
+    live_preview_debounce = 0,
+    cursor_hover_throttle_ms = 0,
     compiler_args = {
       "--root",
       find_git_root(vim.api.nvim_buf_get_name(0)) or vim.fn.getcwd(),
@@ -39,6 +41,18 @@ return {
         end,
       },
     },
+    get_preamble_file = function(_bufnr, path, _cwd, _kind)
+      if path:match("/wiki/") then
+        return vim.fn.expand("~/wiki/concealer-context.typ")
+      end
+    end,
+    get_inputs = function(_bufnr, path, _cwd, _kind)
+      local id = vim.fn.fnamemodify(path, ":t:r")
+      return {
+        "focus=" .. id,
+        "preview=true",
+      }
+    end,
   },
   ft = "typst",
 }
