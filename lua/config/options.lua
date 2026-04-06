@@ -71,52 +71,29 @@ vim.opt.matchpairs:append("$:$")
 vim.g.rime_enabled = true
 vim.g.dict_enabled = true -- dictionary 服务器默认 CMP 开启；on_attach 会将其关闭
 vim.g.dict_initialized = false
-vim.lsp.enable({ "dictionary", "rime_ls" })
 
-local lsp_by_ft = {
-  arduino = { "arduino" },
-  astro = { "astro-ls" },
-  c = { "clangd" },
-  cpp = { "clangd" },
-  html = { "html_lsp" },
-  javascript = { "vtsls" },
-  javascriptreact = { "vtsls" },
-  lua = { "emmylua_ls" },
-  markdown = { "harper_ls", "ltex" },
-  objc = { "clangd" },
-  objcpp = { "clangd" },
-  python = { "pyright" },
-  rust = { "rust_analyzer" },
-  swift = { "sourcekit-lsp" },
-  -- tex = { "harper_ls", "ltex", "texlab" },
-  -- plaintex = { "harper_ls", "ltex", "texlab" },
-  tex = { "ltex", "texlab" },
-  plaintex = { "ltex", "texlab" },
-  typst = { "harper_ls", "ltex", "tinymist", "zk-lsp" },
-  typescript = { "vtsls" },
-  typescriptreact = { "vtsls" },
-  wolfram = { "wolfram_lsp" },
-  xml = { "html_lsp" },
-  yaml = { "ts_query_ls" },
+local servers = {
+  "dictionary",
+  "rime_ls",
+  "arduino",
+  "astro-ls",
+  "clangd",
+  "html_lsp",
+  "vtsls",
+  "emmylua_ls",
+  "harper_ls",
+  "ltex",
+  "pyright",
+  "rust_analyzer",
+  "sourcekit-lsp",
+  "texlab",
+  "tinymist",
+  "zk-lsp",
+  "wolfram_lsp",
+  "ts_query_ls",
 }
 
-local enabled_lsp = {}
-
-vim.api.nvim_create_autocmd("FileType", {
-  callback = function(args)
-    local servers = lsp_by_ft[args.match]
-    if not servers then
-      return
-    end
-
-    for _, server in ipairs(servers) do
-      if not enabled_lsp[server] then
-        vim.lsp.enable(server)
-        enabled_lsp[server] = true
-      end
-    end
-  end,
-})
+vim.lsp.enable(servers)
 
 autocmd("FileType", {
   pattern = { "markdown" },

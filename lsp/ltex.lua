@@ -4,7 +4,7 @@ for word in io.open(path_spelling, "r"):lines() do
   table.insert(spell_dic, word)
 end
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
+-- capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
 capabilities.general.positionEncodings = { "utf-8", "utf-16" }
 return {
   name = "ltex",

@@ -15,16 +15,19 @@ return {
     'Needs["LSPServer`"];LSPServer`StartServer[]',
   },
   root_dir = root_dir,
-  handlers = {
-    ["textDocument/publishDiagnostics"] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
+
+  on_attach = function(client, bufnr)
+    local ns = vim.lsp.diagnostic.get_namespace(client.id)
+
+    vim.diagnostic.config({
       severity_sort = true,
       underline = true,
       virtual_text = {
-        severity_limit = "Warning",
+        severity = { min = vim.diagnostic.severity.WARN },
       },
       signs = {
-        severity_limit = "Warning",
+        severity = { min = vim.diagnostic.severity.WARN },
       },
-    }),
-  },
+    }, ns)
+  end,
 }

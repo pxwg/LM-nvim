@@ -1,4 +1,4 @@
-local util = require("lspconfig.util")
+-- local util = require("lspconfig.util")
 return {
   name = "arduino",
   cmd = {
@@ -13,10 +13,10 @@ return {
     "esp32:esp32:esp32s3",
   },
   filetypes = { "arduino" },
-  root_dir = function(bufnr, on_dir)
-    local fname = vim.api.nvim_buf_get_name(bufnr)
-    on_dir(util.root_pattern("*.ino")(fname))
-  end,
+  -- root_dir = function(bufnr, on_dir)
+  --   local fname = vim.api.nvim_buf_get_name(bufnr)
+  --   on_dir(util.root_pattern("*.ino")(fname))
+  -- end,
   capabilities = {
     textDocument = {
       semanticTokens = vim.NIL,
