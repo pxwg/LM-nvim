@@ -443,8 +443,10 @@ local function note_paths(id)
 end
 
 function M.new_note(with_metadata)
-  local note_path = vim.fn.system({ "zk-lsp", "new", "--wiki-root", "./" })
-  vim.cmd("edit " .. note_path)
+  local wiki_root = vim.fn.expand("~/wiki")
+  local note_path = vim.trim(vim.fn.system({ "zk-lsp", "new", "--wiki-root", wiki_root }))
+  vim.cmd("cd " .. vim.fn.fnameescape(wiki_root))
+  vim.cmd("edit " .. vim.fn.fnameescape(note_path))
 
   vim.schedule(function()
     -- Jump to the first "= Title <id>" heading line
