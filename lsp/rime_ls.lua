@@ -1,5 +1,5 @@
 local rime_ls_filetypes =
-  { "vimwiki", "tex", "markdown", "copilot-chat", "AvanteInput", "codecompanion", "typst", "hello" }
+  { "vimwiki", "tex", "markdown", "copilot-chat", "AvanteInput", "codecompanion", "typst", "alma", "hello" }
 
 local rime_on_attach = function(client, _)
   local toggle_rime = function()

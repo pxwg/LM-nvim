@@ -58,30 +58,31 @@ local function change_cursor_color()
   end
 end
 
+local function attach_client_to_buffer(bufnr, client_name)
+  if #vim.lsp.get_clients({ bufnr = bufnr, name = client_name }) > 0 then
+    return true
+  end
+
+  local client = vim.lsp.get_clients({ name = client_name })[1]
+  local client_id = client and client.id
+
+  if not client_id and vim.lsp.config and vim.lsp.config[client_name] then
+    client_id = vim.lsp.start(vim.lsp.config[client_name], { bufnr = bufnr })
+  end
+
+  if client_id then
+    return vim.lsp.buf_attach_client(bufnr, client_id)
+  end
+
+  vim.notify(client_name .. " client not found", vim.log.levels.ERROR)
+  return false
+end
+
 function M.attach_rime_to_buffer(bufnr)
-  local active_clients = vim.lsp.get_clients()
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-  local rime_client_id = nil
-  local dictionary_client_id = nil
-  for _, client in ipairs(active_clients) do
-    if client.name == "rime_ls" then
-      rime_client_id = client.id
-    elseif client.name == "dictionary" then
-      dictionary_client_id = client.id
-    end
-  end
-
-  if rime_client_id then
-    vim.lsp.buf_attach_client(bufnr, rime_client_id)
-  else
-    vim.notify("rime_ls client not found", vim.log.levels.ERROR)
-  end
-
-  if dictionary_client_id then
-    vim.lsp.buf_attach_client(bufnr, dictionary_client_id)
-  else
-    vim.notify("dictionary client not found", vim.log.levels.ERROR)
-  end
+  attach_client_to_buffer(bufnr, "rime_ls")
+  attach_client_to_buffer(bufnr, "dictionary")
 end
 
 function M.start_rime_ls()
