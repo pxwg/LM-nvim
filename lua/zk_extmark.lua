@@ -4,11 +4,59 @@ local config = {
   note_root = vim.fn.expand("~/wiki/note"),
   extension = ".typ",
   cache = {},
+  active_link_by_buf = {},
   hl_group = "Identifier", -- 标题的颜色
 }
 
 -- 命名空间
 local ns_id = vim.api.nvim_create_namespace("zk_typst_titles")
+
+local note_link_pattern = "@(%d%d%d%d%d%d%d%d%d%d)"
+
+local function get_cursor_link(bufnr)
+  if vim.api.nvim_get_current_buf() ~= bufnr then
+    return nil
+  end
+
+  local ok, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
+  if not ok then
+    return nil
+  end
+
+  local line_idx = cursor[1] - 1
+  local cursor_col = cursor[2]
+  local line = vim.api.nvim_buf_get_lines(bufnr, line_idx, line_idx + 1, false)[1]
+  if not line then
+    return nil
+  end
+
+  local current_pos = 1
+  while true do
+    local s, e, id = string.find(line, note_link_pattern, current_pos)
+    if not s then
+      return nil
+    end
+
+    if cursor_col >= s - 1 and cursor_col < e then
+      return {
+        line = line_idx,
+        start_col = s - 1,
+        end_col = e,
+        id = id,
+      }
+    end
+
+    current_pos = e + 1
+  end
+end
+
+local function link_key(link)
+  if not link then
+    return ""
+  end
+
+  return table.concat({ link.line, link.start_col, link.end_col, link.id }, ":")
+end
 
 --- 从文件中读取标题
 local function get_title_from_file(id)
@@ -51,36 +99,45 @@ function M.refresh_extmarks()
   vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
 
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local active_link = get_cursor_link(bufnr)
+  config.active_link_by_buf[bufnr] = link_key(active_link)
 
   for line_idx, line in ipairs(lines) do
     local current_pos = 1
 
     while true do
       -- 匹配 @ + 10位数字
-      local s, e, id = string.find(line, "@(%d%d%d%d%d%d%d%d%d%d)", current_pos)
+      local s, e, id = string.find(line, note_link_pattern, current_pos)
 
       if not s then
         break
       end
 
-      local title = get_title_from_file(id)
+      local is_active_link = active_link
+        and active_link.line == line_idx - 1
+        and active_link.start_col == s - 1
+        and active_link.end_col == e
 
-      if title then
-        -- Extmark 1: 负责隐藏 (Conceal)
-        -- 将 @260... 整个区域隐藏，只显示一个 "@"
-        vim.api.nvim_buf_set_extmark(bufnr, ns_id, line_idx - 1, s - 1, {
-          end_col = e,
-          conceal = "@",
-          hl_group = config.hl_group,
-        })
+      if not is_active_link then
+        local title = get_title_from_file(id)
 
-        -- Extmark 2: 负责显示标题 (Virt Text)
-        -- 位置设置在 'e' (即 ID 的末尾)，这样标题就会出现在 @ 的后面
-        vim.api.nvim_buf_set_extmark(bufnr, ns_id, line_idx - 1, e, {
-          virt_text = { { title, config.hl_group } },
-          virt_text_pos = "inline",
-          hl_mode = "combine",
-        })
+        if title then
+          -- Extmark 1: 负责隐藏 (Conceal)
+          -- 将 @260... 整个区域隐藏，只显示一个 "@"
+          vim.api.nvim_buf_set_extmark(bufnr, ns_id, line_idx - 1, s - 1, {
+            end_col = e,
+            conceal = "@",
+            hl_group = config.hl_group,
+          })
+
+          -- Extmark 2: 负责显示标题 (Virt Text)
+          -- 位置设置在 'e' (即 ID 的末尾)，这样标题就会出现在 @ 的后面
+          vim.api.nvim_buf_set_extmark(bufnr, ns_id, line_idx - 1, e, {
+            virt_text = { { title, config.hl_group } },
+            virt_text_pos = "inline",
+            hl_mode = "combine",
+          })
+        end
       end
 
       current_pos = e + 1
@@ -108,6 +165,18 @@ function M.setup(opts)
         config.cache = {}
       end
       M.refresh_extmarks()
+    end,
+  })
+
+  vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+    group = group,
+    pattern = "*.typ",
+    callback = function(ev)
+      local active_link = get_cursor_link(ev.buf)
+      local active_key = link_key(active_link)
+      if config.active_link_by_buf[ev.buf] ~= active_key then
+        M.refresh_extmarks()
+      end
     end,
   })
 

@@ -145,13 +145,13 @@ return {
     })
     require("util.alma_zk_blackboard").setup()
 
-    vim.api.nvim_create_user_command("AlmaAttachFormulaImages", function(opts)
-      local bufnr = tonumber(opts.args) or vim.api.nvim_get_current_buf()
-      attach_alma_formula_images(bufnr)
-    end, {
-      nargs = "?",
-      desc = "Render and attach formula images in the current Alma buffer",
-    })
+    -- vim.api.nvim_create_user_command("AlmaAttachFormulaImages", function(opts)
+    --   local bufnr = tonumber(opts.args) or vim.api.nvim_get_current_buf()
+    --   attach_alma_formula_images(bufnr)
+    -- end, {
+    --   nargs = "?",
+    --   desc = "Render and attach formula images in the current Alma buffer",
+    -- })
 
     local alma_formula_group = vim.api.nvim_create_augroup("AlmaFormulaImages", { clear = true })
 
@@ -164,7 +164,7 @@ return {
         alma_keymap(event.buf, "n", "<CR>", submit_alma_chat, "Alma Submit")
         alma_keymap(event.buf, "n", "q", close_alma_chat, "Alma Close Chat")
         require("util.rime_ls").attach_rime_to_buffer(event.buf)
-        schedule_alma_formula_attach(event.buf, 900)
+        -- schedule_alma_formula_attach(event.buf, 900)
       end,
     })
 
