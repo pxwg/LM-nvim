@@ -51,6 +51,7 @@ return {
       return {
         "focus=" .. id,
         "preview=true",
+        "preview-concealer=true",
       }
     end,
   },
