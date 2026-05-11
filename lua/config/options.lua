@@ -136,3 +136,12 @@ if vim.fn.has("linux") == 1 then
 end
 
 vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+
+require("vim._core.ui2").enable()
+autocmd("FileType", {
+  pattern = { "pager", "cmd", "msg", "dialog" },
+  callback = function()
+    vim.opt_local.statusline = " "
+    vim.opt_local.winbar = ""
+  end,
+})
