@@ -1,5 +1,6 @@
 local M = {}
 local zk_cli = require("zk_cli")
+local zk_capture = require("util.zk_capture")
 
 -- Execute a workspace/executeCommand on zk-lsp, returns true if dispatched
 local function execute_command_zk_lsp(cmd, args, callback)
@@ -457,6 +458,14 @@ function M.new_note(with_metadata)
   end)
 
   refresh_tinymist()
+end
+
+function M.new_note_interactive()
+  zk_capture.start(function()
+    refresh_tinymist()
+  end, function()
+    M.new_note(false)
+  end)
 end
 
 -- Create note with metadata template
@@ -990,7 +999,7 @@ end
 vim.api.nvim_create_user_command("Zk", function(opts)
   local arg = opts.args
   if arg == "new" then
-    M.new_note(false) -- Default: no metadata
+    M.new_note_interactive()
   elseif arg == "newm" or arg == "new-metadata" then
     M.new_note_with_metadata()
   elseif arg == "export" then
@@ -1060,8 +1069,8 @@ vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
 vim.keymap.set(
   "n",
   "zn",
-  M.new_note_with_metadata,
-  { noremap = true, silent = false, desc = "[Z]ettel [N]ew with [M]etadata" }
+  M.new_note_interactive,
+  { noremap = true, silent = false, desc = "[Z]ettel [N]ew" }
 )
 vim.keymap.set("n", "zs", M.search_title, { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
 vim.keymap.set("n", "<leader>fz", M.search_title, { noremap = true, silent = false, desc = "[F]ind [Z]ettel" })

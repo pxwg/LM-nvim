@@ -441,7 +441,7 @@ local function fetch_url_metadata(url)
   end
 
   local html, err = fetch_url(url)
-  if html == "" then
+  if not html or html == "" then
     return nil, err ~= "" and err or "Empty response body"
   end
 
