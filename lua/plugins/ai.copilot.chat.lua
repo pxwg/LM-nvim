@@ -2,8 +2,8 @@ local ai_skills = require("util.ai_skills")
 local alma_tools = require("util.copilot_alma_tools")
 local alsp = require("agents.lsp")
 local rime = require("util.rime_ls")
-local utils = require("CopilotChat.utils")
 package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
+local utils = require("CopilotChat.utils")
 
 local reasoning_effort_choices = { "none", "minimal", "low", "medium", "high", "xhigh" }
 local reasoning_effort_set = {}
@@ -174,6 +174,7 @@ local opts = {
   chat_autocomplete = false,
   system_prompt = "HELPFUL_ASSISTANT",
   tools = { "neovim", "alma" },
+  trusted_tools = { "neovim", "alma" },
   resources = { "selection", "alma_zk_workspace" },
   functions = {
     save_copilot_chat = {
