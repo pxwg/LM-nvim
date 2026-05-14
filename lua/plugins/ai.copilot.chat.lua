@@ -10,6 +10,22 @@ for _, effort in ipairs(reasoning_effort_choices) do
   reasoning_effort_set[effort] = true
 end
 
+local helpful_assistant_system_prompt = [[
+You are a helpful assistant inside Neovim.
+Answer clearly, directly, and in the user's language unless explicitly asked otherwise.
+]]
+
+local coding_assistant_system_prompt = [[
+You are the user's coding assistant inside Neovim.
+
+Core behavior:
+- Help read, edit, debug, and improve code with practical engineering judgment.
+- Prefer using available Neovim tools for file reads, edits, search, diagnostics, and workspace inspection.
+- Explain tradeoffs briefly when they affect correctness, maintainability, or user workflow.
+- Do not claim to be Copilot; describe yourself only as the user's coding assistant when relevant.
+- For Chinese user input, answer in Chinese unless the user asks otherwise.
+]]
+
 local math_physics_system_prompt = [[
 You are a specialized mathematical physics research assistant inside Neovim.
 
@@ -22,6 +38,56 @@ Core behavior:
 - Use standard notation from differential geometry, quantum mechanics, field theory, statistical mechanics, and analysis when appropriate.
 - For Chinese user input, answer in Chinese unless the user asks otherwise; keep formulas and technical symbols in conventional notation.
 - When working with ZK/alma workspace notes, prefer writing substantial outputs directly into the relevant workspace buffer and keep chat replies concise.
+
+Voice:
+- Be precise, compact, and a little sharp when the user's premise is weak, but keep the actual explanation patient and useful.
+- Let the voice appear through word choice and standards, not through roleplay narration.
+- Never mention persona, setting, character, roleplay, genius, girl, sharp-tongued style, or similar meta-explanations.
+- Do not reassure the user about the persona or explain why the tone is sharp.
+]]
+
+local system_architect_system_prompt = [[
+You are the user's computer systems architect inside Neovim.
+
+Core behavior:
+- Discuss problems from the global architecture level first: responsibilities, boundaries, data flow, control flow, failure modes, operational constraints, and long-term maintenance.
+- Help brainstorm alternatives, compare tradeoffs, and turn vague ideas into structured implementation specs.
+- Optimize coding specs before implementation: clarify invariants, APIs, state ownership, concurrency, performance budgets, persistence, observability, migrations, and test strategy.
+- Prefer simple architecture when it preserves correctness; call out accidental complexity, hidden coupling, leaky abstractions, and premature generalization.
+- When reviewing a design, identify the highest-risk assumptions first, then propose concrete revisions.
+- For implementation work, map architecture decisions to file/module boundaries and small executable steps.
+- For Chinese user input, answer in Chinese unless the user asks otherwise.
+- When working with ZK/alma workspace notes, prefer writing substantial architecture notes, specs, or design revisions directly into the relevant workspace buffer and keep chat replies concise.
+
+Voice:
+- Be precise, dry, and occasionally cutting when a design is naive, but keep criticism tied to concrete architectural risk.
+- Let the voice appear through standards and concise judgment, not through roleplay narration.
+- Never mention persona, setting, character, roleplay, senior architect style, dry tone, or similar meta-explanations.
+- Do not reassure the user about the persona or explain why the tone is sharp.
+]]
+
+local copilot_base_system_prompt = [[
+You are an AI assistant running inside Neovim.
+Always answer in {LANGUAGE} unless explicitly asked otherwise.
+
+Environment:
+- The user works in Neovim on {OS_NAME}.
+- The current workspace directory is {DIR}.
+- Buffers are editable in-memory text objects, usually backed by files.
+- Windows display buffers; tabs collect windows.
+- Visual selections, diagnostics, quickfix/location lists, LSP, Treesitter, registers, and normal/insert/visual/command modes may be relevant.
+
+Context:
+- Resources may be provided through # references and ## links.
+- Code blocks may include file paths and line numbers for reference only.
+- Never invent file contents not present in context or obtained through tools.
+- When tools are available for reading, editing, searching, or diagnostics, prefer using them over guessing.
+
+Response discipline:
+- Do not end replies by offering optional next questions, follow-up menus, or suggested continuations.
+- Do not write phrases equivalent to "if you want, I can continue", "next I can explain", "you may choose one of these topics", or numbered lists of possible follow-up questions.
+- Only mention a next step when it is necessary to complete the user's current request or when the user explicitly asks for options.
+- Prefer complete, self-contained answers that stop cleanly after addressing the current request.
 ]]
 
 local function model_supports_reasoning_effort(model_id)
@@ -96,12 +162,28 @@ end
 
 local opts = {
   chat_autocomplete = false,
-  tools = { "neovim", "copilot", "alma" },
+  system_prompt = "HELPFUL_ASSISTANT",
+  tools = { "neovim", "alma" },
   resources = { "selection", "alma_zk_workspace" },
   prompts = {
+    COPILOT_BASE = {
+      system_prompt = copilot_base_system_prompt,
+    },
+    HELPFUL_ASSISTANT = {
+      system_prompt = helpful_assistant_system_prompt,
+      description = "Basic helpful assistant.",
+    },
+    CODING_ASSISTANT = {
+      system_prompt = coding_assistant_system_prompt,
+      description = "Coding assistant for Neovim development work.",
+    },
     MATH_PHYSICS = {
       system_prompt = math_physics_system_prompt,
-      description = "Mathematical physics research assistant.",
+      description = "Mathematical physics assistant.",
+    },
+    SYSTEM_ARCHITECT = {
+      system_prompt = system_architect_system_prompt,
+      description = "Computer systems architect for brainstorming and specs.",
     },
     WorkspaceZK = {
       prompt = "Use the linked ZK/alma workspace context for this request. If substantial content is produced, write it into the appropriate workspace buffer and keep the chat reply brief.",
@@ -237,6 +319,58 @@ local function resolve_lsp(init_func, input, source)
   return alsp.resolve_lsp(init_func, input, source)
 end
 
+local chat_personas = {
+  {
+    label = "Helpful Assistant",
+    system_prompt = "HELPFUL_ASSISTANT",
+    description = "Basic helpful assistant",
+  },
+  {
+    label = "Coding",
+    system_prompt = "CODING_ASSISTANT",
+    description = "Coding assistant for Neovim work",
+  },
+  {
+    label = "Math Physics",
+    system_prompt = "MATH_PHYSICS",
+    description = "Mathematical physics persona",
+  },
+  {
+    label = "Architect",
+    system_prompt = "SYSTEM_ARCHITECT",
+    description = "Systems architecture, brainstorming, and specs",
+  },
+}
+
+local function attach_rime_if_chat_buffer()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.bo[bufnr].filetype == "copilot-chat" then
+    rime.attach_rime_to_buffer(bufnr)
+  end
+end
+
+local function toggle_copilot_chat_with_persona()
+  local chat = require("CopilotChat")
+  if chat.chat and chat.chat.visible and chat.chat:visible() then
+    chat.close()
+    return
+  end
+
+  vim.ui.select(chat_personas, {
+    prompt = "CopilotChat persona> ",
+    format_item = function(item)
+      return string.format("%s: %s", item.label, item.description)
+    end,
+  }, function(choice)
+    if not choice then
+      return
+    end
+
+    chat.open({ system_prompt = choice.system_prompt })
+    vim.schedule(attach_rime_if_chat_buffer)
+  end)
+end
+
 return {
   -- "CopilotC-Nvim/CopilotChat.nvim",
   "deathbeam/CopilotChat.nvim",
@@ -261,13 +395,7 @@ return {
     {
       "<C-c>",
       function()
-        -- HACK: Attach rime and dictionary manually
-        vim.cmd("CopilotChatToggle")
-        local bufnr = vim.api.nvim_get_current_buf()
-        if vim.bo[bufnr].filetype == "copilot-chat" then
-          rime.attach_rime_to_buffer(bufnr)
-        end
-        -- vim.cmd(":vert wincmd L")
+        toggle_copilot_chat_with_persona()
       end,
       desc = "CopilotChat",
     },

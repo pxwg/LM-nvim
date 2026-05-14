@@ -33,6 +33,26 @@ local function should_disclose_workspace()
   return path_is_under(root, bufname)
 end
 
+local function current_registered_workspace()
+  local ok, blackboard = pcall(require, "util.alma_zk_blackboard")
+  if not ok or type(blackboard.status) ~= "function" then
+    return nil
+  end
+
+  local ok_status, status = pcall(blackboard.status)
+  if not ok_status or type(status) ~= "table" then
+    return nil
+  end
+
+  local workspace_id = status.current_workspace_id
+  local workspace = workspace_id and status.workspaces and status.workspaces[workspace_id] or nil
+  if type(workspace_id) ~= "string" or workspace_id == "" or type(workspace) ~= "table" then
+    return nil
+  end
+
+  return workspace, status
+end
+
 local function current_buffer_facts()
   local bufnr = vim.api.nvim_get_current_buf()
   return {
@@ -138,7 +158,8 @@ function M.copilot_functions()
         required = {},
       },
       resolve = function()
-        if not should_disclose_workspace() then
+        local registered_workspace = current_registered_workspace()
+        if not registered_workspace or not should_disclose_workspace() then
           return {}
         end
 
