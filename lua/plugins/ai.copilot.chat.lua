@@ -2,6 +2,7 @@ local ai_skills = require("util.ai_skills")
 local alma_tools = require("util.copilot_alma_tools")
 local alsp = require("agents.lsp")
 local rime = require("util.rime_ls")
+local utils = require("CopilotChat.utils")
 package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
 
 local reasoning_effort_choices = { "none", "minimal", "low", "medium", "high", "xhigh" }
@@ -103,6 +104,15 @@ local function split_reasoning_model_id(model_id)
   return model_id, nil
 end
 
+local function normalize_chat_history_title(title)
+  title = vim.trim(title or "")
+  if title == "" then
+    return os.date("chat-%y%m%d%H%M")
+  end
+
+  return title:gsub('[/\\:%*%?"<>|]', "_")
+end
+
 local function local_openai_model_entry(model_id)
   return {
     id = model_id,
@@ -165,6 +175,37 @@ local opts = {
   system_prompt = "HELPFUL_ASSISTANT",
   tools = { "neovim", "alma" },
   resources = { "selection", "alma_zk_workspace" },
+  functions = {
+    save_copilot_chat = {
+      group = "neovim",
+      uri = "copilot-chat://history/{title}",
+      description = "Save the current CopilotChat conversation history with an appropriate title. Use this when the user asks to save the current chat.",
+      schema = {
+        type = "object",
+        required = { "title" },
+        properties = {
+          title = {
+            type = "string",
+            description = "Short descriptive title for the saved chat history",
+          },
+        },
+      },
+      resolve = function(input)
+        local title = normalize_chat_history_title(input and input.title or "")
+        utils.schedule_main()
+        require("CopilotChat").save(title)
+
+        return {
+          {
+            uri = "copilot-chat://history/" .. title,
+            name = "Saved CopilotChat History",
+            mimetype = "text/plain",
+            data = "Saved current CopilotChat history as: " .. title,
+          },
+        }
+      end,
+    },
+  },
   prompts = {
     COPILOT_BASE = {
       system_prompt = copilot_base_system_prompt,
