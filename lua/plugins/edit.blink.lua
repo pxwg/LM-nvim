@@ -100,7 +100,7 @@ end
 
 return {
   "saghen/blink.cmp",
-  event = "InsertEnter",
+  event = "VeryLazy",
   -- event = "UIEnter",
   -- enabled = false,
   -- use a release tag to download pre-built binaries
