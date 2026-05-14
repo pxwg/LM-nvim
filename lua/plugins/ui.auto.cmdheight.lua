@@ -1,6 +1,7 @@
 return {
   "jake-stewart/auto-cmdheight.nvim",
   event = "VeryLazy",
+  enabled = false,
   opts = {
     -- max cmdheight before displaying hit enter prompt.
     max_lines = 5,

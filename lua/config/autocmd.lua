@@ -457,3 +457,11 @@ require("zk_scripts")
 --   filetypes = { "typst" },
 --   root_dir = vim.fn.expand("~/wiki"),
 -- })
+
+autocmd("FileType", {
+  pattern = "codecompanion",
+  callback = function(event)
+    require("util.rime_ls").attach_rime_to_buffer(event.buf)
+    -- schedule_alma_formula_attach(event.buf, 900)
+  end,
+})

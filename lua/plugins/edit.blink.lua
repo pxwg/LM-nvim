@@ -117,7 +117,7 @@ return {
     "dmitmel/cmp-digraphs",
     "hrsh7th/cmp-nvim-lsp",
     "giuxtaposition/blink-cmp-copilot",
-    { "pxwg/blink-cmp-copilot-chat" },
+    { "pxwg/blink-cmp-copilot-chat", dev = true },
     -- "jalvesaq/cmp-zotcite",
     {
       "saghen/blink.compat",
