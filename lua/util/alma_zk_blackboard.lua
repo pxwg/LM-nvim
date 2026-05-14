@@ -366,8 +366,7 @@ local function parse_hunk_count(raw)
 end
 
 local function parse_hunk_header(line)
-  local old_start, old_count, new_start, new_count, tail =
-    line:match("^@@%s+%-(%d+),?(%d*)%s+%+(%d+),?(%d*)%s+@@(.*)$")
+  local old_start, old_count, new_start, new_count, tail = line:match("^@@%s+%-(%d+),?(%d*)%s+%+(%d+),?(%d*)%s+@@(.*)$")
   if not old_start then
     return nil
   end
@@ -461,7 +460,9 @@ local function workspace_for_thread(thread_id)
 end
 
 local function proposal_workspace(thread_id)
-  return workspace_for_thread(thread_id) or (state.current_workspace_id and workspace_for_id(state.current_workspace_id)) or nil
+  return workspace_for_thread(thread_id)
+    or (state.current_workspace_id and workspace_for_id(state.current_workspace_id))
+    or nil
 end
 
 local function proposal_file_path(file, workspace)
@@ -1148,13 +1149,12 @@ local function build_attachment_payload(thread_id, workspace, binding)
     visible_buffers = visible_buffers,
     changed_files_since_snapshot = changed_files_since_snapshot(previous_snapshot, current_files),
     review_feedback = review_feedback(thread_id),
-  },
-    {
-      id = snapshot_id,
-      files = current_files,
-      visible_buffers = visible_buffers,
-      rpc_sync_key = sync_key,
-    }
+  }, {
+    id = snapshot_id,
+    files = current_files,
+    visible_buffers = visible_buffers,
+    rpc_sync_key = sync_key,
+  }
 end
 
 local function attachment_dir(workspace, thread_id)
@@ -1193,7 +1193,8 @@ local function ensure_spec_metadata(spec, attachment)
   metadata.attachment_count = #metadata.attachments
   metadata.attachmentCount = #metadata.attachments
   metadata.attachment_labels = type(metadata.attachment_labels) == "table" and metadata.attachment_labels or {}
-  metadata.attachmentLabels = type(metadata.attachmentLabels) == "table" and metadata.attachmentLabels or metadata.attachment_labels
+  metadata.attachmentLabels = type(metadata.attachmentLabels) == "table" and metadata.attachmentLabels
+    or metadata.attachment_labels
   table.insert(metadata.attachment_labels, attachment.label)
   metadata.attachmentLabels = metadata.attachment_labels
 end
@@ -1569,7 +1570,10 @@ local function make_status_lines()
     table.insert(lines, "thread bindings:")
     for _, thread_id in ipairs(binding_ids) do
       local binding = state.thread_bindings[thread_id]
-      table.insert(lines, string.format("  %s -> %s (%s)", thread_id, binding.workspace_id, binding.mode or "blackboard"))
+      table.insert(
+        lines,
+        string.format("  %s -> %s (%s)", thread_id, binding.workspace_id, binding.mode or "blackboard")
+      )
     end
   end
 
@@ -1641,7 +1645,10 @@ local function bind_thread(thread_id, workspace_id)
     return nil, "thread id is required"
   end
 
-  workspace_id = workspace_id or state.current_workspace_id or detect_workspace_id(vim.api.nvim_buf_get_name(0)) or detect_workspace_id(current_dir())
+  workspace_id = workspace_id
+    or state.current_workspace_id
+    or detect_workspace_id(vim.api.nvim_buf_get_name(0))
+    or detect_workspace_id(current_dir())
   if type(workspace_id) ~= "string" or workspace_id == "" then
     return nil, "workspace id is required"
   end
@@ -1935,14 +1942,7 @@ on_proposal_received = function(event)
   state.proposals[proposal.id] = proposal
   render_proposal_review(proposal)
   refresh_review_feedback(proposal.thread_id)
-  notify(
-    string.format(
-      "Received proposal %s (%d files, %d hunks)",
-      proposal.id,
-      #proposal.files,
-      #proposal.hunks
-    )
-  )
+  notify(string.format("Received proposal %s (%d files, %d hunks)", proposal.id, #proposal.files, #proposal.hunks))
 end
 
 local function complete_workspaces(arg_lead)
@@ -1965,6 +1965,22 @@ function M.register_workspace(id)
     state.current_workspace_id = workspace.id
   end
   return workspace, err
+end
+
+function M.register_current_workspace(target)
+  local workspace_id = target
+
+  if type(workspace_id) ~= "string" or workspace_id == "" then
+    workspace_id = detect_workspace_id(vim.api.nvim_buf_get_name(0)) or detect_workspace_id(current_dir())
+  elseif workspace_id:find("/", 1, true) then
+    workspace_id = detect_workspace_id(workspace_id) or vim.fn.fnamemodify(workspace_id, ":t")
+  end
+
+  if type(workspace_id) ~= "string" or workspace_id == "" then
+    return nil, "No workspace id found for registration"
+  end
+
+  return M.register_workspace(workspace_id)
 end
 
 function M.bind(thread_id, workspace_id)

@@ -1,5 +1,6 @@
-local alsp = require("agents.lsp")
 local ai_skills = require("util.ai_skills")
+local alma_tools = require("util.copilot_alma_tools")
+local alsp = require("agents.lsp")
 local rime = require("util.rime_ls")
 package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
 
@@ -8,6 +9,20 @@ local reasoning_effort_set = {}
 for _, effort in ipairs(reasoning_effort_choices) do
   reasoning_effort_set[effort] = true
 end
+
+local math_physics_system_prompt = [[
+You are a specialized mathematical physics research assistant inside Neovim.
+
+Core behavior:
+- Prefer precise mathematical reasoning over broad summaries.
+- State definitions, assumptions, domains, boundary conditions, and units when they matter.
+- For derivations, proceed step by step and make algebraic transformations explicit enough to audit.
+- Distinguish theorem, heuristic, approximation, convention, and physical interpretation.
+- When uncertain, say what is uncertain and propose the shortest verification path.
+- Use standard notation from differential geometry, quantum mechanics, field theory, statistical mechanics, and analysis when appropriate.
+- For Chinese user input, answer in Chinese unless the user asks otherwise; keep formulas and technical symbols in conventional notation.
+- When working with ZK/alma workspace notes, prefer writing substantial outputs directly into the relevant workspace buffer and keep chat replies concise.
+]]
 
 local function model_supports_reasoning_effort(model_id)
   return model_id:match("^gpt%-5") ~= nil or model_id:match("^gpt%-oss") ~= nil or model_id:match("^o%d") ~= nil
@@ -81,7 +96,18 @@ end
 
 local opts = {
   chat_autocomplete = false,
-  tools = { "@neovim", "@copilot" },
+  tools = { "neovim", "copilot", "alma" },
+  resources = { "selection", "alma_zk_workspace" },
+  prompts = {
+    MATH_PHYSICS = {
+      system_prompt = math_physics_system_prompt,
+      description = "Mathematical physics research assistant.",
+    },
+    WorkspaceZK = {
+      prompt = "Use the linked ZK/alma workspace context for this request. If substantial content is produced, write it into the appropriate workspace buffer and keep the chat reply brief.",
+      description = "Work directly with the linked ZK/alma workspace.",
+    },
+  },
   providers = {
     copilot = {
       disabled = true,
@@ -248,11 +274,38 @@ return {
   },
 
   opts = function() end,
-  cmd = "CopilotChat",
+  cmd = { "CopilotChat", "CopilotChatWorkspaceZK" },
   config = function()
     local chat = require("CopilotChat")
     local mcp = require("mcphub")
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, ai_skills.copilot_functions(vim.uv.cwd()))
+    opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, alma_tools.copilot_functions())
+    vim.api.nvim_create_user_command("CopilotChatWorkspaceZK", function(command_opts)
+      local blackboard = require("util.alma_zk_blackboard")
+      local workspace, err = blackboard.register_current_workspace(command_opts.args ~= "" and command_opts.args or nil)
+      if not workspace then
+        vim.notify("[copilot-chat-zk] " .. tostring(err), vim.log.levels.WARN)
+        return
+      end
+
+      vim.notify("[copilot-chat-zk] Registered workspace " .. workspace.id)
+    end, {
+      nargs = "?",
+      complete = function(arg_lead)
+        local ok, blackboard = pcall(require, "util.alma_zk_blackboard")
+        if not ok or type(blackboard.status) ~= "function" then
+          return {}
+        end
+
+        local status = blackboard.status()
+        local ids = vim.tbl_keys(status.workspaces or {})
+        table.sort(ids)
+        return vim.tbl_filter(function(id)
+          return id:find(arg_lead, 1, true) == 1
+        end, ids)
+      end,
+      desc = "Register the current or named ZK workspace for CopilotChat alma tools",
+    })
     mcp.setup()
     mcp.on({ "servers_updated", "tool_list_changed", "resource_list_changed" }, function()
       local hub = mcp.get_hub_instance()
