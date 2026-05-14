@@ -391,10 +391,15 @@ local function attach_rime_if_chat_buffer()
   end
 end
 
-local function toggle_copilot_chat_with_persona()
+local function has_copilot_chat_instance(chat)
+  return chat.chat and chat.chat.bufnr and vim.api.nvim_buf_is_valid(chat.chat.bufnr)
+end
+
+local function open_copilot_chat_with_persona()
   local chat = require("CopilotChat")
-  if chat.chat and chat.chat.visible and chat.chat:visible() then
-    chat.close()
+  if has_copilot_chat_instance(chat) then
+    chat.open(chat.chat.config or {})
+    vim.schedule(attach_rime_if_chat_buffer)
     return
   end
 
@@ -437,7 +442,7 @@ return {
     {
       "<C-c>",
       function()
-        toggle_copilot_chat_with_persona()
+        open_copilot_chat_with_persona()
       end,
       desc = "CopilotChat",
     },
