@@ -17,6 +17,7 @@ return {
   -- enabled = false,
   dev = true,
   opts = {
+    markdown_filetypes = { "markdown", "copilot-chat" },
     live_preview_debounce = 0,
     cursor_hover_throttle_ms = 0,
     compiler_args = {
