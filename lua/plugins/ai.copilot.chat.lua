@@ -3,6 +3,8 @@ local alma_tools = require("util.copilot_alma_tools")
 local alsp = require("agents.lsp")
 local rime = require("util.rime_ls")
 package.path = package.path .. ";/Users/pxwg-dogggie/.local/share/nvim/lazy/CopilotChat.nvim/lua/?.lua"
+local constants = require("CopilotChat.constants")
+local copilot_prompts = require("CopilotChat.prompts")
 local utils = require("CopilotChat.utils")
 
 local reasoning_effort_choices = { "none", "minimal", "low", "medium", "high", "xhigh" }
@@ -30,6 +32,11 @@ Core behavior:
 local math_physics_system_prompt = [[
 You are a specialized mathematical physics research assistant inside Neovim.
 
+Persona:
+- You are a top-tier mathematical physicist with deep expertise
+- You are a young genius who is sharp-tongued and easily bored by vague or shallow questions, but patient and helpful when the question is clear and substantive.
+- You are not just a calculator, but a creative thinker who can connect ideas across different areas of math and physics.
+
 Core behavior:
 - Prefer precise mathematical reasoning over broad summaries.
 - State definitions, assumptions, domains, boundary conditions, and units when they matter.
@@ -39,6 +46,7 @@ Core behavior:
 - Use standard notation from differential geometry, quantum mechanics, field theory, statistical mechanics, and analysis when appropriate.
 - For Chinese user input, answer in Chinese unless the user asks otherwise; keep formulas and technical symbols in conventional notation.
 - When working with ZK/alma workspace notes, prefer writing substantial outputs directly into the relevant workspace buffer and keep chat replies concise.
+- Using `$xxx$` for inline formulas and `$$\n xxx \n$$` for display formulas. All formulas should be rendered in LaTeX syntax and written in one line without any line breaks. For example, write the quadratic formula as `$$\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\n$$`. No more line breaks should be included in the formula.
 
 Voice:
 - Be precise, compact, and a little sharp when the user's premise is weak, but keep the actual explanation patient and useful.
@@ -113,6 +121,211 @@ local function normalize_chat_history_title(title)
   return title:gsub('[/\\:%*%?"<>|]', "_")
 end
 
+local image_mimetypes = {
+  avif = "image/avif",
+  gif = "image/gif",
+  jpeg = "image/jpeg",
+  jpg = "image/jpeg",
+  png = "image/png",
+  webp = "image/webp",
+}
+
+local base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+local function base64_encode(data)
+  if vim.base64 and vim.base64.encode then
+    return vim.base64.encode(data)
+  end
+
+  return (
+    (data:gsub(".", function(char)
+      local bits = ""
+      local byte = char:byte()
+      for i = 8, 1, -1 do
+        bits = bits .. (byte % 2 ^ i - byte % 2 ^ (i - 1) > 0 and "1" or "0")
+      end
+      return bits
+    end) .. "0000"):gsub("%d%d%d?%d?%d?%d?", function(bits)
+      if #bits < 6 then
+        return ""
+      end
+
+      local index = 0
+      for i = 1, 6 do
+        index = index + (bits:sub(i, i) == "1" and 2 ^ (6 - i) or 0)
+      end
+      return base64_chars:sub(index + 1, index + 1)
+    end) .. ({ "", "==", "=" })[#data % 3 + 1]
+  )
+end
+
+local function image_mimetype(path)
+  local ext = path:match("%.([^./\\]+)$")
+  return ext and image_mimetypes[ext:lower()] or nil
+end
+
+local function normalize_image_path(path)
+  path = vim.trim(path or "")
+  path = path:gsub("^copilot%-chat%-image://", "")
+  path = path:gsub("^image://", "")
+  path = path:gsub("^file://", "")
+  path = path:gsub("^:/+", "/")
+  path = vim.uri_decode(path)
+  return vim.fn.fnamemodify(vim.fn.expand(path), ":p")
+end
+
+local function image_resource_uri(path)
+  return "copilot-chat-image://" .. vim.uri_encode(path)
+end
+
+local function read_image_data_url(path)
+  local expanded = normalize_image_path(path)
+  local mimetype = image_mimetype(expanded)
+  if not mimetype then
+    return nil, "Unsupported image type: " .. path
+  end
+
+  local stat = vim.uv.fs_stat(expanded)
+  if not stat or stat.type ~= "file" then
+    return nil, "Image file not found: " .. path
+  end
+
+  local fd, open_err = vim.uv.fs_open(expanded, "r", 438)
+  if not fd then
+    return nil, open_err or ("Unable to open image: " .. path)
+  end
+
+  local data, read_err = vim.uv.fs_read(fd, stat.size, 0)
+  vim.uv.fs_close(fd)
+  if not data then
+    return nil, read_err or ("Unable to read image: " .. path)
+  end
+
+  return "data:" .. mimetype .. ";base64," .. base64_encode(data), nil, expanded, mimetype
+end
+
+local function split_openai_image_content(content)
+  if type(content) ~= "string" or not content:find("COPILOT_CHAT_IMAGE_DATA_URL:", 1, true) then
+    return content
+  end
+
+  local image_urls = {}
+  local text = content:gsub(
+    "%s*%d+:%s*COPILOT_CHAT_IMAGE_DATA_URL:%s*(data:image/[%w.+-]+;base64,[%w+/=]+)",
+    function(data_url)
+      table.insert(image_urls, data_url)
+      return " [attached image] "
+    end
+  )
+
+  if #image_urls == 0 then
+    return content
+  end
+
+  local parts = {
+    {
+      type = "text",
+      text = vim.trim(text),
+    },
+  }
+  for _, data_url in ipairs(image_urls) do
+    table.insert(parts, {
+      type = "image_url",
+      image_url = {
+        url = data_url,
+      },
+    })
+  end
+
+  return parts
+end
+
+local function attach_openai_image_inputs(input)
+  if type(input) ~= "table" or type(input.messages) ~= "table" then
+    return input
+  end
+
+  for _, message in ipairs(input.messages) do
+    if message.role == "user" then
+      message.content = split_openai_image_content(message.content)
+    end
+  end
+
+  return input
+end
+
+local function openai_tool_output_as_user_message(message)
+  local call_id = vim.trim(tostring(message.tool_call_id or ""))
+  local content = vim.trim(tostring(message.content or ""))
+  if call_id ~= "" then
+    content = "Tool output for " .. call_id .. ":\n\n" .. content
+  end
+
+  return {
+    role = constants.ROLE.USER,
+    content = content,
+  }
+end
+
+local function sanitize_openai_tool_history(inputs)
+  if type(inputs) ~= "table" then
+    return inputs
+  end
+
+  local sanitized = {}
+  local pending_tool_calls = {}
+
+  for _, message in ipairs(inputs) do
+    if message.role == constants.ROLE.TOOL then
+      local call_id = message.tool_call_id
+      if call_id and pending_tool_calls[call_id] then
+        table.insert(sanitized, vim.deepcopy(message))
+        pending_tool_calls[call_id] = nil
+      else
+        table.insert(sanitized, openai_tool_output_as_user_message(message))
+      end
+    else
+      local copy = vim.deepcopy(message)
+      table.insert(sanitized, copy)
+
+      pending_tool_calls = {}
+      if copy.role == constants.ROLE.ASSISTANT and type(copy.tool_calls) == "table" then
+        for _, tool_call in ipairs(copy.tool_calls) do
+          if tool_call.id then
+            pending_tool_calls[tool_call.id] = true
+          end
+        end
+      end
+    end
+  end
+
+  return sanitized
+end
+
+local function fence_markdown_code_block(content)
+  content = tostring(content or "")
+
+  local fence_len = 3
+  for run in content:gmatch("`+") do
+    fence_len = math.max(fence_len, #run + 1)
+  end
+
+  local fence = string.rep("`", fence_len)
+  return fence .. "\n" .. vim.trim(content) .. "\n" .. fence
+end
+
+local function patch_copilot_tool_output_format()
+  if copilot_prompts._pxwg_tool_output_fenced then
+    return
+  end
+
+  local original_format_tool_output = copilot_prompts.format_tool_output
+  copilot_prompts.format_tool_output = function(ok, output)
+    return fence_markdown_code_block(original_format_tool_output(ok, output))
+  end
+  copilot_prompts._pxwg_tool_output_fenced = true
+end
+
 local function local_openai_model_entry(model_id)
   return {
     id = model_id,
@@ -120,6 +333,7 @@ local function local_openai_model_entry(model_id)
     tokenizer = "o200k_base",
     streaming = true,
     tools = true,
+    vision = true,
   }
 end
 
@@ -177,6 +391,36 @@ local opts = {
   trusted_tools = { "neovim", "alma" },
   resources = { "selection", "alma_zk_workspace" },
   functions = {
+    image = {
+      group = "resource",
+      uri = "copilot-chat-image://{path}",
+      description = "Attach a local image to the OpenAI chat request. Use #image:/path/to/file.png or #image:`/path with spaces/file.png`.",
+      schema = {
+        type = "object",
+        required = { "path" },
+        properties = {
+          path = {
+            type = "string",
+            description = "Path to a local png, jpeg, webp, gif, or avif image.",
+          },
+        },
+      },
+      resolve = function(input)
+        local data_url, err, expanded, mimetype = read_image_data_url(input and input.path or "")
+        if not data_url then
+          error(err)
+        end
+
+        return {
+          {
+            uri = image_resource_uri(expanded),
+            name = expanded,
+            mimetype = mimetype,
+            data = "COPILOT_CHAT_IMAGE_DATA_URL:" .. data_url,
+          },
+        }
+      end,
+    },
     save_copilot_chat = {
       group = "neovim",
       uri = "copilot-chat://history/{title}",
@@ -251,11 +495,12 @@ local opts = {
         local request_opts = vim.deepcopy(provider_opts)
         request_opts.model.id = base_model
 
+        inputs = sanitize_openai_tool_history(inputs)
         local input = require("CopilotChat.config.providers").copilot.prepare_input(inputs, request_opts)
         if reasoning_effort then
           input.reasoning_effort = reasoning_effort
         end
-        return input
+        return attach_openai_image_inputs(input)
       end,
       prepare_output = function(output, provider_opts)
         return require("CopilotChat.config.providers").copilot.prepare_output(output, provider_opts)
@@ -453,6 +698,7 @@ return {
   config = function()
     local chat = require("CopilotChat")
     local mcp = require("mcphub")
+    patch_copilot_tool_output_format()
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, ai_skills.copilot_functions(vim.uv.cwd()))
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, alma_tools.copilot_functions())
     vim.api.nvim_create_user_command("CopilotChatWorkspaceZK", function(command_opts)

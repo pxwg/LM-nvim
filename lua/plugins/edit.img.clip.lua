@@ -5,6 +5,12 @@ return {
   opts = {
     -- recommended settings
     filetypes = {
+      ["copilot-chat"] = {
+        prompt_for_file_name = false,
+        template = "#image:`$FILE_PATH`",
+        use_absolute_path = true,
+        url_encode_path = false,
+      },
       codecompanion = {
         prompt_for_file_name = false,
         template = "[Image]($FILE_PATH)",

@@ -118,6 +118,43 @@ local function patch_snacks_picker_filename_formatter()
   end
 end
 
+local function hl_fg(groups)
+  for _, group in ipairs(groups) do
+    local hl = vim.api.nvim_get_hl(0, { name = group, link = false, create = false })
+    if hl and hl.fg then
+      return string.format("#%06x", hl.fg)
+    end
+  end
+end
+
+local function sync_snacks_math_image_hl()
+  local fg = hl_fg({ "Normal", "NormalFloat" })
+  if fg then
+    vim.api.nvim_set_hl(0, "SnacksImageMath", { fg = fg })
+  end
+end
+
+local function attach_snacks_image_doc(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) or not vim.api.nvim_buf_is_loaded(bufnr) then
+    return
+  end
+  local ft = vim.bo[bufnr].filetype
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  if ft == "" and name:match("copilot%-chat") then
+    vim.bo[bufnr].filetype = "copilot-chat"
+    ft = "copilot-chat"
+  end
+  if ft ~= "markdown" and ft ~= "copilot-chat" then
+    return
+  end
+
+  vim.schedule(function()
+    if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
+      require("snacks.image.doc").attach(bufnr)
+    end
+  end)
+end
+
 return {
   "folke/snacks.nvim",
   event = "VeryLazy",
@@ -183,14 +220,14 @@ return {
     image = {
       -- enabled = false,
       math = {
-        -- enabled = false,
         enabled = false,
+        -- enabled = false,
+        cjk_font = "LXGW WenKai",
         typst = {
           tpl = [[
-        #set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))
+        #set page(width: auto, height: auto, margin: (x: 0pt, y: 0pt), fill: none)
         #let sym = "Sym"
-        #show math.equation.where(block: false): set text(top-edge: "bounds", bottom-edge: "bounds")
-        #set text(size: 10pt, fill: rgb("${color}"))
+        #set text(font: ("New Computer Modern", "${cjk_font}"), size: ${font_size}, fill: rgb("${color}"), top-edge: "ascender", bottom-edge: "descender")
         ${header}
         ${content}]],
         },
@@ -227,6 +264,29 @@ return {
   },
   config = function(_, opts)
     require("snacks").setup(opts)
+    sync_snacks_math_image_hl()
+
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = vim.api.nvim_create_augroup("SnacksImageMathColor", { clear = true }),
+      callback = sync_snacks_math_image_hl,
+    })
+
+    local image = require("snacks.image")
+    image.langs = function()
+      return { "markdown" }
+    end
+
+    local image_group = vim.api.nvim_create_augroup("SnacksImageDocAttach", { clear = true })
+    vim.api.nvim_create_autocmd({ "FileType", "BufEnter", "BufWinEnter" }, {
+      group = image_group,
+      callback = function(event)
+        attach_snacks_image_doc(event.buf)
+      end,
+    })
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+      attach_snacks_image_doc(bufnr)
+    end
+
     patch_snacks_picker_filename_formatter()
   end,
   keys = {
