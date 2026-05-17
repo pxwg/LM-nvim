@@ -145,3 +145,5 @@ autocmd("FileType", {
     vim.opt_local.winbar = ""
   end,
 })
+
+vim.o.cursorline = true
