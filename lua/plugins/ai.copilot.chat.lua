@@ -700,6 +700,156 @@ local function bounded_system(cmd, cwd, opts)
   return run()
 end
 
+local function tool_timeout_message(name, timeout_ms)
+  return string.format(
+    "[CopilotChat tool guard: tool %q timed out after %dms. The result was discarded; retry with a narrower path/pattern or a bounded command.]",
+    tostring(name),
+    timeout_ms
+  )
+end
+
+local function patch_copilot_tool_timeout()
+  if copilot_prompts._pxwg_tool_timeout then
+    return
+  end
+
+  local async = require("plenary.async")
+  local original_execute_tool_call = copilot_prompts.execute_tool_call
+
+  copilot_prompts.execute_tool_call = function(name, input, config, source)
+    local run = async.wrap(function(callback)
+      local done = false
+      local timeout_ms = tool_call_timeout_ms
+      local timer = vim.uv.new_timer()
+
+      local function close_timer()
+        if timer and not timer:is_closing() then
+          timer:stop()
+          timer:close()
+        end
+      end
+
+      local function finish(ok, output)
+        if done then
+          return
+        end
+
+        done = true
+        close_timer()
+        vim.schedule(function()
+          callback(ok, output)
+        end)
+      end
+
+      timer:start(timeout_ms, 0, function()
+        finish(false, tool_timeout_message(name, timeout_ms))
+      end)
+
+      async.run(function()
+        local ran, ok, output = pcall(original_execute_tool_call, name, input, config, source)
+        if not ran then
+          finish(false, ok)
+          return
+        end
+
+        finish(ok, output)
+      end)
+    end, 1)
+
+    return run()
+  end
+
+  copilot_prompts._pxwg_tool_timeout = true
+end
+
+local function split_bounded_lines(text, max_count)
+  local out = {}
+  if type(text) ~= "string" or text == "" then
+    return out
+  end
+
+  for line in text:gmatch("[^\r\n]+") do
+    if line ~= "" and line ~= "(no output)" then
+      table.insert(out, line)
+      if max_count and max_count > 0 and #out >= max_count then
+        break
+      end
+    end
+  end
+
+  return out
+end
+
+local function patch_copilot_file_scanners()
+  local files = require("CopilotChat.utils.files")
+  if files._pxwg_bounded_scanners then
+    return
+  end
+
+  local async = require("plenary.async")
+
+  files.glob = async.wrap(function(path, scan_opts, callback)
+    scan_opts = vim.tbl_deep_extend("force", files.scan_args or {}, scan_opts or {})
+    if vim.fn.executable("rg") ~= 1 then
+      callback({})
+      return
+    end
+
+    local cmd = { "rg" }
+    if scan_opts.pattern then
+      vim.list_extend(cmd, { "-g", scan_opts.pattern })
+    end
+    if scan_opts.max_depth then
+      vim.list_extend(cmd, { "--max-depth", tostring(scan_opts.max_depth) })
+    end
+    if scan_opts.no_ignore then
+      table.insert(cmd, "--no-ignore")
+    end
+    if scan_opts.hidden then
+      table.insert(cmd, "--hidden")
+    end
+    table.insert(cmd, "--files")
+
+    local result = bounded_system(cmd, path, {
+      timeout_ms = tool_call_timeout_ms,
+      max_stdout_bytes = tool_output_max_bytes,
+      max_stderr_bytes = tool_stderr_max_bytes,
+      kill_on_output_limit = true,
+    })
+    callback(split_bounded_lines(result.stdout, scan_opts.max_count))
+  end, 3)
+
+  files.grep = async.wrap(function(path, scan_opts, callback)
+    scan_opts = vim.tbl_deep_extend("force", files.scan_args or {}, scan_opts or {})
+    if vim.fn.executable("rg") ~= 1 or not scan_opts.pattern or scan_opts.pattern == "" then
+      callback({})
+      return
+    end
+
+    local cmd = { "rg" }
+    if scan_opts.max_depth then
+      vim.list_extend(cmd, { "--max-depth", tostring(scan_opts.max_depth) })
+    end
+    if scan_opts.no_ignore then
+      table.insert(cmd, "--no-ignore")
+    end
+    if scan_opts.hidden then
+      table.insert(cmd, "--hidden")
+    end
+    vim.list_extend(cmd, { "--files-with-matches", "--ignore-case", "-e", scan_opts.pattern })
+
+    local result = bounded_system(cmd, path, {
+      timeout_ms = tool_call_timeout_ms,
+      max_stdout_bytes = tool_output_max_bytes,
+      max_stderr_bytes = tool_stderr_max_bytes,
+      kill_on_output_limit = true,
+    })
+    callback(split_bounded_lines(result.stdout, scan_opts.max_count))
+  end, 3)
+
+  files._pxwg_bounded_scanners = true
+end
+
 local function local_openai_model_entry(model_id)
   return {
     id = model_id,
@@ -1293,6 +1443,8 @@ return {
     local mcp = require("mcphub")
     patch_copilot_tool_output_format()
     patch_copilot_tool_rejection()
+    patch_copilot_tool_timeout()
+    patch_copilot_file_scanners()
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, ai_skills.copilot_functions(vim.uv.cwd()))
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, alma_tools.copilot_functions())
     vim.api.nvim_create_user_command("CopilotChatWorkspaceZK", function(command_opts)
