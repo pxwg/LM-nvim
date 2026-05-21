@@ -7,6 +7,10 @@ local constants = require("CopilotChat.constants")
 local copilot_prompts = require("CopilotChat.prompts")
 local utils = require("CopilotChat.utils")
 
+local tool_call_timeout_ms = 8000
+local tool_output_max_bytes = 60000
+local tool_stderr_max_bytes = 12000
+
 local reasoning_effort_choices = { "none", "minimal", "low", "medium", "high", "xhigh" }
 local reasoning_effort_set = {}
 for _, effort in ipairs(reasoning_effort_choices) do
@@ -314,6 +318,21 @@ local function fence_markdown_code_block(content)
   return fence .. "\n" .. vim.trim(content) .. "\n" .. fence
 end
 
+local function truncate_tool_text(text, max_bytes, label)
+  text = tostring(text or "")
+  if #text <= max_bytes then
+    return text, false
+  end
+
+  local truncated = text:sub(1, max_bytes)
+  return truncated .. string.format(
+    "\n\n[CopilotChat tool guard: %s truncated after %d bytes; original output exceeded the limit.]",
+    label or "output",
+    max_bytes
+  ),
+    true
+end
+
 local function patch_copilot_tool_output_format()
   if copilot_prompts._pxwg_tool_output_fenced then
     return
@@ -321,9 +340,351 @@ local function patch_copilot_tool_output_format()
 
   local original_format_tool_output = copilot_prompts.format_tool_output
   copilot_prompts.format_tool_output = function(ok, output)
-    return fence_markdown_code_block(original_format_tool_output(ok, output))
+    local formatted = original_format_tool_output(ok, output)
+    formatted = truncate_tool_text(formatted, tool_output_max_bytes, "formatted tool output")
+    return fence_markdown_code_block(formatted)
   end
   copilot_prompts._pxwg_tool_output_fenced = true
+end
+
+local function patch_copilot_tool_rejection()
+  if copilot_prompts._pxwg_tool_rejection then
+    return
+  end
+
+  local function extract_tool_rejections(prompt)
+    local rejected = {}
+    local filtered_lines = {}
+
+    for _, line in ipairs(vim.split(prompt or "", "\n", { plain = true })) do
+      local tool_id, comment = line:match("^%s*#reject_tool_call:(%S+)%s*(.-)%s*$")
+      if tool_id then
+        rejected[vim.trim(tool_id)] = vim.trim(comment or "")
+      elseif vim.trim(line) ~= "" then
+        table.insert(filtered_lines, line)
+      end
+    end
+
+    return rejected, filtered_lines
+  end
+
+  local function rejection_results(rejected)
+    local chat = require("CopilotChat").chat
+    local tool_names = {}
+    if chat then
+      for _, message in ipairs(chat:get_messages()) do
+        if type(message.tool_calls) == "table" then
+          for _, tool_call in ipairs(message.tool_calls) do
+            if tool_call.id then
+              tool_names[vim.trim(tool_call.id)] = tool_call.name
+            end
+          end
+        end
+      end
+    end
+
+    local resolved_tools = {}
+    for tool_id, comment in pairs(rejected) do
+      local name = tool_names[tool_id] or "unknown"
+      local result = "User rejected this tool call." .. "\n\nTool: " .. name .. "\nTool call id: " .. tool_id
+
+      if comment ~= "" then
+        result = result .. "\n\nUser comment:\n" .. comment
+      end
+
+      table.insert(resolved_tools, {
+        id = tool_id,
+        result = result,
+      })
+    end
+
+    return resolved_tools
+  end
+
+  local original_resolve_prompt = copilot_prompts.resolve_prompt
+  copilot_prompts.resolve_prompt = function(prompt, config)
+    local rejected, filtered_lines = extract_tool_rejections(prompt)
+    if not vim.tbl_isempty(rejected) and #filtered_lines == 0 then
+      return config, prompt
+    end
+
+    return original_resolve_prompt(prompt, config)
+  end
+
+  local original_resolve_functions = copilot_prompts.resolve_functions
+  copilot_prompts.resolve_functions = function(prompt, config)
+    local rejected, filtered_lines = extract_tool_rejections(prompt)
+    prompt = table.concat(filtered_lines, "\n")
+    if not vim.tbl_isempty(rejected) and #filtered_lines == 0 then
+      return {}, rejection_results(rejected), ""
+    end
+
+    local resolved_resources, resolved_tools, resolved_prompt = original_resolve_functions(prompt, config)
+    if not vim.tbl_isempty(rejected) then
+      resolved_tools = resolved_tools or {}
+      for _, tool in ipairs(rejection_results(rejected)) do
+        table.insert(resolved_tools, tool)
+      end
+    end
+
+    return resolved_resources, resolved_tools, resolved_prompt
+  end
+
+  copilot_prompts._pxwg_tool_rejection = true
+end
+
+local function pending_tool_call_at_cursor(chat)
+  local assistant_message = chat:get_message(constants.ROLE.ASSISTANT)
+  if not assistant_message or type(assistant_message.tool_calls) ~= "table" or #assistant_message.tool_calls == 0 then
+    return nil, "No pending tool call found."
+  end
+
+  local current_line = vim.api.nvim_get_current_line()
+  local line_name, line_id = current_line:match("^%s*#([^:%s]+):(%S+)%s*$")
+  if line_id then
+    for _, tool_call in ipairs(assistant_message.tool_calls) do
+      if vim.trim(tool_call.id or "") == vim.trim(line_id) then
+        return tool_call, nil, vim.api.nvim_win_get_cursor(0)[1], line_name
+      end
+    end
+  end
+
+  local user_message = chat:get_message(constants.ROLE.USER, true) or chat:get_message(constants.ROLE.USER)
+  if user_message and user_message.section then
+    local matches = {}
+    local start_line = user_message.section.start_line
+    local end_line = user_message.section.end_line or vim.api.nvim_buf_line_count(chat.bufnr)
+    local lines = vim.api.nvim_buf_get_lines(chat.bufnr, start_line - 1, end_line, false)
+
+    for index, line in ipairs(lines) do
+      local name, id = line:match("^%s*#([^:%s]+):(%S+)%s*$")
+      if id then
+        for _, tool_call in ipairs(assistant_message.tool_calls) do
+          if tool_call.name == name and vim.trim(tool_call.id or "") == vim.trim(id) then
+            table.insert(matches, {
+              tool_call = tool_call,
+              line = start_line + index - 1,
+            })
+          end
+        end
+      end
+    end
+
+    if #matches == 1 then
+      return matches[1].tool_call, nil, matches[1].line
+    elseif #matches > 1 then
+      return nil, "Move the cursor to the tool-call line you want to reject."
+    end
+  end
+
+  if #assistant_message.tool_calls == 1 then
+    return assistant_message.tool_calls[1], nil, nil
+  end
+
+  return nil, "Move the cursor to the tool-call line you want to reject."
+end
+
+local function reject_pending_tool_call()
+  local copilot = require("CopilotChat")
+  local chat = copilot.chat
+  if not chat or not chat:visible() then
+    vim.notify("CopilotChat is not open.", vim.log.levels.WARN)
+    return
+  end
+
+  local tool_call, err, line = pending_tool_call_at_cursor(chat)
+  if not tool_call then
+    vim.notify(err, vim.log.levels.WARN)
+    return
+  end
+
+  vim.ui.input({
+    prompt = "Reject tool call comment> ",
+  }, function(comment)
+    if comment == nil then
+      return
+    end
+
+    comment = vim.trim(comment)
+    local replacement = "#reject_tool_call:" .. tool_call.id
+    if comment ~= "" then
+      replacement = replacement .. " " .. comment
+    end
+
+    local function apply_rejection()
+      local target_line = line
+      if not target_line then
+        local user_message = chat:get_message(constants.ROLE.USER)
+        target_line = user_message and user_message.section and user_message.section.end_line or nil
+      end
+
+      if target_line then
+        local modifiable = vim.bo[chat.bufnr].modifiable
+        vim.bo[chat.bufnr].modifiable = true
+        vim.api.nvim_buf_set_lines(chat.bufnr, target_line - 1, target_line, false, { replacement })
+        vim.bo[chat.bufnr].modifiable = modifiable
+      else
+        chat:add_message({
+          role = constants.ROLE.USER,
+          content = "\n" .. replacement .. "\n",
+        })
+      end
+
+      chat:parse()
+      local message = chat:get_message(constants.ROLE.USER)
+      if message then
+        copilot.ask(message.content)
+      end
+    end
+
+    if vim.in_fast_event() then
+      vim.schedule(apply_rejection)
+    else
+      apply_rejection()
+    end
+  end)
+end
+
+local function append_limited(chunks, current_bytes, data, max_bytes)
+  if not data or data == "" or current_bytes >= max_bytes then
+    return current_bytes, data and data ~= ""
+  end
+
+  local remaining = max_bytes - current_bytes
+  if #data <= remaining then
+    table.insert(chunks, data)
+    return current_bytes + #data, false
+  end
+
+  table.insert(chunks, data:sub(1, remaining))
+  return max_bytes, true
+end
+
+local function source_cwd(source)
+  local cwd = source and source.cwd or nil
+  if type(cwd) == "function" then
+    local ok, value = pcall(cwd)
+    cwd = ok and value or nil
+  end
+
+  if type(cwd) ~= "string" or cwd == "" then
+    return nil
+  end
+
+  return cwd
+end
+
+local function bounded_system(cmd, cwd, opts)
+  opts = opts or {}
+  local async = require("plenary.async")
+  local run = async.wrap(function(callback)
+    local timeout_ms = opts.timeout_ms or tool_call_timeout_ms
+    local max_stdout = opts.max_stdout_bytes or tool_output_max_bytes
+    local max_stderr = opts.max_stderr_bytes or tool_stderr_max_bytes
+    local stdout_chunks = {}
+    local stderr_chunks = {}
+    local stdout_bytes = 0
+    local stderr_bytes = 0
+    local stdout_truncated = false
+    local stderr_truncated = false
+    local timed_out = false
+    local output_limited = false
+    local done = false
+    local timer = vim.uv.new_timer()
+    local kill_timer = vim.uv.new_timer()
+    local handle
+
+    local function terminate(signal)
+      if done or not handle then
+        return
+      end
+
+      pcall(function()
+        handle:kill(signal)
+      end)
+    end
+
+    handle = vim.system(cmd, {
+      cwd = cwd,
+      text = true,
+      stdout = function(_, data)
+        local truncated
+        stdout_bytes, truncated = append_limited(stdout_chunks, stdout_bytes, data, max_stdout)
+        stdout_truncated = stdout_truncated or truncated
+        if truncated and opts.kill_on_output_limit then
+          output_limited = true
+          terminate(15)
+        end
+      end,
+      stderr = function(_, data)
+        local truncated
+        stderr_bytes, truncated = append_limited(stderr_chunks, stderr_bytes, data, max_stderr)
+        stderr_truncated = stderr_truncated or truncated
+        if truncated and opts.kill_on_output_limit then
+          output_limited = true
+          terminate(15)
+        end
+      end,
+    }, function(result)
+      done = true
+      if timer then
+        timer:stop()
+        timer:close()
+      end
+      if kill_timer then
+        kill_timer:stop()
+        kill_timer:close()
+      end
+
+      local stdout = table.concat(stdout_chunks)
+      local stderr = table.concat(stderr_chunks)
+      local guard = {}
+      if timed_out then
+        table.insert(guard, string.format("command timed out after %dms", timeout_ms))
+      end
+      if output_limited then
+        table.insert(guard, "command stopped after output limit was reached")
+      end
+      if stdout_truncated then
+        table.insert(guard, string.format("stdout truncated at %d bytes", max_stdout))
+      end
+      if stderr_truncated then
+        table.insert(guard, string.format("stderr truncated at %d bytes", max_stderr))
+      end
+
+      if stderr ~= "" then
+        stdout = stdout .. (stdout ~= "" and "\n\n" or "") .. "[stderr]\n" .. stderr
+      end
+      if #guard > 0 then
+        stdout = stdout
+          .. (stdout ~= "" and "\n\n" or "")
+          .. "[CopilotChat tool guard: "
+          .. table.concat(guard, "; ")
+          .. ".]"
+      end
+
+      result.stdout = stdout ~= "" and stdout or "(no output)"
+      result.stderr = stderr
+      callback(result)
+    end)
+
+    timer:start(timeout_ms, 0, function()
+      if done then
+        return
+      end
+
+      timed_out = true
+      terminate(15)
+      kill_timer:start(1000, 0, function()
+        if done then
+          return
+        end
+        terminate(9)
+      end)
+    end)
+  end, 1)
+
+  return run()
 end
 
 local function local_openai_model_entry(model_id)
@@ -391,6 +752,157 @@ local opts = {
   trusted_tools = { "neovim", "alma" },
   resources = { "selection", "alma_zk_workspace" },
   functions = {
+    bash = {
+      group = "copilot",
+      description = string.format(
+        "Executes a bash command and returns bounded output. Commands are terminated after %dms and stdout is truncated after %d bytes.",
+        tool_call_timeout_ms,
+        tool_output_max_bytes
+      ),
+      schema = {
+        type = "object",
+        required = { "command" },
+        properties = {
+          command = {
+            type = "string",
+            description = "Bash command to execute.",
+          },
+        },
+      },
+      resolve = function(input, source)
+        local command = input and input.command or ""
+        if command == "" then
+          error("No bash command provided")
+        end
+
+        local out = bounded_system({ "bash", "-c", command }, source_cwd(source), {
+          timeout_ms = tool_call_timeout_ms,
+          max_stdout_bytes = tool_output_max_bytes,
+          max_stderr_bytes = tool_stderr_max_bytes,
+          kill_on_output_limit = true,
+        })
+
+        return {
+          {
+            data = out.stdout,
+          },
+        }
+      end,
+    },
+    grep = {
+      group = "copilot",
+      uri = "files://grep/{pattern}",
+      description = string.format(
+        "Searches for a pattern across files in the workspace with bounded runtime and output. Search stops after %dms or %d output bytes.",
+        tool_call_timeout_ms,
+        tool_output_max_bytes
+      ),
+      schema = {
+        type = "object",
+        required = { "pattern" },
+        properties = {
+          pattern = {
+            type = "string",
+            description = "Pattern to search for.",
+          },
+        },
+      },
+      resolve = function(input, source)
+        local pattern = input and input.pattern or ""
+        if pattern == "" then
+          error("No grep pattern provided")
+        end
+
+        local cmd
+        if vim.fn.executable("rg") == 1 then
+          cmd = {
+            "rg",
+            "--max-depth",
+            "50",
+            "--files-with-matches",
+            "--ignore-case",
+            "-e",
+            pattern,
+          }
+        elseif vim.fn.executable("grep") == 1 then
+          cmd = {
+            "grep",
+            "-rli",
+            "-e",
+            pattern,
+          }
+        else
+          error("No executable found for grep")
+        end
+
+        local out = bounded_system(cmd, source_cwd(source), {
+          timeout_ms = tool_call_timeout_ms,
+          max_stdout_bytes = tool_output_max_bytes,
+          max_stderr_bytes = tool_stderr_max_bytes,
+          kill_on_output_limit = true,
+        })
+
+        return {
+          {
+            uri = "files://grep/" .. pattern,
+            mimetype = "text/plain",
+            data = out.stdout,
+          },
+        }
+      end,
+    },
+    glob = {
+      group = "copilot",
+      uri = "files://glob/{pattern}",
+      description = string.format(
+        "Lists filenames matching a pattern in the workspace with bounded runtime and output. Listing stops after %dms or %d output bytes.",
+        tool_call_timeout_ms,
+        tool_output_max_bytes
+      ),
+      schema = {
+        type = "object",
+        required = { "pattern" },
+        properties = {
+          pattern = {
+            type = "string",
+            description = "Glob pattern to match files.",
+            default = "**/*",
+          },
+        },
+      },
+      resolve = function(input, source)
+        if vim.fn.executable("rg") ~= 1 then
+          error("rg is required for bounded glob; refusing to recursively scan the filesystem")
+        end
+
+        local pattern = input and input.pattern or "**/*"
+        local out = bounded_system(
+          {
+            "rg",
+            "-g",
+            pattern,
+            "--max-depth",
+            "50",
+            "--files",
+          },
+          source_cwd(source),
+          {
+            timeout_ms = tool_call_timeout_ms,
+            max_stdout_bytes = tool_output_max_bytes,
+            max_stderr_bytes = tool_stderr_max_bytes,
+            kill_on_output_limit = true,
+          }
+        )
+
+        return {
+          {
+            uri = "files://glob/" .. pattern,
+            mimetype = "text/plain",
+            data = out.stdout,
+          },
+        }
+      end,
+    },
     image = {
       group = "resource",
       uri = "copilot-chat-image://{path}",
@@ -511,6 +1023,13 @@ local opts = {
     },
   },
   mappings = {
+    reject_tool_call = {
+      normal = "gr",
+      insert = false,
+      callback = function()
+        reject_pending_tool_call()
+      end,
+    },
     show_diff = {
       full_diff = true,
     },
@@ -699,6 +1218,7 @@ return {
     local chat = require("CopilotChat")
     local mcp = require("mcphub")
     patch_copilot_tool_output_format()
+    patch_copilot_tool_rejection()
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, ai_skills.copilot_functions(vim.uv.cwd()))
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, alma_tools.copilot_functions())
     vim.api.nvim_create_user_command("CopilotChatWorkspaceZK", function(command_opts)
