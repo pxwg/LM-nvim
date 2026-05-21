@@ -931,8 +931,8 @@ end
 local opts = {
   chat_autocomplete = false,
   system_prompt = "HELPFUL_ASSISTANT",
-  tools = { "neovim", "alma" },
-  trusted_tools = { "neovim", "alma" },
+  tools = { "neovim", "alma", "skills" },
+  trusted_tools = { "neovim", "alma", "skills" },
   resources = { "selection", "alma_zk_workspace" },
   functions = {
     bash = {
@@ -1445,7 +1445,16 @@ return {
     patch_copilot_tool_rejection()
     patch_copilot_tool_timeout()
     patch_copilot_file_scanners()
-    opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, ai_skills.copilot_functions(vim.uv.cwd()))
+    opts.functions = vim.tbl_deep_extend(
+      "force",
+      opts.functions or {},
+      ai_skills.copilot_functions(vim.uv.cwd(), {
+        sources = {
+          ["project-codex"] = true,
+          codex = true,
+        },
+      })
+    )
     opts.functions = vim.tbl_deep_extend("force", opts.functions or {}, alma_tools.copilot_functions())
     vim.api.nvim_create_user_command("CopilotChatWorkspaceZK", function(command_opts)
       local blackboard = require("util.alma_zk_blackboard")

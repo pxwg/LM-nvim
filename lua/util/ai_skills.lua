@@ -169,35 +169,47 @@ function M.list(cwd)
   return out
 end
 
-function M.copilot_functions(cwd)
+local function source_allowed(source, sources)
+  if not sources then
+    return true
+  end
+
+  return sources[source] == true
+end
+
+function M.copilot_functions(cwd, opts)
+  opts = opts or {}
+  local sources = opts.sources
   local functions = {}
 
   for _, skill in ipairs(M.list(cwd)) do
-    functions[skill.tool_name] = {
-      group = "skills",
-      description = string.format("[%s] %s", skill.source, skill.description),
-      schema = {
-        type = "object",
-        properties = {},
-        required = {},
-      },
-      resolve = function()
-        return {
-          {
-            uri = "skill://" .. skill.source .. "/" .. skill.name,
-            name = skill.name,
-            mimetype = "text/markdown",
-            data = table.concat({
-              "# Skill: " .. skill.name,
-              "Source: " .. skill.source,
-              "Path: " .. skill.path,
-              "",
-              skill.content,
-            }, "\n"),
-          },
-        }
-      end,
-    }
+    if source_allowed(skill.source, sources) then
+      functions[skill.tool_name] = {
+        group = "skills",
+        description = string.format("[%s] %s", skill.source, skill.description),
+        schema = {
+          type = "object",
+          properties = {},
+          required = {},
+        },
+        resolve = function()
+          return {
+            {
+              uri = "skill://" .. skill.source .. "/" .. skill.name,
+              name = skill.name,
+              mimetype = "text/markdown",
+              data = table.concat({
+                "# Skill: " .. skill.name,
+                "Source: " .. skill.source,
+                "Path: " .. skill.path,
+                "",
+                skill.content,
+              }, "\n"),
+            },
+          }
+        end,
+      }
+    end
   end
 
   return functions
