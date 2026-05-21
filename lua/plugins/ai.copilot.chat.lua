@@ -12,8 +12,12 @@ local tool_output_max_bytes = 60000
 local tool_stderr_max_bytes = 12000
 
 local reasoning_effort_choices = { "none", "minimal", "low", "medium", "high", "xhigh" }
+local deepseek_reasoning_effort_choices = { "none", "high", "max" }
 local reasoning_effort_set = {}
 for _, effort in ipairs(reasoning_effort_choices) do
+  reasoning_effort_set[effort] = true
+end
+for _, effort in ipairs(deepseek_reasoning_effort_choices) do
   reasoning_effort_set[effort] = true
 end
 
@@ -110,6 +114,15 @@ end
 local function split_reasoning_model_id(model_id)
   local base_model, effort = model_id:match("^(.*)%-([^%-]+)$")
   if base_model and reasoning_effort_set[effort] then
+    return base_model, effort
+  end
+
+  return model_id, nil
+end
+
+local function split_deepseek_model_id(model_id)
+  local base_model, effort = split_reasoning_model_id(model_id)
+  if effort and vim.tbl_contains(deepseek_reasoning_effort_choices, effort) then
     return base_model, effort
   end
 
@@ -745,6 +758,26 @@ local function get_local_openai_model_entries()
   return models
 end
 
+local function deepseek_model_entry(model_id)
+  return {
+    id = model_id,
+    name = model_id,
+    tokenizer = "o200k_base",
+    streaming = true,
+    tools = true,
+    vision = false,
+  }
+end
+
+local function expand_deepseek_model(model_id)
+  return vim
+    .iter(deepseek_reasoning_effort_choices)
+    :map(function(effort)
+      return deepseek_model_entry(model_id .. "-" .. effort)
+    end)
+    :totable()
+end
+
 local opts = {
   chat_autocomplete = false,
   system_prompt = "HELPFUL_ASSISTANT",
@@ -1019,6 +1052,47 @@ local opts = {
       end,
       get_url = function()
         return "http://localhost:8080/v1/chat/completions"
+      end,
+    },
+    deepseek = {
+      get_headers = function()
+        local api_key = (vim.uv or vim.loop).os_getenv("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
+        if not api_key or api_key == "" then
+          error("DEEPSEEK_API_KEY is not set")
+        end
+
+        return {
+          ["Authorization"] = "Bearer " .. api_key,
+          ["Content-Type"] = "application/json",
+        }
+      end,
+      get_models = function()
+        local models = {}
+        vim.list_extend(models, expand_deepseek_model("deepseek-chat"))
+        vim.list_extend(models, expand_deepseek_model("deepseek-reasoner"))
+        return models
+      end,
+      prepare_input = function(inputs, provider_opts)
+        local base_model, reasoning_effort = split_deepseek_model_id(provider_opts.model.id)
+        local request_opts = vim.deepcopy(provider_opts)
+        request_opts.model.id = base_model
+
+        inputs = sanitize_openai_tool_history(inputs)
+        local input = require("CopilotChat.config.providers").copilot.prepare_input(inputs, request_opts)
+        if reasoning_effort == "none" then
+          input.thinking = { type = "disabled" }
+        elseif reasoning_effort then
+          input.thinking = { type = "enabled" }
+          input.reasoning_effort = reasoning_effort
+        end
+
+        return attach_openai_image_inputs(input)
+      end,
+      prepare_output = function(output, provider_opts)
+        return require("CopilotChat.config.providers").copilot.prepare_output(output, provider_opts)
+      end,
+      get_url = function()
+        return "https://api.deepseek.com/v1/chat/completions"
       end,
     },
   },
