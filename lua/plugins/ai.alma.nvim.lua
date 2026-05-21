@@ -129,13 +129,13 @@ return {
       end,
       desc = "Alma Thread Global",
     },
-    {
-      "<C-c>",
-      function()
-        vim.cmd("Alma")
-      end,
-      desc = "Alma",
-    },
+    -- {
+    --   "<C-c>",
+    --   function()
+    --     vim.cmd("Alma")
+    --   end,
+    --   desc = "Alma",
+    -- },
   },
   config = function()
     require("alma").setup({
