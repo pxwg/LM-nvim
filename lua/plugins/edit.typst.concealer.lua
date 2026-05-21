@@ -57,20 +57,20 @@ attach_copilot_chat_formula_images = function(bufnr, attempt)
   end
   set_conceal_for_buffer_windows(bufnr)
 
-  local ok_main, typst_concealer = pcall(require, "typst-concealer")
-  local ok_runtime, runtime = pcall(require, "typst-concealer.machine.runtime")
+  local ok_main, image_concealer = pcall(require, "math-conceal.image")
+  local ok_runtime, runtime = pcall(require, "math-conceal.image.machine.runtime")
   if not ok_main or not ok_runtime then
     if attempt < 5 then
       vim.defer_fn(function()
         attach_copilot_chat_formula_images(bufnr, attempt + 1)
       end, 500)
     else
-      vim.notify("typst-concealer is not loaded for CopilotChat buffer", vim.log.levels.WARN)
+      vim.notify("math-conceal.image is not loaded for CopilotChat buffer", vim.log.levels.WARN)
     end
     return
   end
 
-  typst_concealer._enabled_buffers[bufnr] = true
+  image_concealer._enabled_buffers[bufnr] = true
   if not vim.b[bufnr].copilot_chat_formula_tracker_attached then
     vim.api.nvim_buf_attach(bufnr, false, {
       on_lines = function(_, changed_buf)
@@ -93,7 +93,7 @@ attach_copilot_chat_formula_images = function(bufnr, attempt)
 
   for _, delay_ms in ipairs({ 800, 1800, 3200 }) do
     vim.defer_fn(function()
-      if vim.api.nvim_buf_is_valid(bufnr) and typst_concealer._enabled_buffers[bufnr] == true then
+      if vim.api.nvim_buf_is_valid(bufnr) and image_concealer._enabled_buffers[bufnr] == true then
         pcall(runtime.refresh_visible_overlays, bufnr, { force_reupload_blocks = true, margin = 8 })
       end
     end, delay_ms)
@@ -102,12 +102,20 @@ end
 
 return {
   "PartyWumpus/typst-concealer",
-  -- enabled = false,
+  enabled = false,
   dev = true,
+  dir = "/Users/pxwg-dogggie/typst-concealer",
   opts = {
     service_binary = "/Users/pxwg-dogggie/typst-concealer/service/target/release/typst-concealer-service",
     use_compiler_service = true,
     use_formula_service = true,
+    backends = {
+      latex = {
+        enabled = true,
+        compiler = "pdflatex",
+        converter = "pdftocairo",
+      },
+    },
     markdown_filetypes = { "markdown", "copilot-chat" },
     live_preview_debounce = 0,
     cursor_hover_throttle_ms = 0,
@@ -148,7 +156,7 @@ return {
     end,
   },
   config = function(_, opts)
-    require("typst-concealer").setup(opts)
+    require("math-conceal.image").setup(opts)
 
     local group = vim.api.nvim_create_augroup("CopilotChatFormulaImages", { clear = true })
     vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter", "BufEnter" }, {
@@ -174,5 +182,5 @@ return {
       end
     end
   end,
-  ft = { "markdown", "typst", "copilot-chat" },
+  ft = { "markdown", "typst", "copilot-chat", "tex" },
 }

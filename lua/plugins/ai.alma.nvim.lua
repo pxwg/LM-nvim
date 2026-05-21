@@ -28,20 +28,20 @@ local function attach_alma_formula_images(bufnr, attempt)
     vim.bo[bufnr].filetype = "alma"
   end
 
-  local ok_main, typst_concealer = pcall(require, "typst-concealer")
-  local ok_runtime, runtime = pcall(require, "typst-concealer.machine.runtime")
+  local ok_main, image_concealer = pcall(require, "math-conceal.image")
+  local ok_runtime, runtime = pcall(require, "math-conceal.image.machine.runtime")
   if not ok_main or not ok_runtime then
     if attempt < 5 then
       vim.defer_fn(function()
         attach_alma_formula_images(bufnr, attempt + 1)
       end, 500)
     else
-      vim.notify("typst-concealer is not loaded for Alma buffer", vim.log.levels.WARN)
+      vim.notify("math-conceal.image is not loaded for Alma buffer", vim.log.levels.WARN)
     end
     return
   end
 
-  typst_concealer._enabled_buffers[bufnr] = true
+  image_concealer._enabled_buffers[bufnr] = true
   local ok_render, err = pcall(runtime.render_buf, bufnr)
   if not ok_render then
     vim.notify("Alma formula render failed: " .. tostring(err), vim.log.levels.WARN)
@@ -50,7 +50,7 @@ local function attach_alma_formula_images(bufnr, attempt)
 
   for _, delay_ms in ipairs({ 800, 1800, 3200 }) do
     vim.defer_fn(function()
-      if vim.api.nvim_buf_is_valid(bufnr) and typst_concealer._enabled_buffers[bufnr] == true then
+      if vim.api.nvim_buf_is_valid(bufnr) and image_concealer._enabled_buffers[bufnr] == true then
         pcall(runtime.refresh_visible_overlays, bufnr, { force_reupload_blocks = true, margin = 8 })
       end
     end, delay_ms)
