@@ -3,22 +3,17 @@ if lazy_ok then
   lazy.load({ plugins = { "CopilotChat.nvim" } })
 end
 
-local ok, copilot_chat = pcall(require, "CopilotChat")
-if not ok then
-  vim.notify("CopilotChat.nvim is not available: " .. tostring(copilot_chat), vim.log.levels.ERROR)
-  return
-end
-
 local constants = require("CopilotChat.constants")
+local copilot_chat = require("CopilotChat")
 
 local delay_ms = tonumber(vim.g.copilotchat_stream_math_delay_ms) or 35
 local chunk_chars = tonumber(vim.g.copilotchat_stream_math_chunk_chars) or 3
 
-local text = [=[你好。下面给几个路径积分相关公式，顺便测试行内与展示公式。
+local text = [=[Hello. Below are several path-integral formulas for testing both inline and display math rendering.
 
-行内公式：量子振幅常写作 $\langle q_f,t_f|q_i,t_i\rangle = \int_{q(t_i)=q_i}^{q(t_f)=q_f}\mathcal{D}q\,e^{\frac{i}{\hbar}S[q]}$，其中作用量为 $S[q]=\int_{t_i}^{t_f}L(q,\dot q,t)\,dt$。
+Inline formula: a quantum transition amplitude is often written as $\langle q_f,t_f|q_i,t_i\rangle = \int_{q(t_i)=q_i}^{q(t_f)=q_f}\mathcal{D}q\,e^{\frac{i}{\hbar}S[q]}$, where the action is $S[q]=\int_{t_i}^{t_f}L(q,\dot q,t)\,dt$.
 
-展示公式：
+Display formulas:
 
 $$
 Z[J]=\int \mathcal{D}\phi\,\exp\left\{\frac{i}{\hbar}\left(S[\phi]+\int d^dx\,J(x)\phi(x)\right)\right\}
@@ -40,7 +35,23 @@ $$
 \frac{\delta Z[J]}{\delta J(x)}=\frac{i}{\hbar}\int \mathcal{D}\phi\,\phi(x)\,\exp\left\{\frac{i}{\hbar}\left(S[\phi]+\int d^dy\,J(y)\phi(y)\right)\right\}
 $$
 
-这些已经足够测试：行内公式、带边界条件的路径积分、生成泛函、欧氏路径积分和泛函导数。
+Additional examples:
+
+- Free-particle propagator:
+
+$$
+K_0(x_f,t_f;x_i,t_i)=\sqrt{\frac{m}{2\pi i\hbar (t_f-t_i)}}\,\exp\left[\frac{i m (x_f-x_i)^2}{2\hbar (t_f-t_i)}\right]
+$$
+
+- Wick rotation from real time to imaginary time: $t=-i\tau$, so $e^{\frac{i}{\hbar}S}\to e^{-\frac{1}{\hbar}S_E}$.
+
+- Correlation functions from the generating functional:
+
+$$
+\langle \phi(x_1)\phi(x_2)\rangle=\left.\frac{\hbar^2}{i^2 Z[J]}\frac{\delta^2 Z[J]}{\delta J(x_1)\delta J(x_2)}\right|_{J=0}
+$$
+
+These examples should be enough to test inline math, display math, boundary-conditioned path integrals, generating functionals, Euclidean path integrals, functional derivatives, propagators, and correlation functions.
 ]=]
 
 local function split_utf8(input, size)
@@ -72,7 +83,11 @@ local state = {
   streamed = "",
 }
 
-copilot_chat.open()
+copilot_chat.open({
+  window = {
+    layout = "replace",
+  },
+})
 copilot_chat.chat:clear()
 copilot_chat.chat:start()
 
