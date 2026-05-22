@@ -10,7 +10,7 @@ vim.opt.spell = false
 -- vim.opt.spelllang = "cjk"
 
 -- Set up spell checking only for tex and markdown files with English checking but ignoring CJK
-vim.api.nvim_create_autocmd({ "FileType" }, {
+autocmd({ "FileType" }, {
   pattern = { "tex", "markdown", "typst" },
   callback = function()
     if vim.bo.buftype ~= "nofile" then
