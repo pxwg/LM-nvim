@@ -69,6 +69,10 @@ Create a new file in `lua/plugins/` following the `{category}.{plugin-name}.lua`
 
 LSP servers and formatters are managed by Mason (`<leader>cm` opens Mason UI). No manual installation commands needed — Mason handles tool installation.
 
+## CopilotChat Tools
+
+CopilotChat tools that run commands, scan files, call MCP tools, or otherwise block must be bounded by timeout and output guards. Prefer `bounded_system()` for shell-backed tools so long scans can terminate and return timeout or truncation results instead of blocking Neovim.
+
 ## Sidekick.nvim with Wiki Integration
 
 The `sidekick.nvim` plugin is configured with two Claude Code integrations:
