@@ -30,6 +30,42 @@ local function is_wiki_path(path)
   return path == wiki_root or path:sub(1, #wiki_root + 1) == wiki_root .. "/"
 end
 
+local function is_copilot_chat_buffer(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return false
+  end
+
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  return vim.bo[bufnr].filetype == "copilot-chat" or name:match("copilot%-chat") ~= nil
+end
+
+local function apply_math_conceal_buffer_mode(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  local is_copilot_chat = is_copilot_chat_buffer(bufnr)
+
+  local ok, math_conceal = pcall(require, "math-conceal")
+  if not ok or math_conceal.setup_buffer == nil then
+    return
+  end
+
+  math_conceal.setup_buffer(bufnr, {
+    mode = is_copilot_chat and "preview" or "edit",
+  })
+
+  local ok_image, image = pcall(require, "math-conceal.image")
+  if ok_image and image.config ~= nil then
+    image.config.conceal_in_normal = is_copilot_chat
+  end
+
+  local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
+  if ok_manager then
+    pcall(manager.sync_cursor_conceal, bufnr, { force = true })
+  end
+end
+
 return {
   {
     "dirichy/latex_concealer.nvim",
@@ -56,6 +92,9 @@ return {
     main = "math-conceal",
     opts = {
       ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown" },
+      buffer = {
+        mode = "edit",
+      },
       image = {
         enabled = true,
         filetypes = { "typst", "markdown", "latex" },
@@ -121,5 +160,20 @@ return {
         "phy",
       },
     },
+    config = function(_, opts)
+      require("math-conceal").setup(opts)
+
+      local group = vim.api.nvim_create_augroup("MathConcealBufferMode", { clear = true })
+      vim.api.nvim_create_autocmd({ "FileType", "BufEnter", "BufWinEnter" }, {
+        group = group,
+        callback = function(event)
+          apply_math_conceal_buffer_mode(event.buf)
+        end,
+      })
+
+      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        apply_math_conceal_buffer_mode(bufnr)
+      end
+    end,
   },
 }
