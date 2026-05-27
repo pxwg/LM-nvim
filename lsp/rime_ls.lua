@@ -1,5 +1,9 @@
 local rime_ls_filetypes =
-  { "vimwiki", "tex", "markdown", "copilot-chat", "AvanteInput", "codecompanion", "typst", "alma", "hello" }
+  { "vimwiki", "tex", "markdown", "copilot-chat", "AvanteInput", "codecompanion", "typst", "alma", "codex", "hello" }
+local rime_library_path = table.concat(
+  { "/Library/Input Methods/Squirrel.app/Contents/Frameworks", "/opt/homebrew/lib", "/usr/local/lib" },
+  ":"
+)
 
 local rime_on_attach = function(client, _)
   local toggle_rime = function()
@@ -59,6 +63,10 @@ return {
   name = "rime_ls",
   -- cmd = vim.lsp.rpc.connect("127.0.0.1", 9257),
   cmd = { vim.fn.expand("~/rime-ls/target/release/rime_ls") },
+  cmd_env = {
+    DYLD_FALLBACK_LIBRARY_PATH = rime_library_path,
+    DYLD_LIBRARY_PATH = rime_library_path,
+  },
   filetypes = rime_ls_filetypes,
   single_file_support = true,
   init_options = {

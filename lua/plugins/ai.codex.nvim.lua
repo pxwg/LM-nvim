@@ -1,3 +1,24 @@
+local function attach_codex_math_conceal(bufnr)
+  local ok, math_conceal = pcall(require, "math-conceal")
+  if not ok or math_conceal.setup_buffer == nil then
+    return
+  end
+
+  math_conceal.setup_buffer(bufnr, {
+    mode = "preview",
+  })
+
+  local ok_image, image = pcall(require, "math-conceal.image")
+  if ok_image and image.config ~= nil then
+    image.config.conceal_in_normal = true
+  end
+
+  local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
+  if ok_manager then
+    pcall(manager.sync_cursor_conceal, bufnr, { force = true })
+  end
+end
+
 return {
   "pxwg/codex.nvim",
   dir = "/Users/pxwg-dogggie/codex.nvim",
@@ -51,6 +72,8 @@ return {
         if ok and rime.attach_rime_to_buffer then
           rime.attach_rime_to_buffer(event.buf)
         end
+
+        attach_codex_math_conceal(event.buf)
       end,
     })
   end,

@@ -1,5 +1,14 @@
 local M = {}
-local rime_ls_filetypes = { "vimwiki", "tex", "markdown", "copilot-chat", "Avante", "codecompanion", "typst", "alma" }
+local rime_ls_filetypes =
+  { "vimwiki", "tex", "markdown", "copilot-chat", "Avante", "codecompanion", "typst", "alma", "codex" }
+local rime_library_path = table.concat(
+  { "/Library/Input Methods/Squirrel.app/Contents/Frameworks", "/opt/homebrew/lib", "/usr/local/lib" },
+  ":"
+)
+local rime_cmd_env = {
+  DYLD_FALLBACK_LIBRARY_PATH = rime_library_path,
+  DYLD_LIBRARY_PATH = rime_library_path,
+}
 
 function M.setup_rime()
   -- global status
@@ -160,6 +169,7 @@ end
 
 function M.start_rime_ls()
   local job_id = vim.fn.jobstart(vim.fn.expand("~/rime-ls/target/release/rime_ls") .. " --listen", {
+    env = rime_cmd_env,
     on_stdout = function() end,
     on_stderr = function() end,
     on_exit = function(_, code)

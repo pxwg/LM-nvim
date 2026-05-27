@@ -39,12 +39,25 @@ local function is_copilot_chat_buffer(bufnr)
   return vim.bo[bufnr].filetype == "copilot-chat" or name:match("copilot%-chat") ~= nil
 end
 
+local function is_codex_buffer(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return false
+  end
+
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  return vim.bo[bufnr].filetype == "codex" or name:match("^codex://") ~= nil
+end
+
+local function is_ai_chat_buffer(bufnr)
+  return is_copilot_chat_buffer(bufnr) or is_codex_buffer(bufnr)
+end
+
 local function apply_math_conceal_buffer_mode(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return
   end
 
-  local is_copilot_chat = is_copilot_chat_buffer(bufnr)
+  local is_ai_chat = is_ai_chat_buffer(bufnr)
 
   local ok, math_conceal = pcall(require, "math-conceal")
   if not ok or math_conceal.setup_buffer == nil then
@@ -52,12 +65,12 @@ local function apply_math_conceal_buffer_mode(bufnr)
   end
 
   math_conceal.setup_buffer(bufnr, {
-    mode = is_copilot_chat and "preview" or "edit",
+    mode = is_ai_chat and "preview" or "edit",
   })
 
   local ok_image, image = pcall(require, "math-conceal.image")
   if ok_image and image.config ~= nil then
-    image.config.conceal_in_normal = is_copilot_chat
+    image.config.conceal_in_normal = is_ai_chat
   end
 
   local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
@@ -91,14 +104,14 @@ return {
     -- build = "make lua51",
     main = "math-conceal",
     opts = {
-      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown" },
+      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "codex" },
       buffer = {
         mode = "edit",
       },
       image = {
         enabled = true,
-        filetypes = { "typst", "markdown", "latex" },
-        markdown_filetypes = { "markdown", "copilot-chat" },
+        filetypes = { "typst", "markdown", "latex", "codex" },
+        markdown_filetypes = { "markdown", "copilot-chat", "codex" },
         service_binary = "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service",
         ppi = 300,
         math_baseline_pt = 11,
