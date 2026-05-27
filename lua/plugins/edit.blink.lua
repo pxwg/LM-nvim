@@ -402,7 +402,7 @@ return {
       sources = {
         default = { "lsp", "path", "buffer", "copilot", "spell" },
         per_filetype = {
-          codex = { "codex", "buffer", "path" },
+          codex = { "codex", "lsp", "buffer", "path" },
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
           AvanteInput = {
