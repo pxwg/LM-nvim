@@ -3,6 +3,7 @@ local cn = require("util.autocorrect")
 local fit = require("util.fit")
 local hs = require("util.hammerspoon")
 local nt_file = require("util.note_file_index")
+local selection_capture = require("util.selection_capture")
 
 require("util.fast_keymap")
 
@@ -180,6 +181,17 @@ map("n", "<leader>ud", "<cmd>Twilight<cr>", { silent = true, desc = "[D]im" })
 
 --which key
 map("n", "<leader>?", ":WhichKey<cr>", { desc = "Buffer Local Keymaps (which-key)" })
+
+vim.api.nvim_create_user_command("SelectionCapture", function(opts)
+  selection_capture.capture(opts.range > 0 and opts or nil)
+end, {
+  range = true,
+  desc = "Copy selected text screenshot and source metadata to the clipboard",
+})
+
+map("x", "<leader>yc", function()
+  selection_capture.capture()
+end, { noremap = true, silent = true, desc = "[Y]ank selection [C]apture" })
 
 -- enter github repo for plugins
 require("util.plug_url")
