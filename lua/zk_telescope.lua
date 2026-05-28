@@ -180,7 +180,7 @@ function M.search_with_filters()
             ["<C-s>"] = { "toggle_alias", mode = { "n", "i" } },
             ["<C-k>"] = { "toggle_keyword", mode = { "n", "i" } },
             ["<C-a>"] = { "toggle_abstract", mode = { "n", "i" } },
-            ["<C-g>"] = { "select_tag", mode = { "n", "i" } },
+            ["<C-i>"] = { "select_tag", mode = { "n", "i" } },
             ["<C-f>"] = { "select_keyword_filter", mode = { "n", "i" } },
             ["<C-r>"] = { "clear_filters", mode = { "n", "i" } },
           },
