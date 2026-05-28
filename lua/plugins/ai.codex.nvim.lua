@@ -186,15 +186,6 @@ return {
       end,
     })
 
-    vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-      group = vim.api.nvim_create_augroup("CodexNvimAttach", { clear = true }),
-      callback = function(event)
-        if is_codex_buffer(event.buf) then
-          schedule_codex_input_helpers(event.buf)
-        end
-      end,
-    })
-
     vim.api.nvim_create_user_command("CodexAttachInputHelpers", function(opts)
       local bufnr = tonumber(opts.args)
       if bufnr then

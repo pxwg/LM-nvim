@@ -204,8 +204,9 @@ return {
       require("math-conceal").setup(opts)
 
       local group = vim.api.nvim_create_augroup("MathConcealBufferMode", { clear = true })
-      vim.api.nvim_create_autocmd({ "FileType", "BufEnter", "BufWinEnter" }, {
+      vim.api.nvim_create_autocmd("FileType", {
         group = group,
+        pattern = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "codex", "copilot-chat" },
         callback = function(event)
           apply_math_conceal_buffer_mode(event.buf)
         end,
