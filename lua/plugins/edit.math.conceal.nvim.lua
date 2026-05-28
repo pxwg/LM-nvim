@@ -52,8 +52,29 @@ local function is_ai_chat_buffer(bufnr)
   return is_copilot_chat_buffer(bufnr) or is_codex_buffer(bufnr)
 end
 
+local math_conceal_filetypes = {
+  plaintex = true,
+  tex = true,
+  context = true,
+  bibtex = true,
+  typst = true,
+  markdown = true,
+  codex = true,
+}
+
+local function is_math_conceal_buffer(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return false
+  end
+  return is_ai_chat_buffer(bufnr) or math_conceal_filetypes[vim.bo[bufnr].filetype] == true
+end
+
 local function apply_math_conceal_buffer_mode(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  if not is_math_conceal_buffer(bufnr) then
     return
   end
 
@@ -64,14 +85,21 @@ local function apply_math_conceal_buffer_mode(bufnr)
     return
   end
 
-  math_conceal.setup_buffer(bufnr, {
-    mode = is_ai_chat and "preview" or "edit",
-  })
-
-  local ok_image, image = pcall(require, "math-conceal.image")
-  if ok_image and image.config ~= nil then
-    image.config.conceal_in_normal = is_ai_chat
+  local desired_mode = is_ai_chat and "presentation" or "edit"
+  if
+    vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
+    and type(math_conceal.get_buffer_config) == "function"
+  then
+    local ok_config, config = pcall(math_conceal.get_buffer_config, bufnr)
+    if ok_config and config and config.mode == desired_mode then
+      return
+    end
   end
+
+  math_conceal.setup_buffer(bufnr, {
+    mode = desired_mode,
+  })
+  vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
 
   local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
   if ok_manager then
@@ -153,7 +181,6 @@ return {
             end,
           },
         },
-        conceal_in_normal = false,
         backends = {
           latex = {
             enabled = true,

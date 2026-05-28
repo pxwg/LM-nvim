@@ -40,7 +40,6 @@ vim.o.lazyredraw = true
 vim.opt.laststatus = 3
 vim.opt.splitright = true
 vim.opt.splitbelow = true
-vim.opt.conceallevel = 2
 vim.g.tex_conceal = "abdmg"
 vim.diagnostic.config({
   virtual_text = true,

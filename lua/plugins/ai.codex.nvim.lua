@@ -17,14 +17,21 @@ local function attach_codex_math_conceal(bufnr)
     return
   end
 
-  math_conceal.setup_buffer(bufnr, {
-    mode = "preview",
-  })
-
-  local ok_image, image = pcall(require, "math-conceal.image")
-  if ok_image and image.config ~= nil then
-    image.config.conceal_in_normal = true
+  local desired_mode = "presentation"
+  if
+    vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
+    and type(math_conceal.get_buffer_config) == "function"
+  then
+    local ok_config, config = pcall(math_conceal.get_buffer_config, bufnr)
+    if ok_config and config and config.mode == desired_mode then
+      return
+    end
   end
+
+  math_conceal.setup_buffer(bufnr, {
+    mode = desired_mode,
+  })
+  vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
 
   local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
   if ok_manager then
