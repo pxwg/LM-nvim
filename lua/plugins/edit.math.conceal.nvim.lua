@@ -39,13 +39,33 @@ local function is_copilot_chat_buffer(bufnr)
   return vim.bo[bufnr].filetype == "copilot-chat" or name:match("copilot%-chat") ~= nil
 end
 
-local function is_codex_buffer(bufnr)
+local function codex_buffer_role(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
-    return false
+    return nil
+  end
+
+  local filetype = vim.bo[bufnr].filetype
+  if filetype == "codex-input" or vim.b[bufnr].codex_role == "composer" or vim.b[bufnr].codex_composer == true then
+    return "input"
+  end
+  if filetype == "codex-history" or vim.b[bufnr].codex_role == "history" then
+    return "history"
   end
 
   local name = vim.api.nvim_buf_get_name(bufnr)
-  return vim.bo[bufnr].filetype == "codex" or name:match("^codex://") ~= nil
+  if filetype == "codex" or name:match("^codex://") ~= nil then
+    return "history"
+  end
+
+  return nil
+end
+
+local function is_codex_buffer(bufnr)
+  return codex_buffer_role(bufnr) ~= nil
+end
+
+local function codex_math_conceal_mode(bufnr)
+  return codex_buffer_role(bufnr) == "input" and "edit" or "presentation"
 end
 
 local function is_ai_chat_buffer(bufnr)
@@ -60,6 +80,8 @@ local math_conceal_filetypes = {
   typst = true,
   markdown = true,
   codex = true,
+  ["codex-history"] = true,
+  ["codex-input"] = true,
 }
 
 local function is_math_conceal_buffer(bufnr)
@@ -78,14 +100,17 @@ local function apply_math_conceal_buffer_mode(bufnr)
     return
   end
 
-  local is_ai_chat = is_ai_chat_buffer(bufnr)
-
   local ok, math_conceal = pcall(require, "math-conceal")
   if not ok or math_conceal.setup_buffer == nil then
     return
   end
 
-  local desired_mode = is_ai_chat and "presentation" or "edit"
+  local desired_mode = "edit"
+  if is_copilot_chat_buffer(bufnr) then
+    desired_mode = "presentation"
+  elseif is_codex_buffer(bufnr) then
+    desired_mode = codex_math_conceal_mode(bufnr)
+  end
   if
     vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
     and type(math_conceal.get_buffer_config) == "function"
@@ -132,14 +157,14 @@ return {
     -- build = "make lua51",
     main = "math-conceal",
     opts = {
-      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "codex" },
+      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "codex", "codex-history", "codex-input" },
       buffer = {
         mode = "edit",
       },
       image = {
         enabled = true,
-        filetypes = { "typst", "markdown", "latex", "codex" },
-        markdown_filetypes = { "markdown", "copilot-chat", "codex" },
+        filetypes = { "typst", "markdown", "latex", "codex", "codex-history", "codex-input" },
+        markdown_filetypes = { "markdown", "copilot-chat", "codex", "codex-history", "codex-input" },
         service_binary = "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service",
         ppi = 300,
         math_baseline_pt = 11,
@@ -206,7 +231,18 @@ return {
       local group = vim.api.nvim_create_augroup("MathConcealBufferMode", { clear = true })
       vim.api.nvim_create_autocmd("FileType", {
         group = group,
-        pattern = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "codex", "copilot-chat" },
+        pattern = {
+          "plaintex",
+          "tex",
+          "context",
+          "bibtex",
+          "typst",
+          "markdown",
+          "codex",
+          "codex-history",
+          "codex-input",
+          "copilot-chat",
+        },
         callback = function(event)
           apply_math_conceal_buffer_mode(event.buf)
         end,

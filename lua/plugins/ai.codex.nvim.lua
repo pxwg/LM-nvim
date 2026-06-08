@@ -1,10 +1,30 @@
-local function is_codex_buffer(bufnr)
+local function codex_buffer_role(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
-    return false
+    return nil
+  end
+
+  local filetype = vim.bo[bufnr].filetype
+  if filetype == "codex-input" or vim.b[bufnr].codex_role == "composer" or vim.b[bufnr].codex_composer == true then
+    return "input"
+  end
+  if filetype == "codex-history" or vim.b[bufnr].codex_role == "history" then
+    return "history"
   end
 
   local name = vim.api.nvim_buf_get_name(bufnr)
-  return vim.bo[bufnr].filetype == "codex" or name:match("^codex://") ~= nil
+  if filetype == "codex" or name:match("^codex://") ~= nil then
+    return "history"
+  end
+
+  return nil
+end
+
+local function is_codex_buffer(bufnr)
+  return codex_buffer_role(bufnr) ~= nil
+end
+
+local function codex_math_conceal_mode(bufnr)
+  return codex_buffer_role(bufnr) == "input" and "edit" or "presentation"
 end
 
 local function attach_codex_math_conceal(bufnr)
@@ -17,7 +37,7 @@ local function attach_codex_math_conceal(bufnr)
     return
   end
 
-  local desired_mode = "presentation"
+  local desired_mode = codex_math_conceal_mode(bufnr)
   if
     vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
     and type(math_conceal.get_buffer_config) == "function"
@@ -77,11 +97,14 @@ local function attach_codex_lsp_clients(bufnr)
 end
 
 local function attach_codex_input_helpers(bufnr)
-  if not is_codex_buffer(bufnr) then
+  local role = codex_buffer_role(bufnr)
+  if role == nil then
     return
   end
 
-  attach_codex_lsp_clients(bufnr)
+  if role == "input" then
+    attach_codex_lsp_clients(bufnr)
+  end
   attach_codex_math_conceal(bufnr)
 end
 
@@ -160,18 +183,20 @@ return {
     })
 
     vim.api.nvim_create_autocmd("FileType", {
-      pattern = "codex",
+      pattern = { "codex", "codex-history", "codex-input" },
       group = vim.api.nvim_create_augroup("CodexNvimConfig", { clear = true }),
       callback = function(event)
-        vim.keymap.set({ "n", "i" }, "<C-s>", function()
-          require("codex").submit()
-        end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
-        vim.keymap.set("n", "<CR>", function()
-          require("codex").submit()
-        end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
-        vim.keymap.set("n", "q", function()
-          vim.api.nvim_win_close(0, true)
-        end, { buffer = event.buf, silent = true, desc = "Codex Close Chat" })
+        if vim.bo[event.buf].filetype == "codex" then
+          vim.keymap.set({ "n", "i" }, "<C-s>", function()
+            require("codex").submit()
+          end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
+          vim.keymap.set("n", "<CR>", function()
+            require("codex").submit()
+          end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
+          vim.keymap.set("n", "q", function()
+            vim.api.nvim_win_close(0, true)
+          end, { buffer = event.buf, silent = true, desc = "Codex Close Chat" })
+        end
 
         schedule_codex_input_helpers(event.buf)
       end,
