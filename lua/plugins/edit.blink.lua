@@ -370,6 +370,7 @@ return {
           --   return ctx.mode ~= "cmdline"
           -- end,
           draw = {
+            align_to = "cursor",
             columns = { { "kind_icon", "label", "label_description", gap = 1 }, { "kind" } },
           },
           -- border = { "󱕦", " ", " ", " ", " ", " ", "󰩃", " " },
@@ -649,5 +650,85 @@ return {
         },
       },
     })
+
+    do
+      local ok_menu, menu = pcall(require, "blink.cmp.completion.windows.menu")
+      local ok_config, blink_config = pcall(require, "blink.cmp.config")
+      if ok_menu and ok_config and not menu.__math_conceal_stable_cursor_position then
+        local menu_config = blink_config.completion.menu
+        local function context_key(context)
+          local cursor = context and context.cursor
+          return string.format(
+            "%s|%s|%s|%s|%s|%s|%s",
+            tostring(context and context.bufnr),
+            tostring(context and context.mode),
+            tostring(context and context.bounds and context.bounds.line_number),
+            tostring(context and context.bounds and context.bounds.start_col),
+            tostring(cursor and cursor[1]),
+            tostring(cursor and cursor[2]),
+            tostring(context and context.bufnr and vim.api.nvim_buf_get_changedtick(context.bufnr))
+          )
+        end
+
+        menu.update_position = function()
+          local context = menu.context
+          if context == nil then
+            return
+          end
+
+          local win = menu.win
+          if not win:is_open() then
+            return
+          end
+
+          win:update_size()
+
+          local border_size = win:get_border_size()
+          local pos = win:get_vertical_direction_and_height(menu_config.direction_priority, menu_config.max_height)
+          if not pos then
+            win:close()
+            return
+          end
+
+          local row = pos.direction == "s" and 1 or -pos.height - border_size.vertical
+          if vim.api.nvim_get_mode().mode == "c" then
+            local cmdline_position = menu_config.cmdline_position()
+            win:set_win_config({
+              relative = "editor",
+              row = cmdline_position[1] + row,
+              col = math.max(cmdline_position[2] + context.bounds.start_col, 0),
+            })
+          else
+            local current_win = vim.api.nvim_get_current_win()
+            local win_position = vim.api.nvim_win_get_position(current_win)
+            local cursor_screen_row = vim.fn.winline()
+            local cursor_screen_col = vim.fn.wincol()
+            if cursor_screen_row <= 0 or cursor_screen_col <= 0 then
+              win:set_win_config({ relative = "cursor", row = row, col = 0 })
+            else
+              local key = context_key(context)
+              local cached = menu.__math_conceal_position_cache
+              if cached == nil or cached.key ~= key then
+                cached = {
+                  key = key,
+                  row = math.max(win_position[1] + cursor_screen_row - 1 + row, 0),
+                  col = math.max(win_position[2] + cursor_screen_col - 1 - border_size.left, 0),
+                }
+                menu.__math_conceal_position_cache = cached
+              end
+              win:set_win_config({
+                relative = "editor",
+                row = cached.row,
+                col = cached.col,
+              })
+            end
+          end
+
+          win:set_height(pos.height)
+          menu.position_update_emitter:emit()
+        end
+        menu.__math_conceal_stable_cursor_position = true
+      end
+    end
   end,
 }

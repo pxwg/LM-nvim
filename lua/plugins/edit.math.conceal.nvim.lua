@@ -106,11 +106,11 @@ local function apply_math_conceal_buffer_mode(bufnr)
   end
 
   local desired_mode = "edit"
-  if is_copilot_chat_buffer(bufnr) then
-    desired_mode = "presentation"
-  elseif is_codex_buffer(bufnr) then
-    desired_mode = codex_math_conceal_mode(bufnr)
-  end
+  -- if is_copilot_chat_buffer(bufnr) then
+  --   desired_mode = "presentation"
+  -- elseif is_codex_buffer(bufnr) then
+  --   desired_mode = codex_math_conceal_mode(bufnr)
+  -- end
   if
     vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
     and type(math_conceal.get_buffer_config) == "function"
@@ -164,7 +164,7 @@ return {
       image = {
         enabled = true,
         filetypes = { "typst", "markdown", "latex", "codex", "codex-history", "codex-input" },
-        markdown_filetypes = { "markdown", "copilot-chat", "codex", "codex-history", "codex-input" },
+        markdown_filetypes = { "markdown", "copilot-chat", "codex", "codex-history" },
         service_binary = "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service",
         ppi = 300,
         math_baseline_pt = 11,
