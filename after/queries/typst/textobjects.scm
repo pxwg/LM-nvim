@@ -11,32 +11,14 @@
 
 ((math
   "$"
-  ([_] @math.inner)* 
+  ([_] @math.inner)*
   "$"))
 
-; extends
-
-; General section with form ==... xxx
-; ((section
-;   ((heading) @head_operator
-;     (#match? @head_operator "^=\\s+.*"))
-;   .
-;   (_) @start
-;   (_)? @end .) @section.outer
-;   (#make-range! "section.inner" @start @end))
-
+; Section textobject. Keep this query directive-free because mini.ai evaluates the
+; whole textobjects query without nvim-treesitter-textobjects' custom directives.
 ((section
-  (heading 
+  (heading
     "=" @head_operator)
   .
-  (_) @start
-  (_)? @end .) @section.outer
-  (#make-range! "section.inner" @start @end))
-
-; ((section((heading) @head_operator
-;          (#match? @head_operator "^=\\s+.*"))
-;          .
-;          (_)
-;          (_)?
-;          .
-;   ) @section.outer)
+  (_)
+  (_)? .) @section.outer)
