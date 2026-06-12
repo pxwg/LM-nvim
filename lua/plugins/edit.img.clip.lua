@@ -16,6 +16,12 @@ return {
         template = "[Image]($FILE_PATH)",
         use_absolute_path = true,
       },
+      codex = {
+        prompt_for_file_name = false,
+        template = "@image:`$FILE_PATH`",
+        use_absolute_path = true,
+        url_encode_path = false,
+      },
     },
     default = {
       embed_image_as_base64 = false,
