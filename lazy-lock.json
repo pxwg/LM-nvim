@@ -23,6 +23,7 @@
   "firenvim": { "branch": "master", "commit": "c4ab7d2aeb145cd93db8660cb134f771722f2b5e" },
   "flash.nvim": { "branch": "main", "commit": "fcea7ff883235d9024dc41e638f164a450c14ca2" },
   "flatten.nvim": { "branch": "main", "commit": "72527798e75b5e34757491947c2cb853ce21dc0e" },
+  "guh.nvim": { "branch": "main", "commit": "137bbb58b965bdf417d79408050fec2b2107ad93" },
   "image.nvim": { "branch": "master", "commit": "446a8a5cc7a3eae3185ee0c697732c32a5547a0b" },
   "img-clip.nvim": { "branch": "main", "commit": "b6ddfb97b5600d99afe3452d707444afda658aca" },
   "jieba.vim": { "branch": "rust", "commit": "0d2bf1916ddcef9d15a2843e01d85e40f7adef04" },
