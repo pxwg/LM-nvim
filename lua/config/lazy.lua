@@ -128,6 +128,7 @@ vim.api.nvim_create_autocmd("User", {
     -- require("util.statusline")
     require("config.keymap")
     require("config.autocmd")
+    require("util.mitex")
     require("util.history_search")
     local hs = require("util.hammerspoon")
     if hs.hammerspoon_enabled() then
