@@ -2,6 +2,7 @@ return {
   "zbirenbaum/copilot.lua",
   cmd = "Copilot",
   build = ":Copilot auth",
+  enabled = false,
   event = "InsertEnter",
   init = function()
     local group = vim.api.nvim_create_augroup("user.copilot_cleanup", { clear = true })
