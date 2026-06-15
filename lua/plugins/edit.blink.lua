@@ -403,8 +403,8 @@ return {
       sources = {
         default = { "lsp", "path", "buffer", "copilot", "spell" },
         per_filetype = {
-          codex = { "codex", "lsp", "buffer", "path" },
-          ["codex-input"] = { "codex", "lsp", "buffer", "path" },
+          coact = { "coact", "lsp", "buffer", "path" },
+          ["coact-input"] = { "coact", "lsp", "buffer", "path" },
           codecompanion = { "codecompanion", "lsp", "buffer", "path", "copilot" },
           ["copilot-chat"] = { "lsp", "buffer", "path", "copilot", "copilot_c" },
           AvanteInput = {
@@ -546,9 +546,9 @@ return {
             },
           },
           buffer = { max_items = 5 },
-          codex = {
-            name = "Codex",
-            module = "codex.completion.blink",
+          coact = {
+            name = "Coact",
+            module = "coact.completion.blink",
             score_offset = 1000,
           },
           copilot = {

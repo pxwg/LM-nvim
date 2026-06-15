@@ -17,8 +17,8 @@ return {
           transform = markdown_to_typst,
         },
         {
-          name = "codex-history-to-typst",
-          from = { filetype = "codex-history" },
+          name = "coact-history-to-typst",
+          from = { filetype = "coact-history" },
           to = { filetype = "typst" },
           transform = markdown_to_typst,
         },

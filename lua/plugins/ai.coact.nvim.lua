@@ -1,33 +1,33 @@
-local function codex_buffer_role(bufnr)
+local function coact_buffer_role(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return nil
   end
 
   local filetype = vim.bo[bufnr].filetype
-  if filetype == "codex-input" or vim.b[bufnr].codex_role == "composer" or vim.b[bufnr].codex_composer == true then
+  if filetype == "coact-input" or vim.b[bufnr].coact_role == "composer" or vim.b[bufnr].coact_composer == true then
     return "input"
   end
-  if filetype == "codex-history" or vim.b[bufnr].codex_role == "history" then
+  if filetype == "coact-history" or vim.b[bufnr].coact_role == "history" then
     return "history"
   end
 
   local name = vim.api.nvim_buf_get_name(bufnr)
-  if filetype == "codex" or name:match("^codex://") ~= nil then
+  if filetype == "coact" or name:match("^coact://") ~= nil then
     return "history"
   end
 
   return nil
 end
 
-local function is_codex_buffer(bufnr)
-  return codex_buffer_role(bufnr) ~= nil
+local function is_coact_buffer(bufnr)
+  return coact_buffer_role(bufnr) ~= nil
 end
 
-local function codex_math_conceal_mode(bufnr)
-  return codex_buffer_role(bufnr) == "input" and "edit" or "presentation"
+local function coact_math_conceal_mode(bufnr)
+  return coact_buffer_role(bufnr) == "input" and "edit" or "presentation"
 end
 
-local function attach_codex_math_conceal(bufnr)
+local function attach_coact_math_conceal(bufnr)
   pcall(function()
     require("lazy").load({ plugins = { "math-conceal.nvim" } })
   end)
@@ -37,7 +37,7 @@ local function attach_codex_math_conceal(bufnr)
     return
   end
 
-  local desired_mode = codex_math_conceal_mode(bufnr)
+  local desired_mode = coact_math_conceal_mode(bufnr)
   if
     vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
     and type(math_conceal.get_buffer_config) == "function"
@@ -67,7 +67,7 @@ local function attached_lsp_clients(bufnr)
   return names
 end
 
-local function attach_codex_lsp_clients(bufnr)
+local function attach_coact_lsp_clients(bufnr)
   pcall(vim.lsp.enable, { "rime_ls", "dictionary" })
 
   local ok, rime = pcall(require, "util.rime_ls")
@@ -96,119 +96,119 @@ local function attach_codex_lsp_clients(bufnr)
   end, 250)
 end
 
-local function attach_codex_input_helpers(bufnr)
-  local role = codex_buffer_role(bufnr)
+local function attach_coact_input_helpers(bufnr)
+  local role = coact_buffer_role(bufnr)
   if role == nil then
     return
   end
 
   if role == "input" then
-    attach_codex_lsp_clients(bufnr)
+    attach_coact_lsp_clients(bufnr)
   end
-  attach_codex_math_conceal(bufnr)
+  attach_coact_math_conceal(bufnr)
 end
 
-local function attach_all_codex_input_helpers()
+local function attach_all_coact_input_helpers()
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    if is_codex_buffer(bufnr) then
-      attach_codex_input_helpers(bufnr)
+    if is_coact_buffer(bufnr) then
+      attach_coact_input_helpers(bufnr)
     end
   end
 end
 
-local function schedule_codex_input_helpers(bufnr)
+local function schedule_coact_input_helpers(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
 
   vim.schedule(function()
-    attach_codex_input_helpers(bufnr)
+    attach_coact_input_helpers(bufnr)
   end)
 
   for _, delay in ipairs({ 120, 600, 1400 }) do
     vim.defer_fn(function()
-      attach_codex_input_helpers(bufnr)
+      attach_coact_input_helpers(bufnr)
     end, delay)
   end
 end
 
-local function schedule_all_codex_input_helpers()
-  vim.schedule(attach_all_codex_input_helpers)
+local function schedule_all_coact_input_helpers()
+  vim.schedule(attach_all_coact_input_helpers)
   for _, delay in ipairs({ 120, 600, 1400, 2600 }) do
-    vim.defer_fn(attach_all_codex_input_helpers, delay)
+    vim.defer_fn(attach_all_coact_input_helpers, delay)
   end
 end
 
-local function run_codex_command(command)
+local function run_coact_command(command)
   vim.cmd(command)
-  schedule_all_codex_input_helpers()
+  schedule_all_coact_input_helpers()
 end
 
 return {
-  "pxwg/codex.nvim",
+  "pxwg/coact.nvim",
   dir = "/Users/pxwg-dogggie/codex.nvim",
-  enabled = vim.g.codex_nvim_enabled ~= false,
+  enabled = vim.g.coact_nvim_enabled ~= false,
   cmd = {
-    "Codex",
+    "Coact",
   },
   keys = {
     {
       "<leader>ac",
       function()
-        run_codex_command("Codex pick")
+        run_coact_command("Coact pick")
       end,
-      desc = "Codex Threads",
+      desc = "Coact Threads",
     },
     {
       "<leader>aC",
       function()
-        run_codex_command("Codex new")
+        run_coact_command("Coact new")
       end,
-      desc = "Codex New Thread",
+      desc = "Coact New Thread",
     },
     {
       "<leader>ai",
       function()
-        run_codex_command("Codex completion-inline")
+        run_coact_command("Coact completion-inline")
       end,
-      desc = "Codex Inline Completion",
+      desc = "Coact Inline Completion",
     },
     {
       "<leader>an",
       function()
-        run_codex_command("Codex completion-nes")
+        run_coact_command("Coact completion-nes")
       end,
-      desc = "Codex Next Edit",
+      desc = "Coact Next Edit",
     },
     {
       "<leader>aN",
       function()
-        run_codex_command("Codex completion-nes-accept")
+        run_coact_command("Coact completion-nes-accept")
       end,
-      desc = "Codex Accept Next Edit",
+      desc = "Coact Accept Next Edit",
     },
     {
       "<leader>aj",
       function()
-        run_codex_command("Codex completion-nes-jump")
+        run_coact_command("Coact completion-nes-jump")
       end,
-      desc = "Codex Jump Next Edit",
+      desc = "Coact Jump Next Edit",
     },
     {
       "<leader>ak",
       function()
-        run_codex_command("Codex completion-nes-dismiss")
+        run_coact_command("Coact completion-nes-dismiss")
       end,
-      desc = "Codex Dismiss Next Edit",
+      desc = "Coact Dismiss Next Edit",
     },
     {
       "<leader>al",
       function()
-        run_codex_command("Codex completion-log")
+        run_coact_command("Coact completion-log")
       end,
-      desc = "Codex Completion Log",
+      desc = "Coact Completion Log",
     },
   },
   config = function()
-    require("codex").setup({
+    require("coact").setup({
       provider = "pi",
       thread = {
         approval_policy = "on-request",
@@ -232,55 +232,55 @@ return {
       },
       buffer = {
         on_attach = function(bufnr)
-          schedule_codex_input_helpers(bufnr)
+          schedule_coact_input_helpers(bufnr)
         end,
       },
     })
 
     vim.api.nvim_create_autocmd("FileType", {
-      pattern = { "codex", "codex-history", "codex-input" },
-      group = vim.api.nvim_create_augroup("CodexNvimConfig", { clear = true }),
+      pattern = { "coact", "coact-history", "coact-input" },
+      group = vim.api.nvim_create_augroup("CoactNvimConfig", { clear = true }),
       callback = function(event)
-        if vim.bo[event.buf].filetype == "codex" then
+        if vim.bo[event.buf].filetype == "coact" then
           vim.keymap.set({ "n", "i" }, "<C-s>", function()
-            require("codex").submit()
-          end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
+            require("coact").submit()
+          end, { buffer = event.buf, silent = true, desc = "Coact Submit" })
           vim.keymap.set("n", "<CR>", function()
-            require("codex").submit()
-          end, { buffer = event.buf, silent = true, desc = "Codex Submit" })
+            require("coact").submit()
+          end, { buffer = event.buf, silent = true, desc = "Coact Submit" })
           vim.keymap.set("n", "q", function()
             vim.api.nvim_win_close(0, true)
-          end, { buffer = event.buf, silent = true, desc = "Codex Close Chat" })
+          end, { buffer = event.buf, silent = true, desc = "Coact Close Chat" })
         end
 
-        schedule_codex_input_helpers(event.buf)
+        schedule_coact_input_helpers(event.buf)
       end,
     })
 
     vim.api.nvim_create_autocmd("User", {
-      pattern = "CodexBufferOpened",
-      group = vim.api.nvim_create_augroup("CodexNvimBufferOpened", { clear = true }),
+      pattern = "CoactBufferOpened",
+      group = vim.api.nvim_create_augroup("CoactNvimBufferOpened", { clear = true }),
       callback = function(event)
         local data = event.data or {}
-        schedule_codex_input_helpers(data.bufnr or event.buf)
+        schedule_coact_input_helpers(data.bufnr or event.buf)
       end,
     })
 
-    vim.api.nvim_create_user_command("CodexAttachInputHelpers", function(opts)
+    vim.api.nvim_create_user_command("CoactAttachInputHelpers", function(opts)
       local bufnr = tonumber(opts.args)
       if bufnr then
-        schedule_codex_input_helpers(bufnr)
+        schedule_coact_input_helpers(bufnr)
       else
-        schedule_all_codex_input_helpers()
+        schedule_all_coact_input_helpers()
       end
     end, {
       nargs = "?",
-      desc = "Attach rime/dictionary and math conceal helpers to Codex buffers",
+      desc = "Attach rime/dictionary and math conceal helpers to Coact buffers",
     })
 
     for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-      if is_codex_buffer(bufnr) then
-        schedule_codex_input_helpers(bufnr)
+      if is_coact_buffer(bufnr) then
+        schedule_coact_input_helpers(bufnr)
       end
     end
   end,

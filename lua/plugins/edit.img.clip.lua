@@ -16,7 +16,7 @@ return {
         template = "[Image]($FILE_PATH)",
         use_absolute_path = true,
       },
-      ["codex-input"] = {
+      ["coact-input"] = {
         prompt_for_file_name = false,
         template = "@image:`$FILE_PATH`",
         use_absolute_path = true,
