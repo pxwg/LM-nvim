@@ -178,15 +178,115 @@ local function replacement_lines(block, converted)
   return out
 end
 
-local function convert_block_at(bufnr, block, lines)
+local function converted_block_lines(block, lines)
   local latex = extract_latex(lines, block.raw_start, block.raw_finish)
   local converted, err = mitex_convert(latex)
   if not converted then
+    return nil, err
+  end
+
+  return replacement_lines(block, converted), nil
+end
+
+local function convert_block_at(bufnr, block, lines)
+  local replacement, err = converted_block_lines(block, lines)
+  if not replacement then
     return false, err
   end
 
-  vim.api.nvim_buf_set_lines(bufnr, block.start - 1, block.finish, false, replacement_lines(block, converted))
+  vim.api.nvim_buf_set_lines(bufnr, block.start - 1, block.finish, false, replacement)
   return true, nil
+end
+
+local function split_text_lines(value)
+  value = value:gsub("\r\n", "\n"):gsub("\r", "\n")
+  if value == "" then
+    return {}, false
+  end
+
+  local trailing_newline = value:sub(-1) == "\n"
+  local lines = vim.split(value, "\n", { plain = true })
+  if trailing_newline then
+    table.remove(lines)
+  end
+
+  return lines, trailing_newline
+end
+
+local function join_text_lines(lines, trailing_newline)
+  local text = table.concat(lines, "\n")
+  if trailing_newline then
+    return text .. "\n"
+  end
+  return text
+end
+
+local function replace_line_range(lines, first, last, replacement)
+  local out = {}
+  for i = 1, first - 1 do
+    out[#out + 1] = lines[i]
+  end
+  for _, line in ipairs(replacement) do
+    out[#out + 1] = line
+  end
+  for i = last + 1, #lines do
+    out[#out + 1] = lines[i]
+  end
+  return out
+end
+
+local function convert_inline_calls(line)
+  local failed = {}
+
+  local converted = line:gsub("#mitex%(%s*(`+)(.-)%1%s*%)", function(_, latex)
+    local typst, err = mitex_convert(latex)
+    if not typst then
+      failed[#failed + 1] = err
+      return "#mitex(`" .. latex .. "`)"
+    end
+    return "$" .. vim.trim(typst) .. "$"
+  end)
+
+  if #failed > 0 then
+    return nil, table.concat(failed, "\n")
+  end
+
+  return converted, nil
+end
+
+function M.convert_latex(latex)
+  return mitex_convert(latex)
+end
+
+function M.convert_text(text)
+  local lines, trailing_newline = split_text_lines(text)
+  local failed = {}
+
+  for i, line in ipairs(lines) do
+    local converted, err = convert_inline_calls(line)
+    if converted then
+      lines[i] = converted
+    else
+      failed[#failed + 1] = "line " .. i .. ": " .. err
+    end
+  end
+
+  local blocks = find_blocks(lines)
+  for idx = #blocks, 1, -1 do
+    local block = assert(blocks[idx])
+    local replacement, err = converted_block_lines(block, lines)
+    if replacement then
+      lines = replace_line_range(lines, block.start, block.finish, replacement)
+    else
+      failed[#failed + 1] = "line " .. block.start .. ": " .. err
+    end
+  end
+
+  if #failed > 0 then
+    return nil, table.concat(failed, "\n")
+  end
+
+  return join_text_lines(lines, trailing_newline), nil
 end
 
 function M.convert_block()
