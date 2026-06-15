@@ -164,9 +164,52 @@ return {
       end,
       desc = "Codex New Thread",
     },
+    {
+      "<leader>ai",
+      function()
+        run_codex_command("Codex completion-inline")
+      end,
+      desc = "Codex Inline Completion",
+    },
+    {
+      "<leader>an",
+      function()
+        run_codex_command("Codex completion-nes")
+      end,
+      desc = "Codex Next Edit",
+    },
+    {
+      "<leader>aN",
+      function()
+        run_codex_command("Codex completion-nes-accept")
+      end,
+      desc = "Codex Accept Next Edit",
+    },
+    {
+      "<leader>aj",
+      function()
+        run_codex_command("Codex completion-nes-jump")
+      end,
+      desc = "Codex Jump Next Edit",
+    },
+    {
+      "<leader>ak",
+      function()
+        run_codex_command("Codex completion-nes-dismiss")
+      end,
+      desc = "Codex Dismiss Next Edit",
+    },
+    {
+      "<leader>al",
+      function()
+        run_codex_command("Codex completion-log")
+      end,
+      desc = "Codex Completion Log",
+    },
   },
   config = function()
     require("codex").setup({
+      provider = "pi",
       thread = {
         approval_policy = "on-request",
         approvals_reviewer = "user",
@@ -174,6 +217,18 @@ return {
       },
       ui = {
         layout = "sidebar",
+      },
+      suggestions = {
+        enabled = true,
+        model = "gpt-5.3-codex-spark",
+        inline = {
+          enabled = true,
+          debounce_ms = 900,
+        },
+        nes = {
+          enabled = true,
+          debounce_ms = 700,
+        },
       },
       buffer = {
         on_attach = function(bufnr)
