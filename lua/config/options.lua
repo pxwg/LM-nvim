@@ -60,7 +60,7 @@ vim.opt.relativenumber = false
 vim.cmd([[highlight WinSeparator guifg=#181825]])
 -- vim.g.codecompanion_enabled = true
 vim.g.avante_enabled = false
-vim.g.copilot_chat_enabled = true
+vim.g.copilot_chat_enabled = false
 vim.g.alma_enabled = false
 vim.o.title = false
 -- vim.opt.fillchars:append({ vert = "", eob = "" })
