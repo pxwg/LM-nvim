@@ -142,6 +142,69 @@ local function run_coact_command(command)
   schedule_all_coact_input_helpers()
 end
 
+local coact_ctrl_c_primed = false
+
+local function coact_window_is_open()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local bufnr = vim.api.nvim_win_get_buf(win)
+    if is_coact_buffer(bufnr) then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function has_coact_buffer()
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if is_coact_buffer(bufnr) then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function run_coact_thread_command(command)
+  coact_ctrl_c_primed = true
+  run_coact_command(command)
+end
+
+local function choose_initial_coact_thread()
+  local choices = {
+    { label = "New Coact thread", command = "Coact new" },
+    { label = "Pick existing Coact thread", command = "Coact pick" },
+  }
+
+  vim.ui.select(choices, {
+    prompt = "Coact: choose a thread",
+    format_item = function(item)
+      return item.label
+    end,
+  }, function(choice)
+    if choice == nil then
+      return
+    end
+
+    run_coact_thread_command(choice.command)
+  end)
+end
+
+local function open_or_choose_coact_thread()
+  if coact_window_is_open() then
+    coact_ctrl_c_primed = true
+    return
+  end
+
+  if coact_ctrl_c_primed or has_coact_buffer() then
+    coact_ctrl_c_primed = true
+    run_coact_command("Coact open")
+    return
+  end
+
+  choose_initial_coact_thread()
+end
+
 return {
   "pxwg/coact.nvim",
   dir = "/Users/pxwg-dogggie/codex.nvim",
@@ -151,16 +214,21 @@ return {
   },
   keys = {
     {
+      "<C-c>",
+      open_or_choose_coact_thread,
+      desc = "Coact Open/Choose Thread",
+    },
+    {
       "<leader>ac",
       function()
-        run_coact_command("Coact pick")
+        run_coact_thread_command("Coact pick")
       end,
       desc = "Coact Threads",
     },
     {
       "<leader>aC",
       function()
-        run_coact_command("Coact new")
+        run_coact_thread_command("Coact new")
       end,
       desc = "Coact New Thread",
     },
