@@ -2,6 +2,16 @@ return {
   -- support for image pasting
   "HakonHarnes/img-clip.nvim",
   event = "VeryLazy",
+  keys = {
+    {
+      "<C-v>",
+      function()
+        require("img-clip").paste_image()
+      end,
+      mode = "i",
+      desc = "Paste image from clipboard",
+    },
+  },
   opts = {
     -- recommended settings
     filetypes = {
@@ -17,6 +27,9 @@ return {
         use_absolute_path = true,
       },
       ["coact-input"] = {
+        dir_path = function()
+          return vim.fs.joinpath(vim.fn.stdpath("data"), "img-clip", "coact-input")
+        end,
         prompt_for_file_name = false,
         template = "@image:`$FILE_PATH`",
         use_absolute_path = true,
