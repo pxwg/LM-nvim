@@ -680,7 +680,7 @@ function M.search_with_filters(opts)
       win = {
         input = {
           keys = {
-            ["<Esc>"] = { "normal_mode", mode = "i", desc = "normal mode" },
+            ["<Esc>"] = { "smart_escape", mode = { "i", "n" }, desc = "normal mode / close" },
             ["m"] = { "select_mode", mode = "n", desc = "choose index mode" },
             ["f"] = { "select_filter", mode = "n", desc = "choose filters" },
             ["R"] = { "reset_state", mode = "n", desc = "reset ZK search state" },
@@ -697,10 +697,14 @@ function M.search_with_filters(opts)
         },
       },
       actions = {
-        normal_mode = {
-          desc = "normal mode",
-          action = function()
-            normal_mode()
+        smart_escape = {
+          desc = "normal mode / close",
+          action = function(picker)
+            if vim.fn.mode():find("^i") then
+              normal_mode()
+            else
+              picker:close()
+            end
           end,
         },
         select_mode = {
