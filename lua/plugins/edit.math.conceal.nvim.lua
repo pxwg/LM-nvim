@@ -30,6 +30,44 @@ local function is_wiki_path(path)
   return path == wiki_root or path:sub(1, #wiki_root + 1) == wiki_root .. "/"
 end
 
+local math_conceal_service_binary =
+  "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service"
+
+local typst_math_header = [[
+      // #show math.equation: set text(font: "Fira Math")
+      #show math.equation.where(block: false): it => {
+        set text(size: 0.85em)
+        it
+      }
+    ]]
+
+local function math_renderer_root(ctx)
+  if is_wiki_path(ctx.path) then
+    return wiki_root
+  end
+  return find_git_root(ctx.path) or ctx.cwd
+end
+
+local function math_renderer_inputs(ctx)
+  local id = vim.fn.fnamemodify(ctx.path, ":t:r")
+  return {
+    "focus=" .. id,
+    "concealed=true",
+    "preview=true",
+    "preview-concealer=true",
+  }
+end
+
+local function math_renderer_preamble_file(ctx)
+  if is_wiki_path(ctx.path) then
+    return wiki_concealer_context
+  end
+end
+
+local function math_renderer_path_excluded(ctx)
+  return excluded_render_paths[vim.fs.normalize(ctx.path)] == true
+end
+
 local function is_copilot_chat_buffer(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return false
@@ -125,11 +163,6 @@ local function apply_math_conceal_buffer_mode(bufnr)
     mode = desired_mode,
   })
   vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
-
-  local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
-  if ok_manager then
-    pcall(manager.sync_cursor_conceal, bufnr, { force = true })
-  end
 end
 
 return {
@@ -157,62 +190,62 @@ return {
     -- build = "make lua51",
     main = "math-conceal",
     opts = {
-      ft = { "plaintex", "tex", "context", "bibtex", "typst", "markdown", "coact", "coact-history", "coact-input" },
+      ft = {
+        "plaintex",
+        "tex",
+        "context",
+        "bibtex",
+        "typst",
+        "markdown",
+        "coact",
+        "coact-history",
+        "coact-input",
+      },
       buffer = {
         mode = "edit",
       },
       image = {
         enabled = true,
-        filetypes = { "typst", "markdown", "latex", "coact", "coact-history", "coact-input" },
-        markdown_filetypes = { "markdown", "copilot-chat", "coact", "coact-history" },
-        service_binary = "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service",
+        -- enabled = false,
+        tracker = {
+          debug = false,
+        },
+        renderers = {
+          typst = {
+            filetypes = { "typst" },
+            service_binary = math_conceal_service_binary,
+            live_debounce = 0,
+            header = typst_math_header,
+            root = math_renderer_root,
+            inputs = math_renderer_inputs,
+            preamble_file = math_renderer_preamble_file,
+            render_paths = {
+              exclude = {
+                math_renderer_path_excluded,
+              },
+            },
+          },
+          markdown = {
+            filetypes = { "markdown", "copilot-chat", "coact", "coact-history" },
+            service_binary = math_conceal_service_binary,
+            live_debounce = 0,
+            header = typst_math_header,
+            root = math_renderer_root,
+            inputs = math_renderer_inputs,
+            preamble_file = math_renderer_preamble_file,
+            mitex_package = "@preview/mitex:0.2.7",
+            render_paths = {
+              exclude = {
+                math_renderer_path_excluded,
+              },
+            },
+          },
+        },
         ppi = 300,
         math_baseline_pt = 11,
         styling_type = "colorscheme",
         color = nil,
-        live_preview_debounce = 0,
         cursor_hover_throttle_ms = 0,
-        header = [[
-      // #show math.equation: set text(font: "Fira Math")
-      #show math.equation.where(block: false): it => {
-        set text(size: 0.85em)
-        it
-      }
-    ]],
-        get_root = function(_bufnr, path, cwd, _kind)
-          if is_wiki_path(path) then
-            return wiki_root
-          end
-          return find_git_root(path) or cwd
-        end,
-        get_inputs = function(_bufnr, path, _cwd, _kind)
-          local id = vim.fn.fnamemodify(path, ":t:r")
-          return {
-            "focus=" .. id,
-            "concealed=true",
-            "preview=true",
-            "preview-concealer=true",
-          }
-        end,
-        get_preamble_file = function(_bufnr, path, _cwd, _kind)
-          if is_wiki_path(path) then
-            return wiki_concealer_context
-          end
-        end,
-        render_paths = {
-          exclude = {
-            function(path)
-              return excluded_render_paths[vim.fs.normalize(path)] == true
-            end,
-          },
-        },
-        backends = {
-          latex = {
-            enabled = true,
-            compiler = "pdflatex",
-            converter = "pdftocairo",
-          },
-        },
       },
       enabled = true,
       highlights = { ["@sup_symbol"] = { link = "@boolean" } },
