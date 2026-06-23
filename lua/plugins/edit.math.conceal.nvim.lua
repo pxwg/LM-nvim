@@ -41,6 +41,44 @@ local typst_math_header = [[
       }
     ]]
 
+local typst_code_render_allowlist = {
+  "definition",
+  "example",
+  "fact",
+  "problem",
+  "proof",
+  "proposition",
+  "remark",
+  "theorem",
+  "status_tag",
+  "tag.idea",
+  "tag.archived",
+  "tag.legacy",
+  "tag.sync",
+  "tag.zk",
+  "tag.neovim",
+  "tag.typst",
+  "tag.coding",
+  "tag.physics",
+  "tag.algebra",
+  "tag.math",
+  "tag.qft",
+  "tag.classical-mechanics",
+  "tag.quantum-mechanics",
+  "tag.voa",
+  "tag.rep-theory",
+  "tag.topology",
+  "tag.geometry",
+  "tag.thinking",
+  "tag.root",
+  "tag.ag",
+  "tag.by-ai",
+  "tag.life",
+  "tag.capture",
+  "tag.yau-contest",
+  "tag.animate",
+}
+
 local function math_renderer_root(ctx)
   if is_wiki_path(ctx.path) then
     return wiki_root
@@ -216,6 +254,9 @@ return {
             service_binary = math_conceal_service_binary,
             live_debounce = 0,
             header = typst_math_header,
+            code_render = {
+              allow = typst_code_render_allowlist,
+            },
             root = math_renderer_root,
             inputs = math_renderer_inputs,
             preamble_file = math_renderer_preamble_file,
