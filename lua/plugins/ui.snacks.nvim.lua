@@ -242,7 +242,7 @@ return {
         -- only_render_image_at_cursor = vim.g.neovim_mode == "skitty" and false or true,
         -- render the image in a floating window
         -- only used if `opts.inline` is disabled
-        enabled = true,
+        enabled = false,
         float = false,
         -- inline = true,
         -- Sets the size of the image
@@ -271,10 +271,10 @@ return {
       callback = sync_snacks_math_image_hl,
     })
 
-    local image = require("snacks.image")
-    image.langs = function()
-      return { "markdown" }
-    end
+    -- local image = require("snacks.image")
+    -- image.langs = function()
+    --   return { "markdown", "typst" }
+    -- end
 
     local image_group = vim.api.nvim_create_augroup("SnacksImageDocAttach", { clear = true })
     vim.api.nvim_create_autocmd({ "FileType", "BufEnter", "BufWinEnter" }, {
