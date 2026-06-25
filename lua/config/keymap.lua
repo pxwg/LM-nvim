@@ -121,8 +121,8 @@ map("n", "<C-w>v", "", {
 -- move lines
 map({ "n", "v" }, "L", "$", { silent = true })
 map({ "n", "v" }, "H", "^", { silent = true })
-map({ "n", "v" }, "j", "gj", { silent = true })
-map({ "n", "v" }, "k", "gk", { silent = true })
+-- map({ "n", "v" }, "j", "gj", { silent = true })
+-- map({ "n", "v" }, "k", "gk", { silent = true })
 
 --save
 map({ "n", "v", "i" }, "<C-s>", function()
@@ -633,16 +633,14 @@ map("i", "<Tab>", function()
   if vim.fn.pumvisible() == 1 then
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
   end
-  local success = require("copilot.suggestion").is_visible()
+  -- local success = require("copilot.suggestion").is_visible()
   local jumpable = require("luasnip").jumpable(1)
   if jumpable then
     require("luasnip").jump(1)
-  elseif success then
-    require("copilot.suggestion").accept_line()
-  elseif not success then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
+  -- elseif success then
+  --   require("copilot.suggestion").accept_line()
   else
-    require("copilot.suggestion").accept_line()
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
   end
 end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
 
