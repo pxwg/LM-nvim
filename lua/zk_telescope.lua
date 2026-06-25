@@ -1,24 +1,27 @@
 local M = {}
 
-local FIELD_DEFS = {
-  { name = "title", label = "Title", icon = "󰗊", desc = "note titles" },
-  { name = "alias", label = "Alias", icon = "󰌹", desc = "aliases / alternate names" },
-  { name = "abstract", label = "Abstract", icon = "󰦨", desc = "abstract summaries" },
-  { name = "keyword", label = "Keyword", icon = "󰌋", desc = "metadata keywords" },
-  { name = "tag", label = "Tag", icon = "󰓹", desc = "inline #tag metadata" },
+local DEFAULT_METADATA_FIELDS = {
+  { path = "schema-version", kind = "integer", source = "zk-lsp" },
+  { path = "aliases", kind = "array-string", source = "zk-lsp" },
+  { path = "abstract", kind = "string", source = "zk-lsp" },
+  { path = "keywords", kind = "array-string", source = "zk-lsp" },
+  { path = "generated", kind = "boolean", source = "zk-lsp" },
+  { path = "checklist-status", kind = "string", source = "zk-lsp" },
+  { path = "relation", kind = "string", source = "zk-lsp" },
+  { path = "relation-target", kind = "array-string", source = "zk-lsp" },
 }
-
-local FIELD_ORDER = vim.tbl_map(function(field)
-  return field.name
-end, FIELD_DEFS)
 
 local INACTIVE_RELATIONS = {
   archived = true,
   legacy = true,
 }
 
+local function wiki_root()
+  return vim.fs.normalize((vim.uv.os_homedir() or vim.fn.expand("~")) .. "/wiki")
+end
+
 local function get_all_notes()
-  return require("zk_cli").list_notes()
+  return require("zk_cli").list_notes({ hydrate_metadata = true })
 end
 
 local function list_or_empty(value)
@@ -33,37 +36,277 @@ local function has_values(values)
   return #list_or_empty(values) > 0
 end
 
-local function mode_count(modes)
-  local count = 0
-  for _, name in ipairs(FIELD_ORDER) do
-    if modes[name] then
-      count = count + 1
+local function normalize_path(path)
+  return type(path) == "string" and vim.trim(path) or ""
+end
+
+local function split_path(path)
+  return vim.split(path, ".", { plain = true, trimempty = true })
+end
+
+local function get_path(tbl, path)
+  local cur = tbl
+  for _, part in ipairs(split_path(path)) do
+    if type(cur) ~= "table" then
+      return nil
+    end
+    cur = cur[part]
+  end
+  return cur
+end
+
+local function is_array(tbl)
+  if type(tbl) ~= "table" then
+    return false
+  end
+  local n = 0
+  for key, _ in pairs(tbl) do
+    if type(key) ~= "number" then
+      return false
+    end
+    n = math.max(n, key)
+  end
+  return n == #tbl
+end
+
+local function value_to_parts(value, out)
+  out = out or {}
+  local t = type(value)
+  if t == "string" then
+    if value ~= "" then
+      out[#out + 1] = value
+    end
+  elseif t == "number" or t == "boolean" then
+    out[#out + 1] = tostring(value)
+  elseif t == "table" then
+    if is_array(value) then
+      for _, item in ipairs(value) do
+        value_to_parts(item, out)
+      end
+    else
+      for _, item in pairs(value) do
+        value_to_parts(item, out)
+      end
     end
   end
-  return count
+  return out
 end
 
-local function all_modes_enabled(modes)
-  return mode_count(modes) == #FIELD_ORDER
+local function value_to_text(value)
+  return table.concat(value_to_parts(value), " ")
 end
 
-local function modes_for(mode)
+local function infer_kind(value)
+  local t = type(value)
+  if t == "boolean" then
+    return "boolean"
+  elseif t == "number" then
+    return math.type and math.type(value) == "integer" and "integer" or "number"
+  elseif t == "string" then
+    return "string"
+  elseif t == "table" and is_array(value) then
+    local item_kind = "string"
+    for _, item in ipairs(value) do
+      item_kind = infer_kind(item)
+      break
+    end
+    return "array-" .. item_kind
+  elseif t == "table" then
+    return "table"
+  end
+  return t
+end
+
+local function flatten_metadata(tbl, prefix, cb)
+  if type(tbl) ~= "table" then
+    return
+  end
+  for key, value in pairs(tbl) do
+    if type(key) == "string" then
+      local path = prefix and (prefix .. "." .. key) or key
+      if type(value) == "table" and not is_array(value) then
+        flatten_metadata(value, path, cb)
+      else
+        cb(path, value)
+      end
+    end
+  end
+end
+
+local function parse_toml_value(raw)
+  raw = vim.trim(raw or "")
+  if raw == "true" then
+    return true
+  elseif raw == "false" then
+    return false
+  elseif raw == "[]" then
+    return {}
+  end
+  local quoted = raw:match('^"(.*)"$')
+  if quoted ~= nil then
+    return quoted
+  end
+  return tonumber(raw) or raw
+end
+
+local function parse_metadata_schema(root)
+  local path = root .. "/zk-lsp.toml"
+  if vim.fn.filereadable(path) == 0 then
+    return {}
+  end
+
+  local fields = {}
+  local current
+  for _, line in ipairs(vim.fn.readfile(path)) do
+    line = line:gsub("#.*$", "")
+    if line:match("^%s*%[%[metadata%.field%]%]%s*$") then
+      if current and current.path then
+        fields[#fields + 1] = current
+      end
+      current = { source = "zk-lsp.toml" }
+    elseif current then
+      local key, raw = line:match("^%s*([%w%-_]+)%s*=%s*(.-)%s*$")
+      if key then
+        current[key] = parse_toml_value(raw)
+      elseif line:match("^%s*%[") then
+        if current.path then
+          fields[#fields + 1] = current
+        end
+        current = nil
+      end
+    end
+  end
+  if current and current.path then
+    fields[#fields + 1] = current
+  end
+  return fields
+end
+
+local function metadata_registry(notes, root)
+  local by_path = {}
+
+  local function ensure(path, attrs)
+    path = normalize_path(path)
+    if path == "" then
+      return nil
+    end
+    local item = by_path[path]
+    if not item then
+      item = {
+        path = path,
+        kind = attrs and attrs.kind or nil,
+        source = attrs and attrs.source or nil,
+        count = 0,
+        sample = nil,
+      }
+      by_path[path] = item
+    else
+      item.kind = item.kind or (attrs and attrs.kind)
+      item.source = item.source or (attrs and attrs.source)
+    end
+    if attrs and attrs.default ~= nil then
+      item.default = attrs.default
+    end
+    return item
+  end
+
+  for _, field in ipairs(DEFAULT_METADATA_FIELDS) do
+    ensure(field.path, field)
+  end
+  for _, field in ipairs(parse_metadata_schema(root)) do
+    ensure(field.path, field)
+  end
+
+  for _, note in ipairs(notes) do
+    flatten_metadata(note.metadata or {}, nil, function(path, value)
+      local item = ensure(path, { kind = infer_kind(value), source = "note-info" })
+      if item then
+        local text = value_to_text(value)
+        if text ~= "" then
+          item.count = item.count + 1
+          item.sample = item.sample or text:sub(1, 60)
+        end
+      end
+    end)
+  end
+
+  local items = {}
+  for _, item in pairs(by_path) do
+    item.kind = item.kind or "string"
+    item.source = item.source or "discovered"
+    items[#items + 1] = item
+  end
+  table.sort(items, function(a, b)
+    if a.count ~= b.count then
+      return a.count > b.count
+    end
+    return a.path:lower() < b.path:lower()
+  end)
+  return items, by_path
+end
+
+local function index_key(index)
+  if index.kind == "metadata" then
+    return "metadata:" .. index.path
+  end
+  return index.kind
+end
+
+local function index_label(index)
+  if index.kind == "metadata" then
+    return index.path
+  elseif index.kind == "metadata_all" then
+    return "all metadata"
+  end
+  return index.kind
+end
+
+local function index_icon(index)
+  if index.kind == "title" then
+    return "󰗊"
+  elseif index.kind == "tag" then
+    return "󰓹"
+  elseif index.kind == "metadata_all" then
+    return "󰘦"
+  end
+  return "󰆼"
+end
+
+local function contains_index(indexes, target)
+  local key = index_key(target)
+  for _, index in ipairs(indexes) do
+    if index_key(index) == key then
+      return true
+    end
+  end
+  return false
+end
+
+local function indexes_equal(indexes, target)
+  return #indexes == 1 and contains_index(indexes, target)
+end
+
+local function indexes_for_mode(mode)
   mode = mode or "title"
-  local modes = {}
-  for _, name in ipairs(FIELD_ORDER) do
-    modes[name] = mode == "all"
+  if mode == "all" then
+    return { { kind = "metadata_all" } }
+  elseif mode == "tag" then
+    return { { kind = "tag" } }
+  elseif mode == "alias" then
+    return { { kind = "metadata", path = "aliases" } }
+  elseif mode == "keyword" then
+    return { { kind = "metadata", path = "keywords" } }
+  elseif mode == "abstract" then
+    return { { kind = "metadata", path = "abstract" } }
+  elseif mode:match("^metadata:") then
+    return { { kind = "metadata", path = mode:sub(10) } }
   end
-  if mode ~= "all" and modes[mode] ~= nil then
-    modes[mode] = true
-  elseif mode ~= "all" then
-    modes.title = true
-  end
-  return modes
+  return { { kind = "title" } }
 end
 
 local function new_state(mode)
   return {
-    modes = modes_for(mode or "title"),
+    indexes = indexes_for_mode(mode or "title"),
     tag_filter = nil,
     keyword_filters = {},
     include_inactive = false,
@@ -84,38 +327,33 @@ local function is_inactive_note(note)
   return INACTIVE_RELATIONS[get_relation(note)] == true
 end
 
-local function field_text(note, field)
-  if field == "title" then
+local function index_text(note, index)
+  if index.kind == "title" then
     return note.title or ""
-  elseif field == "alias" then
-    return join_values(note.aliases)
-  elseif field == "abstract" then
-    return note.abstract or ""
-  elseif field == "keyword" then
-    return join_values(note.keywords)
-  elseif field == "tag" then
+  elseif index.kind == "tag" then
     return join_values(note.tags)
+  elseif index.kind == "metadata" then
+    return value_to_text(get_path(note.metadata or {}, index.path))
+  elseif index.kind == "metadata_all" then
+    return value_to_text(note.metadata or {})
   end
   return ""
 end
 
-local function has_indexed_content(note, modes)
-  local has_active_mode = false
-  for _, field in ipairs(FIELD_ORDER) do
-    if modes[field] then
-      has_active_mode = true
-      if field_text(note, field) ~= "" then
-        return true
-      end
+local function has_indexed_content(note, indexes)
+  for _, index in ipairs(indexes) do
+    if index_text(note, index) ~= "" then
+      return true
     end
   end
-  return not has_active_mode
+  return #indexes == 0
 end
 
 local function keyword_filter_matches(note, wanted)
   wanted = wanted:lower()
-  for _, keyword in ipairs(list_or_empty(note.keywords)) do
-    if keyword:lower() == wanted then
+  local keywords = note.keywords or get_path(note.metadata or {}, "keywords") or {}
+  for _, keyword in ipairs(list_or_empty(keywords)) do
+    if tostring(keyword):lower() == wanted then
       return true
     end
   end
@@ -169,17 +407,12 @@ local function make_items(notes, state)
   local items = {}
 
   for i, note in ipairs(notes) do
-    if has_indexed_content(note, state.modes) then
+    if has_indexed_content(note, state.indexes) then
       local ordinal_parts = {}
-      for _, field in ipairs(FIELD_ORDER) do
-        if state.modes[field] then
-          local text = field_text(note, field)
-          if text ~= "" then
-            if field == "abstract" then
-              text = text:sub(1, 200)
-            end
-            ordinal_parts[#ordinal_parts + 1] = text
-          end
+      for _, index in ipairs(state.indexes) do
+        local text = index_text(note, index)
+        if text ~= "" then
+          ordinal_parts[#ordinal_parts + 1] = text:sub(1, index.kind == "metadata_all" and 500 or 200)
         end
       end
 
@@ -187,20 +420,23 @@ local function make_items(notes, state)
         ordinal_parts[#ordinal_parts + 1] = note.title or ""
       end
 
-      -- Recency bonus: newer notes (earlier in desc-sorted list) get a higher score_add.
-      -- Range 0–20, small enough not to dominate fuzzy score but meaningful as a tiebreaker.
       local recency_bonus = n > 1 and (n - i) / (n - 1) * 20 or 20
       if is_inactive_note(note) then
         recency_bonus = recency_bonus - 8
       end
 
+      local metadata = note.metadata or {}
+      local aliases = metadata.aliases or note.aliases
+      local keywords = metadata.keywords or note.keywords
+      local abstract = metadata.abstract or note.abstract or ""
+
       items[#items + 1] = {
         text = table.concat(ordinal_parts, " "),
         title = note.title,
-        alias = has_values(note.aliases) and join_values(note.aliases) or nil,
-        keyword = has_values(note.keywords) and join_values(note.keywords) or nil,
+        alias = has_values(aliases) and join_values(aliases) or nil,
+        keyword = has_values(keywords) and join_values(keywords) or nil,
         tag = has_values(note.tags) and join_values(note.tags) or nil,
-        abstract = note.abstract ~= "" and note.abstract or nil,
+        abstract = abstract ~= "" and abstract or nil,
         relation = get_relation(note),
         file = note.path,
         pos = { note.title_line, 0 },
@@ -221,10 +457,17 @@ local function format_badge(text, hl)
   return { " " .. text .. " ", hl or "SnacksPickerDimmed" }
 end
 
+local function should_show_index(state, index)
+  return contains_index(state.indexes, index) or contains_index(state.indexes, { kind = "metadata_all" })
+end
+
 local function format_note_item(item, state)
   local note = item._note
+  local metadata = note.metadata or {}
+  local aliases = metadata.aliases or note.aliases
+  local keywords = metadata.keywords or note.keywords
+  local abstract = metadata.abstract or note.abstract or ""
   local ret = {}
-  local show_all = all_modes_enabled(state.modes)
 
   ret[#ret + 1] = { "󰈙 ", "SnacksPickerIcon", virtual = true }
   ret[#ret + 1] = { note.title, "SnacksPickerFile" }
@@ -235,20 +478,23 @@ local function format_note_item(item, state)
     ret[#ret + 1] = format_badge(icon .. " " .. item.relation, "SnacksPickerDimmed")
   end
 
-  if (state.modes.alias or show_all) and has_values(note.aliases) then
+  if should_show_index(state, { kind = "metadata", path = "aliases" }) and has_values(aliases) then
     add_virtual(ret, "  ")
-    ret[#ret + 1] = { table.concat(note.aliases, ", "), "SnacksPickerDimmed" }
+    ret[#ret + 1] = { table.concat(aliases, ", "), "SnacksPickerDimmed" }
   end
 
-  if (state.modes.abstract or show_all) and note.abstract ~= "" then
+  if should_show_index(state, { kind = "metadata", path = "abstract" }) and abstract ~= "" then
     add_virtual(ret, "  ")
-    local abstract = note.abstract:sub(1, 60) .. (note.abstract:len() > 60 and "…" or "")
-    ret[#ret + 1] = { abstract, "SnacksPickerComment" }
+    local shown = abstract:sub(1, 60) .. (abstract:len() > 60 and "…" or "")
+    ret[#ret + 1] = { shown, "SnacksPickerComment" }
   end
 
-  if (state.modes.keyword or show_all or #state.keyword_filters > 0) and has_values(note.keywords) then
+  if
+    (should_show_index(state, { kind = "metadata", path = "keywords" }) or #state.keyword_filters > 0)
+    and has_values(keywords)
+  then
     add_virtual(ret, "  ")
-    for i, keyword in ipairs(note.keywords) do
+    for i, keyword in ipairs(keywords) do
       if i > 1 then
         add_virtual(ret, " ")
       end
@@ -256,7 +502,7 @@ local function format_note_item(item, state)
     end
   end
 
-  if (state.modes.tag or show_all or state.tag_filter) and has_values(note.tags) then
+  if (should_show_index(state, { kind = "tag" }) or state.tag_filter) and has_values(note.tags) then
     add_virtual(ret, "  ")
     for i, tag in ipairs(note.tags) do
       if i > 1 then
@@ -266,21 +512,29 @@ local function format_note_item(item, state)
     end
   end
 
+  for _, index in ipairs(state.indexes) do
+    if index.kind == "metadata" and not ({ aliases = true, abstract = true, keywords = true })[index.path] then
+      local text = index_text(note, index)
+      if text ~= "" then
+        add_virtual(ret, "  ")
+        local shown = text:sub(1, 50) .. (text:len() > 50 and "…" or "")
+        ret[#ret + 1] = { index.path .. "=" .. shown, "SnacksPickerDimmed" }
+      end
+    end
+  end
+
   return ret
 end
 
 local function mode_label(state)
-  if all_modes_enabled(state.modes) then
-    return "all"
+  if #state.indexes == 0 then
+    return "none"
   end
-
   local names = {}
-  for _, field in ipairs(FIELD_DEFS) do
-    if state.modes[field.name] then
-      names[#names + 1] = field.name
-    end
+  for _, index in ipairs(state.indexes) do
+    names[#names + 1] = index_label(index)
   end
-  return #names > 0 and table.concat(names, "+") or "none"
+  return table.concat(names, "+")
 end
 
 local function filter_label(state)
@@ -330,7 +584,8 @@ end
 local function collect_keywords(notes)
   local keywords = {}
   for _, note in ipairs(notes) do
-    for _, keyword in ipairs(list_or_empty(note.keywords)) do
+    local values = note.keywords or get_path(note.metadata or {}, "keywords") or {}
+    for _, keyword in ipairs(list_or_empty(values)) do
       keywords[keyword] = true
     end
   end
@@ -361,13 +616,6 @@ local function toggle_keyword_filter(state, keyword)
   state.keyword_filters = next_filters
 end
 
-local function is_menu_mode_active(state, mode)
-  if mode == "all" then
-    return all_modes_enabled(state.modes)
-  end
-  return state.modes[mode] and mode_count(state.modes) == 1
-end
-
 local function open_note(root, item)
   if not item then
     return
@@ -378,6 +626,7 @@ end
 
 function M.search_with_filters(opts)
   opts = type(opts) == "table" and opts or {}
+  local root = wiki_root()
   local all_notes = get_all_notes()
 
   if #all_notes == 0 then
@@ -385,8 +634,8 @@ function M.search_with_filters(opts)
     return
   end
 
+  local registry = metadata_registry(all_notes, root)
   local state = new_state(opts.mode or "title")
-  local root = vim.fn.expand("~/wiki")
 
   local open_picker
   local open_mode_menu
@@ -396,7 +645,7 @@ function M.search_with_filters(opts)
 
   local function scoped_notes()
     return apply_filters(all_notes, {
-      modes = state.modes,
+      indexes = state.indexes,
       tag_filter = nil,
       keyword_filters = {},
       include_inactive = state.include_inactive,
@@ -428,30 +677,67 @@ function M.search_with_filters(opts)
     end
   end
 
+  local function toggle_index(index)
+    if contains_index(state.indexes, index) then
+      local next_indexes = {}
+      local key = index_key(index)
+      for _, existing in ipairs(state.indexes) do
+        if index_key(existing) ~= key then
+          next_indexes[#next_indexes + 1] = existing
+        end
+      end
+      state.indexes = #next_indexes > 0 and next_indexes or { { kind = "title" } }
+    else
+      local next_indexes = {}
+      for _, existing in ipairs(state.indexes) do
+        if existing.kind ~= "metadata_all" then
+          next_indexes[#next_indexes + 1] = existing
+        end
+      end
+      next_indexes[#next_indexes + 1] = index
+      state.indexes = next_indexes
+    end
+  end
+
   open_mode_menu = function()
     local mode_items = {
-      { text = "title", mode = "title", icon = "󰗊", label = "Title", desc = "search by note title" },
-      { text = "alias", mode = "alias", icon = "󰌹", label = "Alias", desc = "search by aliases" },
-      { text = "abstract", mode = "abstract", icon = "󰦨", label = "Abstract", desc = "search inside abstracts" },
-      { text = "keyword", mode = "keyword", icon = "󰌋", label = "Keyword", desc = "search metadata keywords" },
-      { text = "tag", mode = "tag", icon = "󰓹", label = "Tag", desc = "search inline tags" },
+      { text = "title", index = { kind = "title" }, label = "Title", icon = "󰗊", desc = "note titles" },
+      { text = "tag", index = { kind = "tag" }, label = "Tag", icon = "󰓹", desc = "inline tags" },
       {
-        text = "all",
-        mode = "all",
-        icon = "󰘦",
+        text = "all metadata",
+        index = { kind = "metadata_all" },
         label = "All metadata",
-        desc = "title + alias + abstract + keyword + tag",
+        icon = "󰘦",
+        desc = "all metadata leaf fields",
       },
     }
-    local confirmed = false
+    for _, field in ipairs(registry) do
+      mode_items[#mode_items + 1] = {
+        text = field.path,
+        index = { kind = "metadata", path = field.path },
+        label = field.path,
+        icon = "󰆼",
+        desc = (field.kind or "")
+          .. " · "
+          .. tostring(field.count or 0)
+          .. " notes"
+          .. (field.sample and (" · " .. field.sample) or ""),
+      }
+    end
 
+    local confirmed = false
     Snacks.picker.pick({
-      title = "󰠮 ZK index mode",
+      title = "󰠮 ZK index field (CR=single, Space=toggle multi)",
       layout = "select",
-      win = no_help_win(),
+      win = {
+        input = {
+          keys = { ["<Space>"] = { "toggle_index", mode = { "i", "n" }, desc = "toggle multi-index" }, ["?"] = false },
+        },
+        list = { keys = { ["<Space>"] = { "toggle_index", desc = "toggle multi-index" }, ["?"] = false } },
+      },
       items = mode_items,
       format = function(item)
-        local active = is_menu_mode_active(state, item.mode)
+        local active = contains_index(state.indexes, item.index)
         return {
           { active and "● " or "○ ", active and "SnacksPickerSpecial" or "SnacksPickerDimmed" },
           { item.icon .. " " .. item.label, active and "SnacksPickerFile" or "SnacksPickerDimmed" },
@@ -461,11 +747,24 @@ function M.search_with_filters(opts)
       confirm = function(sub_picker, item)
         confirmed = true
         if item then
-          state.modes = modes_for(item.mode)
+          state.indexes = { item.index }
         end
         sub_picker:close()
         reopen()
       end,
+      actions = {
+        toggle_index = {
+          desc = "toggle multi-index",
+          action = function(sub_picker, item)
+            confirmed = true
+            if item then
+              toggle_index(item.index)
+            end
+            sub_picker:close()
+            reopen()
+          end,
+        },
+      },
       on_close = function()
         if not confirmed then
           reopen()
@@ -498,10 +797,7 @@ function M.search_with_filters(opts)
       items = items,
       format = function(item)
         if item.clear then
-          return {
-            { "󰅖 ", "SnacksPickerSpecial" },
-            { item.label, "SnacksPickerFile" },
-          }
+          return { { "󰅖 ", "SnacksPickerSpecial" }, { item.label, "SnacksPickerFile" } }
         end
         local active = state.tag_filter == item.tag
         return {
@@ -550,10 +846,7 @@ function M.search_with_filters(opts)
       items = items,
       format = function(item)
         if item.clear then
-          return {
-            { "󰅖 ", "SnacksPickerSpecial" },
-            { item.label, "SnacksPickerFile" },
-          }
+          return { { "󰅖 ", "SnacksPickerSpecial" }, { item.label, "SnacksPickerFile" } }
         end
         local active = selected[item.keyword]
         return {
@@ -719,20 +1012,11 @@ function M.search_with_filters(opts)
             close_then(picker, open_filter_menu)
           end,
         },
-        toggle_inactive = {
-          desc = "toggle archived/legacy notes",
-          action = function(picker)
-            capture_query(picker)
-            state.include_inactive = not state.include_inactive
-            picker:close()
-            reopen()
-          end,
-        },
         reset_state = {
           desc = "reset ZK search state",
           action = function(picker)
             capture_query(picker)
-            state.modes = modes_for("title")
+            state.indexes = indexes_for_mode("title")
             state.tag_filter = nil
             state.keyword_filters = {}
             state.include_inactive = false

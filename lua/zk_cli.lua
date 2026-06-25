@@ -297,7 +297,11 @@ local function get_cached_note(id, path, opts)
   end
 
   local mem = note_info_cache[id]
-  if mem and state_equals(state, load_persistent_cache()[id] and load_persistent_cache()[id].state) then
+  if
+    mem
+    and (not opts.require_metadata or mem._source == "zk-lsp")
+    and state_equals(state, load_persistent_cache()[id] and load_persistent_cache()[id].state)
+  then
     if opts.include_references and (not mem.references or next(mem.references) == nil) then
       mem.references = local_note_info(id, path, { include_references = true }).references
     end
@@ -341,31 +345,34 @@ local function pump_refresh_queue()
       local attempts = 0
       local function try_once()
         attempts = attempts + 1
-        run_note_info_async(id, vim.schedule_wrap(function(result)
-          if result.code == 0 and result.stdout and result.stdout ~= "" then
-            local decoded = decode_json(result.stdout, "zk-lsp note-info " .. id)
-            local note = normalize_note_info(decoded, {
-              include_references = item.include_references,
-            })
-            if note then
-              cache_note(note)
-              finish_refresh(id)
-              if item.on_done then
-                item.on_done(note)
+        run_note_info_async(
+          id,
+          vim.schedule_wrap(function(result)
+            if result.code == 0 and result.stdout and result.stdout ~= "" then
+              local decoded = decode_json(result.stdout, "zk-lsp note-info " .. id)
+              local note = normalize_note_info(decoded, {
+                include_references = item.include_references,
+              })
+              if note then
+                cache_note(note)
+                finish_refresh(id)
+                if item.on_done then
+                  item.on_done(note)
+                end
+                pump_refresh_queue()
+                return
               end
-              pump_refresh_queue()
+            end
+
+            if attempts < MAX_NOTE_INFO_ATTEMPTS then
+              try_once()
               return
             end
-          end
 
-          if attempts < MAX_NOTE_INFO_ATTEMPTS then
-            try_once()
-            return
-          end
-
-          finish_refresh(id)
-          pump_refresh_queue()
-        end))
+            finish_refresh(id)
+            pump_refresh_queue()
+          end)
+        )
       end
 
       try_once()
@@ -403,9 +410,11 @@ function M.note_info(id, opts)
     return fallback
   end
 
-  local cached = not opts.refresh and get_cached_note(id, path, {
-    include_references = opts.include_references,
-  })
+  local cached = not opts.refresh
+    and get_cached_note(id, path, {
+      include_references = opts.include_references,
+      require_metadata = opts.require_metadata,
+    })
   if cached then
     return cached
   end
@@ -429,10 +438,12 @@ function M.note_info(id, opts)
 
   local last_error
   for _ = 1, MAX_NOTE_INFO_ATTEMPTS do
-    local result = vim.system({ "zk-lsp", "note-info", id }, {
-      text = true,
-      cwd = wiki_root(),
-    }):wait()
+    local result = vim
+      .system({ "zk-lsp", "note-info", id }, {
+        text = true,
+        cwd = wiki_root(),
+      })
+      :wait()
 
     if result.code == 0 and result.stdout and result.stdout ~= "" then
       local decoded = decode_json(result.stdout, "zk-lsp note-info " .. id)
@@ -483,19 +494,28 @@ function M.list_notes(opts)
   for _, path in ipairs(note_paths()) do
     local id = vim.fn.fnamemodify(path, ":t:r")
     if id:match("^%d+$") then
-      local note = get_cached_note(id, path, {
-        include_references = opts.include_references,
-      })
-
-      if not note then
-        note = local_note_info(id, path, {
+      local note
+      if opts.hydrate_metadata then
+        note = M.note_info(id, {
+          include_references = opts.include_references,
+          require_metadata = true,
+          silent = true,
+        })
+      else
+        note = get_cached_note(id, path, {
           include_references = opts.include_references,
         })
-        if note then
-          note_info_cache[id] = note
-          ensure_refresh(id, {
+
+        if not note then
+          note = local_note_info(id, path, {
             include_references = opts.include_references,
           })
+          if note then
+            note_info_cache[id] = note
+            ensure_refresh(id, {
+              include_references = opts.include_references,
+            })
+          end
         end
       end
 
