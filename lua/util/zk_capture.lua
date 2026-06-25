@@ -1,4 +1,5 @@
 local M = {}
+local zk_bib = require("util.zk_bib")
 
 local function wiki_root()
   return vim.fn.expand("~/wiki")
@@ -8,7 +9,8 @@ local function trim(value)
   if type(value) ~= "string" then
     return ""
   end
-  return value:gsub("^%s+", ""):gsub("%s+$", "")
+  local trimmed = value:gsub("^%s+", ""):gsub("%s+$", "")
+  return trimmed
 end
 
 local function collapse_ws(value)
@@ -47,7 +49,8 @@ local function basename(path)
 end
 
 local function join_paths(...)
-  return table.concat({ ... }, "/"):gsub("//+", "/")
+  local path = table.concat({ ... }, "/"):gsub("//+", "/")
+  return path
 end
 
 local function deep_copy(value)
@@ -799,6 +802,15 @@ local function parse_pdfinfo_output(text)
   return data
 end
 
+local function clean_pdf_metadata_value(value)
+  value = collapse_ws(value or "")
+  local lower = value:lower()
+  if lower == "" or lower == "(null)" or lower == "null" or lower == "untitled" or lower == "unknown" then
+    return ""
+  end
+  return value
+end
+
 local function fetch_pdf_metadata(path)
   local info = {
     title = "",
@@ -810,8 +822,8 @@ local function fetch_pdf_metadata(path)
     local raw = system_text({ "pdfinfo", path })
     if raw then
       local parsed = parse_pdfinfo_output(raw)
-      info.title = collapse_ws(parsed.Title or "")
-      info.abstract = collapse_ws(parsed.Subject or "")
+      info.title = clean_pdf_metadata_value(parsed.Title)
+      info.abstract = clean_pdf_metadata_value(parsed.Subject)
       if trim(parsed.Keywords or "") ~= "" then
         info.keywords = split_words(parsed.Keywords)
       end
@@ -821,11 +833,482 @@ local function fetch_pdf_metadata(path)
   if info.title == "" and command_exists("mdls") then
     local raw = system_text({ "mdls", "-raw", "-name", "kMDItemTitle", path })
     if raw then
-      info.title = collapse_ws(raw:gsub('^"(.*)"%s*$', "%1"))
+      info.title = clean_pdf_metadata_value(raw:gsub('^"(.*)"%s*$', "%1"))
     end
   end
 
   return info
+end
+
+local function curl_text(url, headers)
+  local cmd = {
+    "curl",
+    "-L",
+    "--max-time",
+    "6",
+    "--connect-timeout",
+    "3",
+    "-A",
+    "Mozilla/5.0 (compatible; zk-capture/1.0)",
+  }
+
+  for _, header in ipairs(headers or {}) do
+    cmd[#cmd + 1] = "-H"
+    cmd[#cmd + 1] = header
+  end
+
+  cmd[#cmd + 1] = url
+  return system_text(cmd)
+end
+
+local function looks_like_bibtex(text)
+  text = trim(text or "")
+  if text:match("^@[%a][%w%-]*%s*[%{%(%[]") then
+    return text
+  end
+  return ""
+end
+
+local function url_encode(value)
+  return tostring(value or ""):gsub("\n", " "):gsub("([^%w%-_%.~])", function(ch)
+    return string.format("%%%02X", string.byte(ch))
+  end)
+end
+
+local function url_encode_path(value)
+  return url_encode(value):gsub("%%2F", "/")
+end
+
+local function normalize_doi_candidate(value)
+  value = trim(value or "")
+  value = value:gsub("^[Dd][Oo][Ii]:%s*", "")
+  value = value:gsub("^https?://dx%.doi%.org/", "")
+  value = value:gsub("^https?://doi%.org/", "")
+  value = value:gsub("[,%s%)%]%}>%.;:]+$", "")
+  return value
+end
+
+local function extract_doi_from_text(text)
+  for candidate in (text or ""):gmatch("10%.%d%d%d%d%d?%d?%d?%d?%d?/%S+") do
+    local doi = normalize_doi_candidate(candidate)
+    if doi:match("^10%.%d%d%d%d") then
+      return doi
+    end
+  end
+  return ""
+end
+
+local function extract_arxiv_id_from_text(text)
+  text = text or ""
+  local id = text:match("[Aa][Rr][Xx][Ii][Vv]:%s*([%a%-]+/%d%d%d%d%d%d%d+v?%d*)")
+    or text:match("[Aa][Rr][Xx][Ii][Vv]:%s*(%d%d%d%d%.%d%d%d%d%d+v?%d*)")
+    or text:match("arxiv%.org/abs/([^%s%)%]%}]+)")
+    or text:match("arxiv%.org/pdf/([^%s%)%]%}]+)%.pdf")
+
+  if not id or id == "" then
+    return ""
+  end
+  return id:gsub("[,%s%)%]%}>%.;:]+$", "")
+end
+
+local function fetch_pdf_probe_text(path)
+  local chunks = { basename(path) }
+
+  if command_exists("pdfinfo") then
+    local meta = system_text({ "pdfinfo", "-meta", path })
+    if meta and trim(meta) ~= "" then
+      chunks[#chunks + 1] = meta
+    end
+  end
+
+  if command_exists("pdftotext") then
+    local text = system_text({ "pdftotext", "-f", "1", "-l", "3", "-layout", path, "-" })
+    if text and trim(text) ~= "" then
+      chunks[#chunks + 1] = text
+    end
+  end
+
+  if command_exists("mutool") then
+    local text = system_text({ "mutool", "draw", "-F", "txt", "-o", "-", path, "1-3" })
+    if text and trim(text) ~= "" then
+      chunks[#chunks + 1] = text
+    end
+  end
+
+  if command_exists("strings") then
+    local text = system_text({ "sh", "-c", 'strings -n 8 "$1" | head -300', "sh", path })
+    if text and trim(text) ~= "" then
+      chunks[#chunks + 1] = text
+    end
+  end
+
+  return table.concat(chunks, "\n")
+end
+
+local function infer_pdf_title_from_text(text)
+  for line in (text or ""):gmatch("[^\n]+") do
+    line = collapse_ws(line)
+    local lower = line:lower()
+    if
+      #line >= 16
+      and #line <= 220
+      and not lower:match("^abstract")
+      and not lower:match("^keywords")
+      and not lower:match("^doi")
+      and not lower:match("^arxiv")
+      and not lower:match("^journal")
+      and not lower:match("^submitted")
+      and not line:match("^%d+$")
+      and not line:match("^https?://")
+    then
+      return line
+    end
+  end
+  return ""
+end
+
+local title_stopwords = {
+  a = true,
+  an = true,
+  ["and"] = true,
+  ["for"] = true,
+  ["in"] = true,
+  of = true,
+  on = true,
+  the = true,
+  to = true,
+  with = true,
+}
+
+local function title_tokens(title)
+  local tokens = {}
+  local count = 0
+  for word in (title or ""):lower():gsub("[{}]", " "):gmatch("[%w]+") do
+    if #word > 2 and not title_stopwords[word] and not tokens[word] then
+      tokens[word] = true
+      count = count + 1
+    end
+  end
+  return tokens, count
+end
+
+local function title_similarity(a, b)
+  local left, left_count = title_tokens(a)
+  local right, right_count = title_tokens(b)
+  if left_count == 0 or right_count == 0 then
+    return 0
+  end
+
+  local shared = 0
+  for token in pairs(left) do
+    if right[token] then
+      shared = shared + 1
+    end
+  end
+  return shared / math.max(left_count, right_count)
+end
+
+local function decode_json(raw)
+  local ok, decoded = pcall(vim.json.decode, raw or "")
+  if ok then
+    return decoded
+  end
+  return nil
+end
+
+local function result_from_bibtex(bibtex, method, source)
+  bibtex = looks_like_bibtex(bibtex)
+  if bibtex == "" then
+    return nil
+  end
+
+  local entry = zk_bib.parse_entry(bibtex)
+  if not entry or trim(entry.key or "") == "" then
+    return nil
+  end
+
+  return {
+    bibtex = bibtex,
+    method = method,
+    source = source,
+    title = zk_bib.clean_title(zk_bib.field(entry, "title")),
+    abstract = zk_bib.field(entry, "abstract"),
+    keywords = split_words(zk_bib.field(entry, "keywords")),
+    entry = entry,
+  }
+end
+
+local function fetch_bibtex_by_doi(doi)
+  doi = normalize_doi_candidate(doi)
+  if doi == "" then
+    return nil
+  end
+
+  local attempts = {
+    {
+      method = "INSPIRE DOI",
+      url = "https://inspirehep.net/api/literature?q=doi:" .. url_encode(doi) .. "&size=1&format=bibtex",
+    },
+    {
+      method = "DOI content negotiation",
+      url = "https://doi.org/" .. url_encode_path(doi),
+      headers = { "Accept: application/x-bibtex" },
+    },
+    {
+      method = "Crossref DOI transform",
+      url = "https://api.crossref.org/works/" .. url_encode_path(doi) .. "/transform/application/x-bibtex",
+    },
+    {
+      method = "CrossCite DOI transform",
+      url = "https://data.crosscite.org/application/x-bibtex/" .. url_encode_path(doi),
+    },
+  }
+
+  for _, attempt in ipairs(attempts) do
+    local raw = curl_text(attempt.url, attempt.headers)
+    local result = result_from_bibtex(raw, attempt.method, "https://doi.org/" .. doi)
+    if result then
+      return result
+    end
+  end
+
+  return nil
+end
+
+local function render_authors(authors)
+  local rendered = {}
+  for _, author in ipairs(authors or {}) do
+    if type(author) == "string" then
+      rendered[#rendered + 1] = author
+    elseif author.name then
+      rendered[#rendered + 1] = author.name
+    else
+      local given = author.given or ""
+      local family = author.family or ""
+      local name = collapse_ws(given .. " " .. family)
+      if name ~= "" then
+        rendered[#rendered + 1] = name
+      end
+    end
+  end
+  return table.concat(rendered, " and ")
+end
+
+local function render_crossref_entry(item)
+  local title = type(item.title) == "table" and item.title[1] or item.title or ""
+  local year = nil
+  local parts = item.issued and item.issued["date-parts"]
+  if type(parts) == "table" and parts[1] then
+    year = parts[1][1]
+  end
+  return zk_bib.render_entry({
+    type = item.type == "journal-article" and "article" or "misc",
+    key = zk_bib.derive_key({ title = title, year = year }),
+    fields = {
+      title = title,
+      author = render_authors(item.author),
+      year = year,
+      journal = type(item["container-title"]) == "table" and item["container-title"][1] or "",
+      doi = item.DOI,
+      url = item.URL,
+    },
+  })
+end
+
+local function fetch_crossref_by_title(title)
+  if #trim(title) < 12 then
+    return nil
+  end
+
+  local raw = curl_text("https://api.crossref.org/works?rows=5&query.title=" .. url_encode(title))
+  local decoded = decode_json(raw)
+  local items = decoded and decoded.message and decoded.message.items or {}
+
+  for _, item in ipairs(items) do
+    local candidate_title = type(item.title) == "table" and item.title[1] or item.title or ""
+    if title_similarity(title, candidate_title) >= 0.45 then
+      local result = item.DOI and fetch_bibtex_by_doi(item.DOI) or nil
+      if result then
+        result.method = "Crossref title -> " .. result.method
+        return result
+      end
+      return result_from_bibtex(render_crossref_entry(item), "Crossref title", item.URL)
+    end
+  end
+
+  return nil
+end
+
+local function render_semantic_scholar_entry(item)
+  local external = item.externalIds or {}
+  return zk_bib.render_entry({
+    type = "article",
+    key = zk_bib.derive_key({ title = item.title, year = item.year }),
+    fields = {
+      title = item.title,
+      author = render_authors(item.authors),
+      year = item.year,
+      journal = item.venue,
+      doi = external.DOI,
+      eprint = external.ArXiv,
+      archivePrefix = external.ArXiv and "arXiv" or "",
+      url = item.url,
+    },
+  })
+end
+
+local function fetch_semantic_scholar_by_title(title)
+  if #trim(title) < 12 then
+    return nil
+  end
+
+  local url = "https://api.semanticscholar.org/graph/v1/paper/search?limit=5&fields="
+    .. "title,authors,year,venue,externalIds,url&query="
+    .. url_encode(title)
+  local raw = curl_text(url)
+  local decoded = decode_json(raw)
+  local items = decoded and decoded.data or {}
+
+  for _, item in ipairs(items) do
+    if title_similarity(title, item.title or "") >= 0.45 then
+      local external = item.externalIds or {}
+      local result = external.DOI and fetch_bibtex_by_doi(external.DOI) or nil
+      if result then
+        result.method = "Semantic Scholar title -> " .. result.method
+        return result
+      end
+      if external.ArXiv then
+        local fetched = fetch_paper_web_data("https://arxiv.org/abs/" .. external.ArXiv)
+        if fetched and trim(fetched.bibtex or "") ~= "" then
+          local arxiv_result = result_from_bibtex(fetched.bibtex, "Semantic Scholar title -> arXiv", fetched.source)
+          if arxiv_result then
+            arxiv_result.title = fetched.title ~= "" and fetched.title or arxiv_result.title
+            arxiv_result.abstract = fetched.abstract ~= "" and fetched.abstract or arxiv_result.abstract
+            arxiv_result.keywords = #fetched.keywords > 0 and fetched.keywords or arxiv_result.keywords
+            return arxiv_result
+          end
+        end
+      end
+      return result_from_bibtex(render_semantic_scholar_entry(item), "Semantic Scholar title", item.url)
+    end
+  end
+
+  return nil
+end
+
+local function render_openalex_entry(item)
+  local authors = {}
+  for _, authorship in ipairs(item.authorships or {}) do
+    if authorship.author and authorship.author.display_name then
+      authors[#authors + 1] = authorship.author.display_name
+    end
+  end
+
+  local source = item.primary_location and item.primary_location.source and item.primary_location.source.display_name
+    or ""
+  return zk_bib.render_entry({
+    type = "article",
+    key = zk_bib.derive_key({ title = item.display_name, year = item.publication_year }),
+    fields = {
+      title = item.display_name,
+      author = table.concat(authors, " and "),
+      year = item.publication_year,
+      journal = source,
+      doi = item.doi,
+      url = item.doi or (item.ids and item.ids.openalex) or "",
+    },
+  })
+end
+
+local function fetch_openalex_by_title(title)
+  if #trim(title) < 12 then
+    return nil
+  end
+
+  local raw = curl_text("https://api.openalex.org/works?per-page=5&search=" .. url_encode(title))
+  local decoded = decode_json(raw)
+  local items = decoded and decoded.results or {}
+
+  for _, item in ipairs(items) do
+    if title_similarity(title, item.display_name or "") >= 0.45 then
+      local result = item.doi and fetch_bibtex_by_doi(item.doi) or nil
+      if result then
+        result.method = "OpenAlex title -> " .. result.method
+        return result
+      end
+      return result_from_bibtex(render_openalex_entry(item), "OpenAlex title", item.doi or item.id)
+    end
+  end
+
+  return nil
+end
+
+local function fetch_inspire_by_title(title)
+  if #trim(title) < 12 then
+    return nil
+  end
+
+  local raw = curl_text(
+    "https://inspirehep.net/api/literature?q=" .. url_encode('title:"' .. title .. '"') .. "&size=1&format=bibtex"
+  )
+  local result = result_from_bibtex(raw, "INSPIRE title", nil)
+  if result and title_similarity(title, result.title) >= 0.45 then
+    return result
+  end
+  return nil
+end
+
+local function fetch_bibtex_by_title(title)
+  local providers = {
+    fetch_inspire_by_title,
+    fetch_crossref_by_title,
+    fetch_semantic_scholar_by_title,
+    fetch_openalex_by_title,
+  }
+
+  for _, provider in ipairs(providers) do
+    local result = provider(title)
+    if result then
+      return result
+    end
+  end
+
+  return nil
+end
+
+local function fetch_pdf_online_bibtex(path, pdf_meta)
+  local probe_text = fetch_pdf_probe_text(path)
+  local doi = extract_doi_from_text(probe_text)
+  if doi ~= "" then
+    local result = fetch_bibtex_by_doi(doi)
+    if result then
+      return result
+    end
+  end
+
+  local arxiv_id = extract_arxiv_id_from_text(probe_text)
+  if arxiv_id ~= "" then
+    local fetched = fetch_paper_web_data("https://arxiv.org/abs/" .. arxiv_id)
+    if fetched and trim(fetched.bibtex or "") ~= "" then
+      local result = result_from_bibtex(fetched.bibtex, "PDF arXiv id", fetched.source)
+      if result then
+        result.title = fetched.title ~= "" and fetched.title or result.title
+        result.abstract = fetched.abstract ~= "" and fetched.abstract or result.abstract
+        result.keywords = #fetched.keywords > 0 and fetched.keywords or result.keywords
+        return result
+      end
+    end
+  end
+
+  local title = trim(pdf_meta and pdf_meta.title or "")
+  if title == "" or #title < 12 then
+    title = infer_pdf_title_from_text(probe_text)
+  end
+  if title ~= "" then
+    return fetch_bibtex_by_title(title)
+  end
+
+  return nil
 end
 
 local function note_from_defaults(template)
@@ -980,6 +1463,74 @@ local function build_capture_tag_line(existing_line)
     return line
   end
   return line .. " #tag.capture"
+end
+
+local function build_paper_content(key, body)
+  local source_line = "Source: @" .. key
+  local trimmed_body = trim(body or "")
+  if trimmed_body == "" then
+    return source_line
+  end
+  if trimmed_body:match("^Source:%s*@") then
+    return trimmed_body
+  end
+  return source_line .. "\n\n" .. trimmed_body
+end
+
+local function fallback_pdf_title(path)
+  local title = basename(path):gsub("%.[^.]+$", ""):gsub("[-_]+", " ")
+  return collapse_ws(title)
+end
+
+local function warning_list(prefix, err)
+  if trim(err or "") == "" then
+    return nil
+  end
+  return { prefix .. err }
+end
+
+local function notify_existing_paper(entry, reason)
+  local key = entry and entry.key or ""
+  if key == "" then
+    return
+  end
+  local suffix = reason and (" (matched by " .. reason .. ")") or ""
+  vim.notify("Paper already exists in ref.bib as @" .. key .. suffix, vim.log.levels.INFO)
+  zk_bib.open_source_or_entry(key, { wiki_root = wiki_root() })
+end
+
+local function fallback_web_bibtex(fetched, raw_source)
+  local source = trim(fetched.source or raw_source)
+  local title = trim(fetched.title or "")
+  if title == "" then
+    title = infer_title_from_url(source)
+  end
+  local key = zk_bib.derive_key({ title = title, url = source })
+  return zk_bib.render_entry({
+    type = "misc",
+    key = key,
+    fields = {
+      title = title ~= "" and title or source,
+      url = source,
+    },
+  })
+end
+
+local function unique_child_path(dir_abs, dir_rel, filename)
+  local stem = vim.fn.fnamemodify(filename, ":r")
+  local ext = vim.fn.fnamemodify(filename, ":e")
+  local candidate = filename
+  local index = 2
+
+  while
+    vim.fn.filereadable(join_paths(dir_abs, candidate)) == 1
+    or vim.fn.isdirectory(join_paths(dir_abs, candidate)) == 1
+  do
+    candidate = stem .. "-" .. index .. (ext ~= "" and ("." .. ext) or "")
+    index = index + 1
+  end
+
+  return dir_rel .. "/" .. candidate, join_paths(dir_abs, candidate)
 end
 
 local function build_templates()
@@ -1193,20 +1744,57 @@ local function build_templates()
           if source_kind == "web" then
             local fetched, err = fetch_paper_web_data(raw_source)
             if not fetched then
-              return {
-                warnings = err and { "paper pre_create hook: " .. err } or nil,
+              fetched = {
+                source = normalize_url(raw_source),
+                title = infer_title_from_url(raw_source),
+                abstract = "",
+                keywords = {},
+                bibtex = "",
               }
             end
 
-            local content = ctx.note.content
-            if trim(content) == "" and trim(fetched.bibtex or "") ~= "" then
-              content = "```bib\n" .. trim(fetched.bibtex) .. "\n```"
+            local bibtex = trim(fetched.bibtex or "")
+            local entry = bibtex ~= "" and zk_bib.parse_entry(bibtex) or nil
+            if not entry or trim(entry.key or "") == "" then
+              bibtex = fallback_web_bibtex(fetched, raw_source)
+              entry = zk_bib.parse_entry(bibtex)
+            end
+
+            if not entry or trim(entry.key or "") == "" then
+              return {
+                abort = true,
+                errors = { "paper pre_create hook: failed to derive BibTeX key" },
+              }
+            end
+
+            local duplicate, reason = zk_bib.find_duplicate({
+              key = entry.key,
+              fields = entry.fields,
+              url = fetched.source or raw_source,
+              bibtex = bibtex,
+            }, { wiki_root = ctx.wiki_root })
+            if duplicate then
+              notify_existing_paper(duplicate, reason)
+              return { abort = true }
+            end
+
+            local ok, append_err = zk_bib.append_entry(bibtex, { wiki_root = ctx.wiki_root })
+            if not ok then
+              return {
+                abort = true,
+                errors = { "paper pre_create hook: failed to append ref.bib: " .. append_err },
+              }
+            end
+
+            local title = trim(fetched.title or "")
+            if title == "" then
+              title = zk_bib.clean_title(zk_bib.field(entry, "title"))
             end
 
             return {
               note = {
-                title = fetched.title or "",
-                content = content,
+                title = title,
+                content = build_paper_content(entry.key, ctx.note.content),
                 metadata = {
                   abstract = fetched.abstract or "",
                   keywords = fetched.keywords or {},
@@ -1215,20 +1803,72 @@ local function build_templates()
                   },
                 },
               },
-              warnings = err and { "paper pre_create hook: " .. err } or nil,
+              override_paths = { { "content" } },
+              warnings = warning_list("paper pre_create hook: ", err),
             }
           end
 
           if source_kind == "pdf" then
-            local fetched = fetch_pdf_metadata(raw_source)
+            local source_abs = vim.fn.expand(raw_source)
+            local fetched = fetch_pdf_metadata(source_abs)
+            local online = fetch_pdf_online_bibtex(source_abs, fetched)
+            local bibtex = online and trim(online.bibtex or "") or ""
+            local entry = bibtex ~= "" and zk_bib.parse_entry(bibtex) or nil
+
+            local title = trim(ctx.note.title)
+            if title == "" and online then
+              title = trim(online.title or "")
+            end
+            if title == "" then
+              title = trim(fetched.title or "")
+            end
+            if title == "" then
+              title = fallback_pdf_title(raw_source)
+            end
+
+            local key = entry and trim(entry.key or "") or ""
+            if key == "" then
+              key = zk_bib.derive_key({ title = title, file = raw_source })
+            end
+
+            local duplicate, reason = zk_bib.find_duplicate({
+              key = key,
+              fields = entry and entry.fields or { file = raw_source },
+              file = raw_source,
+              bibtex = bibtex,
+            }, { wiki_root = ctx.wiki_root })
+            if duplicate then
+              notify_existing_paper(duplicate, reason)
+              return { abort = true }
+            end
+
+            local abstract = online and trim(online.abstract or "") or ""
+            if abstract == "" then
+              abstract = fetched.abstract or ""
+            end
+
+            local keywords = online and online.keywords or {}
+            if not keywords or vim.tbl_isempty(keywords) then
+              keywords = fetched.keywords or {}
+            end
+
+            local info
+            if online and trim(online.method or "") ~= "" then
+              info = { "paper pdf pre_create hook: fetched BibTeX via " .. online.method }
+            end
+
             return {
               note = {
-                title = fetched.title or "",
+                title = title,
+                content = build_paper_content(key, ctx.note.content),
+                paper_bibtex = bibtex,
                 metadata = {
-                  abstract = fetched.abstract or "",
-                  keywords = fetched.keywords or {},
+                  abstract = abstract,
+                  keywords = keywords,
                 },
               },
+              override_paths = { { "content" }, { "paper_bibtex" } },
+              info = info,
             }
           end
 
@@ -1250,11 +1890,10 @@ local function build_templates()
             }
           end
 
-          local filename = basename(raw_source)
+          local source_abs = vim.fn.expand(raw_source)
+          local filename = zk_bib.slugify_filename(basename(source_abs))
           local asset_dir_rel = "assets/" .. note_id .. "-pdf"
           local asset_dir_abs = join_paths(ctx.wiki_root, asset_dir_rel)
-          local target_rel = asset_dir_rel .. "/" .. filename
-          local target_abs = join_paths(ctx.wiki_root, target_rel)
 
           local mkdir_ok = vim.fn.mkdir(asset_dir_abs, "p")
           if mkdir_ok == 0 and vim.fn.isdirectory(asset_dir_abs) == 0 then
@@ -1263,7 +1902,8 @@ local function build_templates()
             }
           end
 
-          local move_result = vim.system({ "mv", raw_source, target_abs }, { text = true }):wait()
+          local target_rel, target_abs = unique_child_path(asset_dir_abs, asset_dir_rel, filename)
+          local move_result = vim.system({ "mv", source_abs, target_abs }, { text = true }):wait()
           if move_result.code ~= 0 then
             return {
               warnings = {
@@ -1273,17 +1913,69 @@ local function build_templates()
           end
 
           local fetched = fetch_pdf_metadata(target_abs)
-          return {
-            note = {
-              title = fetched.title or "",
-              metadata = {
-                abstract = fetched.abstract or "",
-                keywords = fetched.keywords or {},
-                user = {
-                  source = { target_rel },
-                },
+          local warnings = {}
+          local bib_key = zk_bib.source_key_from_content(ctx.note.content)
+          if trim(bib_key or "") == "" then
+            warnings[#warnings + 1] = "paper post_create hook: missing Source bibkey"
+          else
+            local title = trim(ctx.note.title)
+            if title == "" then
+              title = trim(fetched.title or "")
+            end
+            if title == "" then
+              title = fallback_pdf_title(target_rel)
+            end
+
+            local existing = zk_bib.find_entry_by_key(bib_key, { wiki_root = ctx.wiki_root })
+            local ok, bib_err
+            if existing then
+              ok, bib_err = zk_bib.set_entry_field(bib_key, "file", target_rel, { wiki_root = ctx.wiki_root })
+            else
+              local pending_bibtex = trim(ctx.note.paper_bibtex or "")
+              if pending_bibtex ~= "" then
+                ok, bib_err = zk_bib.append_entry(pending_bibtex, { wiki_root = ctx.wiki_root })
+                if ok then
+                  ok, bib_err = zk_bib.set_entry_field(bib_key, "file", target_rel, { wiki_root = ctx.wiki_root })
+                end
+              else
+                ok, bib_err = zk_bib.append_entry(
+                  zk_bib.render_entry({
+                    type = "misc",
+                    key = bib_key,
+                    fields = {
+                      title = title,
+                      file = target_rel,
+                    },
+                  }),
+                  { wiki_root = ctx.wiki_root }
+                )
+              end
+            end
+            if not ok then
+              warnings[#warnings + 1] = "paper post_create hook: failed to update ref.bib: " .. bib_err
+            end
+          end
+
+          local note_update = {
+            metadata = {
+              user = {
+                source = { target_rel },
               },
             },
+          }
+          if trim(ctx.note.title or "") == "" and trim(fetched.title or "") ~= "" then
+            note_update.title = fetched.title
+          end
+          if trim(fetched.abstract or "") ~= "" then
+            note_update.metadata.abstract = fetched.abstract
+          end
+          if type(fetched.keywords) == "table" and not vim.tbl_isempty(fetched.keywords) then
+            note_update.metadata.keywords = fetched.keywords
+          end
+
+          return {
+            note = note_update,
+            warnings = #warnings > 0 and warnings or nil,
           }
         end,
       },
@@ -1311,7 +2003,7 @@ local function run_hook(template, hook_name, note, user_note)
 
   if type(result.errors) == "table" and not vim.tbl_isempty(result.errors) then
     vim.notify(result.errors[1], vim.log.levels.ERROR)
-    return nil
+    return nil, { abort = true }
   end
 
   if type(result.warnings) == "table" then
@@ -1320,7 +2012,34 @@ local function run_hook(template, hook_name, note, user_note)
     end
   end
 
-  return normalize_note(result.note or {})
+  if type(result.info) == "table" then
+    for _, message in ipairs(result.info) do
+      vim.notify(message, vim.log.levels.INFO)
+    end
+  end
+
+  if result.abort then
+    return nil, result
+  end
+
+  return deep_copy(result.note or {}), result
+end
+
+local function apply_override_paths(target, source, paths)
+  if type(paths) ~= "table" then
+    return
+  end
+  for _, path in ipairs(paths) do
+    if type(path) == "string" then
+      path = { path }
+    end
+    if type(path) == "table" and #path > 0 then
+      local value = get_path(source, path)
+      if value ~= nil then
+        set_path(target, path, deep_copy(value))
+      end
+    end
+  end
 end
 
 local function resolve_note(template, values)
@@ -1329,9 +2048,13 @@ local function resolve_note(template, values)
   local note = deep_copy(default_note)
 
   merge_missing(note, user_note, {})
-  local pre_create_note = run_hook(template, "pre_create", note, user_note)
+  local pre_create_note, pre_create_result = run_hook(template, "pre_create", note, user_note)
+  if pre_create_result and pre_create_result.abort then
+    return nil, user_note
+  end
   if pre_create_note then
     merge_missing(note, pre_create_note, user_note)
+    apply_override_paths(note, pre_create_note, pre_create_result and pre_create_result.override_paths)
   end
 
   return normalize_note(note), user_note
@@ -1561,6 +2284,10 @@ submit_values = function(template, values, on_complete)
   end
 
   local note, user_note = resolve_note(template, values)
+  if not note then
+    return
+  end
+
   local note_path = create_note(note)
   if not note_path then
     return
@@ -1587,6 +2314,64 @@ local function start_template_input(template, on_complete)
   end
 
   open_form(template, on_complete)
+end
+
+function M.paper_note_from_ref(key, on_complete)
+  local function create_for_key(ref_key)
+    ref_key = trim((ref_key or ""):gsub("^@", ""))
+    if ref_key == "" then
+      return
+    end
+
+    local entry = zk_bib.find_entry_by_key(ref_key, { wiki_root = wiki_root() })
+    if not entry then
+      vim.notify("No ref.bib entry found for @" .. ref_key, vim.log.levels.WARN)
+      return
+    end
+
+    local matches = zk_bib.find_source_notes(ref_key, { wiki_root = wiki_root() })
+    if #matches > 0 then
+      vim.notify("Paper note already exists for @" .. ref_key, vim.log.levels.INFO)
+      zk_bib.open_source_or_entry(ref_key, { wiki_root = wiki_root() })
+      return
+    end
+
+    local template = build_templates().paper
+    local note = normalize_note(note_from_defaults(template))
+    local source = zk_bib.entry_primary_source(entry, { wiki_root = wiki_root() })
+    local keywords = split_words(zk_bib.field(entry, "keywords"))
+
+    note.title = zk_bib.clean_title(zk_bib.field(entry, "title"))
+    if note.title == "" then
+      note.title = ref_key
+    end
+    note.content = build_paper_content(ref_key, "")
+    note.metadata.abstract = zk_bib.field(entry, "abstract")
+    note.metadata.keywords = keywords
+    if trim(source) ~= "" then
+      note.metadata.user.source = { source }
+    end
+
+    local note_path = create_note(note)
+    if not note_path then
+      return
+    end
+
+    local created_note = enrich_created_note(note, note_path)
+    finalize_note(note_path, created_note, on_complete)
+  end
+
+  key = trim((key or ""):gsub("^@", ""))
+  if key ~= "" then
+    create_for_key(key)
+    return
+  end
+
+  local default_key = trim(vim.fn.expand("<cword>"):gsub("^@", ""))
+  vim.ui.input({
+    prompt = "BibTeX key: @",
+    default = default_key,
+  }, create_for_key)
 end
 
 function M.start(on_complete, fallback)
