@@ -1027,6 +1027,12 @@ local function result_from_bibtex(bibtex, method, source)
     return nil
   end
 
+  bibtex = zk_bib.render_entry({
+    type = entry.type,
+    key = entry.key,
+    fields = entry.fields,
+  })
+
   return {
     bibtex = bibtex,
     method = method,
@@ -1766,6 +1772,13 @@ local function build_templates()
                 errors = { "paper pre_create hook: failed to derive BibTeX key" },
               }
             end
+
+            bibtex = zk_bib.render_entry({
+              type = entry.type,
+              key = entry.key,
+              fields = entry.fields,
+            })
+            entry = zk_bib.parse_entry(bibtex)
 
             local duplicate, reason = zk_bib.find_duplicate({
               key = entry.key,

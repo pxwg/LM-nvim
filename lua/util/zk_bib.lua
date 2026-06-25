@@ -463,6 +463,14 @@ function M.set_entry_field(key, field_name, value, opts)
     end
   end
 
+  local prev = entry.end_line - 1
+  while prev > entry.start_line and trim(lines[prev] or "") == "" do
+    prev = prev - 1
+  end
+  if prev > entry.start_line and lines[prev] and not lines[prev]:match(",%s*$") then
+    lines[prev] = lines[prev] .. ","
+  end
+
   table.insert(lines, entry.end_line, replacement)
   local ok, err = pcall(vim.fn.writefile, lines, path)
   if not ok then

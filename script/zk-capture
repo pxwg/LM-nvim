@@ -1,0 +1,1066 @@
+#!/usr/bin/env python3
+"""Capture web pages and PDFs into the local ZK wiki.
+
+This is intentionally stdlib-only so it can be called from a Chrome Native
+Messaging host without a Python virtualenv.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import html
+import json
+import os
+import re
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+HOST_USER_AGENT = "Mozilla/5.0 (compatible; zk-capture/1.0)"
+
+
+def _augment_path() -> None:
+    home = str(Path.home())
+    extras = [
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+        "/usr/bin",
+        "/bin",
+        f"{home}/.local/bin",
+        f"{home}/.cargo/bin",
+    ]
+    current = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.pathsep.join([*extras, current])
+
+
+_augment_path()
+
+
+def trim(value: Any) -> str:
+    if value is None:
+        return ""
+    value = str(value)
+    return re.sub(r"\s+$", "", re.sub(r"^\s+", "", value))
+
+
+def collapse_ws(value: Any) -> str:
+    return re.sub(r"\s+", " ", trim(value))
+
+
+def clean_metadata_value(value: Any) -> str:
+    value = collapse_ws(value)
+    if value.lower() in {"", "(null)", "null", "untitled", "unknown", "n/a"}:
+        return ""
+    return value
+
+
+def wiki_root() -> Path:
+    return Path(os.environ.get("ZK_WIKI_ROOT", "~/wiki")).expanduser().resolve()
+
+
+def note_dir() -> Path:
+    return wiki_root() / "note"
+
+
+def ref_bib_path() -> Path:
+    return wiki_root() / "ref.bib"
+
+
+def command_exists(name: str) -> bool:
+    return shutil.which(name) is not None
+
+
+def run_text(cmd: list[str], *, input_text: str | None = None, timeout: int = 12) -> tuple[str, str, int]:
+    try:
+        proc = subprocess.run(
+            cmd,
+            input=input_text,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+        )
+        return proc.stdout or "", proc.stderr or "", proc.returncode
+    except Exception as exc:  # noqa: BLE001 - CLI should report failures as data.
+        return "", str(exc), 127
+
+
+def notify_open(path: str | Path) -> None:
+    if sys.platform == "darwin":
+        subprocess.Popen(["open", str(path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+# ---------------------------------------------------------------------------
+# URL / metadata helpers
+
+
+def fetch_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: int = 10) -> tuple[bytes, dict[str, str], str]:
+    request_headers = {"User-Agent": HOST_USER_AGENT, **(headers or {})}
+    req = urllib.request.Request(url, headers=request_headers)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - user-requested URL capture.
+        final_url = resp.geturl()
+        info = {k.lower(): v for k, v in resp.headers.items()}
+        return resp.read(), info, final_url
+
+
+def fetch_text(url: str, *, headers: dict[str, str] | None = None, timeout: int = 10) -> str:
+    try:
+        data, hdrs, _ = fetch_bytes(url, headers=headers, timeout=timeout)
+    except Exception:
+        return ""
+    charset = "utf-8"
+    content_type = hdrs.get("content-type", "")
+    m = re.search(r"charset=([^;]+)", content_type, re.I)
+    if m:
+        charset = m.group(1).strip()
+    try:
+        return data.decode(charset, errors="replace")
+    except Exception:
+        return data.decode("utf-8", errors="replace")
+
+
+def decode_entities(value: str) -> str:
+    return html.unescape(value or "")
+
+
+def strip_tags(value: str) -> str:
+    return collapse_ws(re.sub(r"<[^>]+>", " ", decode_entities(value)))
+
+
+def meta_content(markup: str, attr: str, wanted: str) -> str:
+    attr_escaped = re.escape(attr)
+    wanted_escaped = re.escape(wanted)
+    for tag_match in re.finditer(r"<meta\b[^>]*>", markup or "", re.I | re.S):
+        tag = tag_match.group(0)
+        has_attr = re.search(rf"\b{attr_escaped}\s*=\s*(['\"]){wanted_escaped}\1", tag, re.I | re.S)
+        if not has_attr:
+            continue
+        content = re.search(r"\bcontent\s*=\s*(['\"])(.*?)\1", tag, re.I | re.S)
+        if content:
+            return strip_tags(content.group(2))
+    return ""
+
+
+def fetch_web_metadata(url: str) -> dict[str, Any]:
+    markup = fetch_text(url, timeout=8)
+    title = meta_content(markup, "property", "og:title") or meta_content(markup, "name", "twitter:title")
+    if not title:
+        m = re.search(r"<title[^>]*>(.*?)</title>", markup, re.I | re.S)
+        title = strip_tags(m.group(1)) if m else ""
+    abstract = (
+        meta_content(markup, "name", "description")
+        or meta_content(markup, "property", "og:description")
+        or meta_content(markup, "name", "twitter:description")
+    )
+    keywords = split_words(meta_content(markup, "name", "keywords"))
+    return {"title": title, "abstract": abstract, "keywords": keywords}
+
+
+def split_words(value: str) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in re.split(r"[,;|]", value or ""):
+        item = collapse_ws(item)
+        key = item.lower()
+        if item and key not in seen:
+            seen.add(key)
+            out.append(item)
+    return out
+
+
+def infer_title_from_url(url: str) -> str:
+    parsed = urllib.parse.urlparse(url)
+    slug = Path(urllib.parse.unquote(parsed.path)).name
+    slug = re.sub(r"\.[A-Za-z0-9]+$", "", slug)
+    return collapse_ws(re.sub(r"[-_]+", " ", slug)) or parsed.netloc or url
+
+
+# ---------------------------------------------------------------------------
+# BibTeX helpers
+
+
+def brace_value(text: str, pos: int) -> tuple[str, int]:
+    depth = 1
+    i = pos + 1
+    while i < len(text):
+        ch = text[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[pos + 1 : i], i + 1
+        i += 1
+    return text[pos + 1 :], len(text)
+
+
+def quoted_value(text: str, pos: int) -> tuple[str, int]:
+    i = pos + 1
+    while i < len(text):
+        if text[i] == '"' and text[i - 1 : i] != "\\":
+            return text[pos + 1 : i], i + 1
+        i += 1
+    return text[pos + 1 :], len(text)
+
+
+def normalize_field_value(value: str) -> str:
+    value = trim(value)
+    while value.startswith("{") and value.endswith("}"):
+        value = trim(value[1:-1])
+    return collapse_ws(value.replace("\\\n", " "))
+
+
+def parse_fields(body: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    pos = 0
+    while True:
+        m = re.search(r"([A-Za-z][\w_:-]*)\s*=", body[pos:])
+        if not m:
+            break
+        name = m.group(1).lower()
+        idx = pos + m.end()
+        while idx < len(body) and body[idx].isspace():
+            idx += 1
+        if idx >= len(body):
+            break
+        if body[idx] == "{":
+            value, pos = brace_value(body, idx)
+        elif body[idx] == '"':
+            value, pos = quoted_value(body, idx)
+        else:
+            end = idx
+            while end < len(body) and body[end] not in ",\n)}":
+                end += 1
+            value, pos = body[idx:end], end
+        fields[name] = normalize_field_value(value)
+    return fields
+
+
+def parse_bib_entries(text: str) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    for start in [m.start() for m in re.finditer(r"@[A-Za-z][\w-]*\s*[({[]", text)]:
+        m = re.match(r"@([A-Za-z][\w-]*)\s*([({[])", text[start:])
+        if not m:
+            continue
+        typ = m.group(1).lower()
+        open_char = m.group(2)
+        close_char = "}" if open_char == "{" else ")" if open_char == "(" else "]"
+        i = start + m.end()
+        depth = 1
+        in_quote = False
+        while i < len(text):
+            ch = text[i]
+            if ch == '"' and text[i - 1 : i] != "\\":
+                in_quote = not in_quote
+            if not in_quote:
+                if ch == open_char:
+                    depth += 1
+                elif ch == close_char:
+                    depth -= 1
+                    if depth == 0:
+                        raw = text[start : i + 1]
+                        comma = raw.find(",")
+                        key = trim(raw[raw.find(open_char) + 1 : comma]) if comma >= 0 else ""
+                        if re.search(r"\s|=", key):
+                            key = ""
+                        body = raw[comma + 1 : -1] if comma >= 0 else ""
+                        entries.append({"type": typ, "key": key, "text": raw, "fields": parse_fields(body)})
+                        break
+            i += 1
+    return entries
+
+
+def parse_bib_entry(text: str) -> dict[str, Any] | None:
+    entries = parse_bib_entries(text or "")
+    return entries[0] if entries else None
+
+
+def bib_field(entry: dict[str, Any] | None, name: str) -> str:
+    if not entry:
+        return ""
+    return entry.get("fields", {}).get(name.lower(), "")
+
+
+def read_ref_entries() -> list[dict[str, Any]]:
+    path = ref_bib_path()
+    if not path.exists():
+        return []
+    return parse_bib_entries(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def normalize_doi(value: str) -> str:
+    value = trim(value)
+    value = re.sub(r"^https?://(dx\.)?doi\.org/", "", value, flags=re.I)
+    value = re.sub(r"^[Dd][Oo][Ii]:\s*", "", value)
+    return re.sub(r"[,\s)\]}>.;:]+$", "", value).lower()
+
+
+def normalize_arxiv(value: str) -> str:
+    value = trim(value)
+    value = re.sub(r"^arXiv:", "", value, flags=re.I)
+    value = re.sub(r"^https?://arxiv\.org/(abs|pdf)/", "", value, flags=re.I)
+    value = re.sub(r"\.pdf$", "", value, flags=re.I)
+    value = re.sub(r"^(https?://doi\.org/)?10\.48550/arXiv\.", "", value, flags=re.I)
+    value = re.sub(r"v\d+$", "", value, flags=re.I)
+    return value.lower()
+
+
+def normalize_url(value: str) -> str:
+    value = re.sub(r"\s+", "", trim(value))
+    value = re.sub(r"#.*$", "", value)
+    return value.rstrip("/")
+
+
+def find_duplicate(*, key: str = "", fields: dict[str, str] | None = None, bibtex: str = "", file_path: str = "") -> tuple[dict[str, Any] | None, str | None]:
+    parsed = parse_bib_entry(bibtex) if bibtex else None
+    fields = {**((parsed or {}).get("fields") or {}), **(fields or {})}
+    key = key or (parsed or {}).get("key", "")
+    doi = normalize_doi(fields.get("doi", ""))
+    url = normalize_url(fields.get("url", "") or fields.get("howpublished", ""))
+    eprint = normalize_arxiv(fields.get("eprint", "") or extract_arxiv_id(url))
+    file_norm = str(Path(file_path).expanduser()) if file_path else ""
+
+    for entry in read_ref_entries():
+        entry_fields = entry.get("fields", {})
+        if key and entry.get("key") == key:
+            return entry, "key"
+        if doi and normalize_doi(entry_fields.get("doi", "")) == doi:
+            return entry, "doi"
+        entry_url = normalize_url(entry_fields.get("url", "") or entry_fields.get("howpublished", ""))
+        entry_eprint = normalize_arxiv(entry_fields.get("eprint", "") or extract_arxiv_id(entry_url))
+        if eprint and entry_eprint and eprint == entry_eprint:
+            return entry, "eprint"
+        if url and entry_url and url == entry_url:
+            return entry, "url"
+        if file_norm and entry_fields.get("file"):
+            for item in entry_fields["file"].split(";"):
+                if str(Path(item.strip()).expanduser()) == file_norm:
+                    return entry, "file"
+    return None, None
+
+
+def bib_escape(value: Any) -> str:
+    return collapse_ws(value).replace("{", "").replace("}", "")
+
+
+def slug(value: str, *, separator: str = "", max_words: int = 7) -> str:
+    value = re.sub(r"['’]", "", (value or "").lower())
+    words = re.findall(r"[A-Za-z0-9]+", value)
+    stop = {"a", "an", "and", "for", "in", "of", "on", "the", "to", "with"}
+    kept: list[str] = []
+    for word in words:
+        if word not in stop or not kept:
+            kept.append(word)
+        if len(kept) >= max_words:
+            break
+    return separator.join(kept)
+
+
+def derive_key(title: str = "", *, year: Any = None, file_path: str = "", url: str = "") -> str:
+    for candidate in [title, Path(file_path).stem if file_path else "", url]:
+        stem = slug(candidate)
+        if stem:
+            break
+    else:
+        stem = f"paper{abs(hash(title + file_path + url)) % 1000000:06d}"
+    if stem[0].isdigit():
+        stem = "paper" + stem
+    return stem[:60] + str(year or _dt.date.today().year)
+
+
+def render_bib_entry(entry_type: str, key: str, fields: dict[str, Any]) -> str:
+    order = ["title", "author", "year", "journal", "booktitle", "eprint", "archivePrefix", "primaryClass", "doi", "url", "howpublished", "file"]
+    lines = [f"@{entry_type}{{{key},"]
+    emitted: set[str] = set()
+    for name in order:
+        value = fields.get(name) if name in fields else fields.get(name.lower())
+        if trim(value) != "":
+            lines.append(f"  {name} = {{{bib_escape(value)}}},")
+            emitted.add(name.lower())
+    for name in sorted(fields):
+        if name.lower() not in emitted and trim(fields[name]) != "":
+            lines.append(f"  {name} = {{{bib_escape(fields[name])}}},")
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def append_bib_entry(bibtex: str) -> None:
+    path = ref_bib_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    sep = "\n\n" if existing and not existing.endswith("\n\n") else ""
+    with path.open("a", encoding="utf-8") as f:
+        f.write(sep + trim(bibtex) + "\n")
+
+
+def set_bib_field(key: str, field_name: str, value: str) -> bool:
+    path = ref_bib_path()
+    if not path.exists():
+        return False
+    text = path.read_text(encoding="utf-8")
+    entries = parse_bib_entries(text)
+    offset = 0
+    for entry in entries:
+        raw = entry["text"]
+        start = text.find(raw, offset)
+        offset = start + len(raw)
+        if entry.get("key") != key:
+            continue
+        field_re = re.compile(rf"(^\s*{re.escape(field_name)}\s*=\s*)(\{{.*?\}}|\".*?\"|[^,\n]+)(,?)", re.I | re.M | re.S)
+        if field_re.search(raw):
+            new_raw = field_re.sub(lambda m: f"{m.group(1)}{{{bib_escape(value)}}}{m.group(3) or ','}", raw, count=1)
+        else:
+            insert = f"  {field_name} = {{{bib_escape(value)}}},\n"
+            body = raw[:-1].rstrip()
+            trailing = raw[:-1][len(body) :]
+            if body and not body.endswith(","):
+                body += ","
+            new_raw = body + trailing + insert + raw[-1]
+        path.write_text(text[:start] + new_raw + text[start + len(raw) :], encoding="utf-8")
+        return True
+    return False
+
+
+def source_notes_for_key(key: str) -> list[Path]:
+    out: list[Path] = []
+    pattern = re.compile(rf"^\s*Source:\s*@{re.escape(key)}\b")
+    for path in sorted(note_dir().glob("*.typ")):
+        try:
+            if any(pattern.search(line) for line in path.read_text(encoding="utf-8", errors="replace").splitlines()):
+                out.append(path)
+        except OSError:
+            pass
+    return out
+
+
+# ---------------------------------------------------------------------------
+# PDF online lookup
+
+
+def extract_doi(text: str) -> str:
+    for m in re.finditer(r"10\.\d{4,9}/\S+", text or ""):
+        doi = normalize_doi(m.group(0))
+        if doi.startswith("10."):
+            return doi
+    return ""
+
+
+def extract_arxiv_id(text: str) -> str:
+    patterns = [
+        r"[Aa][Rr][Xx][Ii][Vv]:\s*([A-Za-z-]+/\d{7}(?:v\d+)?)",
+        r"[Aa][Rr][Xx][Ii][Vv]:\s*(\d{4}\.\d{4,5}(?:v\d+)?)",
+        r"arxiv\.org/abs/([^\s)\]}>]+)",
+        r"arxiv\.org/pdf/([^\s)\]}>]+)\.pdf",
+        r"\b(\d{4}\.\d{4,5}v?\d*)\.pdf\b",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, text or "", re.I)
+        if m:
+            return re.sub(r"[,\s)\]}>.;:]+$", "", m.group(1))
+    return ""
+
+
+def url_quote(value: str, safe: str = "") -> str:
+    return urllib.parse.quote(value, safe=safe)
+
+
+def looks_like_bibtex(text: str) -> str:
+    text = trim(text)
+    return text if re.match(r"^@[A-Za-z][\w-]*\s*[({[]", text) else ""
+
+
+def result_from_bibtex(bibtex: str, method: str, source: str = "") -> dict[str, Any] | None:
+    bibtex = looks_like_bibtex(bibtex)
+    entry = parse_bib_entry(bibtex) if bibtex else None
+    if not entry or not entry.get("key"):
+        return None
+    bibtex = render_bib_entry(entry["type"], entry["key"], entry.get("fields") or {})
+    entry = parse_bib_entry(bibtex) or entry
+    return {
+        "bibtex": bibtex,
+        "entry": entry,
+        "method": method,
+        "source": source,
+        "title": clean_metadata_value(bib_field(entry, "title")),
+        "abstract": bib_field(entry, "abstract"),
+        "keywords": split_words(bib_field(entry, "keywords")),
+    }
+
+
+def fetch_bib_by_doi(doi: str) -> dict[str, Any] | None:
+    doi = normalize_doi(doi)
+    if not doi:
+        return None
+    attempts = [
+        ("INSPIRE DOI", f"https://inspirehep.net/api/literature?q=doi:{url_quote(doi)}&size=1&format=bibtex", {}),
+        ("DOI content negotiation", f"https://doi.org/{url_quote(doi, safe='/')}", {"Accept": "application/x-bibtex"}),
+        ("Crossref DOI transform", f"https://api.crossref.org/works/{url_quote(doi, safe='/')}/transform/application/x-bibtex", {}),
+        ("CrossCite DOI transform", f"https://data.crosscite.org/application/x-bibtex/{url_quote(doi, safe='/')}", {}),
+    ]
+    for method, url, headers in attempts:
+        raw = fetch_text(url, headers=headers, timeout=7)
+        result = result_from_bibtex(raw, method, f"https://doi.org/{doi}")
+        if result:
+            return result
+    return None
+
+
+def parse_arxiv_atom(xml: str) -> dict[str, Any] | None:
+    entry = re.search(r"<entry>(.*?)</entry>", xml, re.S)
+    if not entry:
+        return None
+    block = entry.group(1)
+    title = strip_tags(re.search(r"<title>(.*?)</title>", block, re.S).group(1)) if re.search(r"<title>(.*?)</title>", block, re.S) else ""
+    summary = strip_tags(re.search(r"<summary>(.*?)</summary>", block, re.S).group(1)) if re.search(r"<summary>(.*?)</summary>", block, re.S) else ""
+    published = strip_tags(re.search(r"<published>(.*?)</published>", block, re.S).group(1)) if re.search(r"<published>(.*?)</published>", block, re.S) else ""
+    authors = [strip_tags(m.group(1)) for m in re.finditer(r"<author>\s*<name>(.*?)</name>\s*</author>", block, re.S)]
+    cats = [m.group(1) for m in re.finditer(r"<category\s+term=['\"]([^'\"]+)", block)]
+    return {"title": title, "abstract": summary, "year": published[:4], "authors": authors, "categories": cats}
+
+
+def fetch_bib_by_arxiv(arxiv_id: str) -> dict[str, Any] | None:
+    arxiv_id = trim(arxiv_id)
+    if not arxiv_id:
+        return None
+    raw = fetch_text(f"https://inspirehep.net/api/literature?q=arxiv:{url_quote(arxiv_id)}&size=1&format=bibtex", timeout=7)
+    result = result_from_bibtex(raw, "INSPIRE arXiv", f"https://arxiv.org/abs/{arxiv_id}")
+    if result:
+        return result
+    atom = fetch_text(f"https://export.arxiv.org/api/query?id_list={url_quote(arxiv_id)}", timeout=7)
+    data = parse_arxiv_atom(atom)
+    if not data:
+        return None
+    key = derive_key(data["title"], year=data["year"])
+    bib = render_bib_entry(
+        "misc",
+        key,
+        {
+            "title": data["title"],
+            "author": " and ".join(data["authors"]),
+            "year": data["year"],
+            "eprint": arxiv_id,
+            "archivePrefix": "arXiv",
+            "primaryClass": data["categories"][0] if data["categories"] else "",
+            "url": f"https://arxiv.org/abs/{arxiv_id}",
+        },
+    )
+    result = result_from_bibtex(bib, "arXiv API", f"https://arxiv.org/abs/{arxiv_id}")
+    if result:
+        result["abstract"] = data["abstract"]
+        result["keywords"] = data["categories"]
+    return result
+
+
+def title_tokens(title: str) -> set[str]:
+    stop = {"a", "an", "and", "for", "in", "of", "on", "the", "to", "with"}
+    return {w for w in re.findall(r"[A-Za-z0-9]+", title.lower()) if len(w) > 2 and w not in stop}
+
+
+def title_similarity(left: str, right: str) -> float:
+    a, b = title_tokens(left), title_tokens(right)
+    return len(a & b) / max(len(a), len(b), 1)
+
+
+def decode_json(raw: str) -> Any:
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
+def render_authors(authors: Any) -> str:
+    out: list[str] = []
+    for author in authors or []:
+        if isinstance(author, str):
+            out.append(author)
+        elif isinstance(author, dict):
+            if author.get("name"):
+                out.append(author["name"])
+            else:
+                name = collapse_ws(f"{author.get('given', '')} {author.get('family', '')}")
+                if name:
+                    out.append(name)
+    return " and ".join(out)
+
+
+def fetch_bib_by_title(title: str) -> dict[str, Any] | None:
+    title = clean_metadata_value(title)
+    if len(title) < 12:
+        return None
+
+    # INSPIRE first for HEP/math papers.
+    inspire = fetch_text(
+        "https://inspirehep.net/api/literature?q=" + url_quote(f'title:"{title}"') + "&size=1&format=bibtex",
+        timeout=7,
+    )
+    result = result_from_bibtex(inspire, "INSPIRE title")
+    if result and title_similarity(title, result.get("title", "")) >= 0.45:
+        return result
+
+    crossref = decode_json(fetch_text("https://api.crossref.org/works?rows=5&query.title=" + url_quote(title), timeout=7))
+    for item in ((crossref or {}).get("message") or {}).get("items") or []:
+        item_title = (item.get("title") or [""])[0] if isinstance(item.get("title"), list) else item.get("title", "")
+        if title_similarity(title, item_title) >= 0.45:
+            if item.get("DOI"):
+                result = fetch_bib_by_doi(item["DOI"])
+                if result:
+                    result["method"] = "Crossref title -> " + result["method"]
+                    return result
+            key = derive_key(item_title, year=((item.get("issued") or {}).get("date-parts") or [[""]])[0][0])
+            bib = render_bib_entry(
+                "article" if item.get("type") == "journal-article" else "misc",
+                key,
+                {
+                    "title": item_title,
+                    "author": render_authors(item.get("author")),
+                    "year": ((item.get("issued") or {}).get("date-parts") or [[""]])[0][0],
+                    "journal": (item.get("container-title") or [""])[0] if isinstance(item.get("container-title"), list) else "",
+                    "doi": item.get("DOI"),
+                    "url": item.get("URL"),
+                },
+            )
+            return result_from_bibtex(bib, "Crossref title", item.get("URL", ""))
+
+    s2 = decode_json(
+        fetch_text(
+            "https://api.semanticscholar.org/graph/v1/paper/search?limit=5&fields=title,authors,year,venue,externalIds,url&query="
+            + url_quote(title),
+            timeout=7,
+        )
+    )
+    for item in (s2 or {}).get("data") or []:
+        if title_similarity(title, item.get("title", "")) >= 0.45:
+            ext = item.get("externalIds") or {}
+            if ext.get("DOI"):
+                result = fetch_bib_by_doi(ext["DOI"])
+                if result:
+                    result["method"] = "Semantic Scholar title -> " + result["method"]
+                    return result
+            if ext.get("ArXiv"):
+                return fetch_bib_by_arxiv(ext["ArXiv"])
+            bib = render_bib_entry(
+                "article",
+                derive_key(item.get("title", ""), year=item.get("year")),
+                {
+                    "title": item.get("title"),
+                    "author": render_authors([a.get("name", "") for a in item.get("authors", [])]),
+                    "year": item.get("year"),
+                    "journal": item.get("venue"),
+                    "url": item.get("url"),
+                },
+            )
+            return result_from_bibtex(bib, "Semantic Scholar title", item.get("url", ""))
+
+    openalex = decode_json(fetch_text("https://api.openalex.org/works?per-page=5&search=" + url_quote(title), timeout=7))
+    for item in (openalex or {}).get("results") or []:
+        if title_similarity(title, item.get("display_name", "")) >= 0.45:
+            if item.get("doi"):
+                result = fetch_bib_by_doi(item["doi"])
+                if result:
+                    result["method"] = "OpenAlex title -> " + result["method"]
+                    return result
+            authors = [((a.get("author") or {}).get("display_name")) for a in item.get("authorships", [])]
+            bib = render_bib_entry(
+                "article",
+                derive_key(item.get("display_name", ""), year=item.get("publication_year")),
+                {
+                    "title": item.get("display_name"),
+                    "author": render_authors([a for a in authors if a]),
+                    "year": item.get("publication_year"),
+                    "journal": (((item.get("primary_location") or {}).get("source") or {}).get("display_name")),
+                    "url": item.get("doi") or item.get("id"),
+                },
+            )
+            return result_from_bibtex(bib, "OpenAlex title", item.get("id", ""))
+    return None
+
+
+def pdf_probe_text(path: Path) -> str:
+    chunks = [path.name]
+    if command_exists("pdfinfo"):
+        out, _, _ = run_text(["pdfinfo", "-meta", str(path)], timeout=8)
+        if trim(out):
+            chunks.append(out)
+    if command_exists("pdftotext"):
+        out, _, _ = run_text(["pdftotext", "-f", "1", "-l", "3", "-layout", str(path), "-"], timeout=12)
+        if trim(out):
+            chunks.append(out)
+    if command_exists("mutool"):
+        out, _, _ = run_text(["mutool", "draw", "-F", "txt", "-o", "-", str(path), "1-3"], timeout=12)
+        if trim(out):
+            chunks.append(out)
+    if command_exists("strings"):
+        out, _, _ = run_text(["strings", "-n", "8", str(path)], timeout=8)
+        if trim(out):
+            chunks.append("\n".join(out.splitlines()[:300]))
+    return "\n".join(chunks)
+
+
+def pdf_metadata(path: Path) -> dict[str, Any]:
+    info = {"title": "", "abstract": "", "keywords": []}
+    if command_exists("pdfinfo"):
+        out, _, _ = run_text(["pdfinfo", str(path)], timeout=8)
+        parsed: dict[str, str] = {}
+        for line in out.splitlines():
+            if ":" in line:
+                key, value = line.split(":", 1)
+                parsed[trim(key)] = trim(value)
+        info["title"] = clean_metadata_value(parsed.get("Title"))
+        info["abstract"] = clean_metadata_value(parsed.get("Subject"))
+        info["keywords"] = split_words(parsed.get("Keywords", ""))
+    if not info["title"] and command_exists("mdls"):
+        out, _, _ = run_text(["mdls", "-raw", "-name", "kMDItemTitle", str(path)], timeout=6)
+        info["title"] = clean_metadata_value(out.strip().strip('"'))
+    return info
+
+
+def infer_pdf_title(text: str) -> str:
+    for line in text.splitlines():
+        line = collapse_ws(line)
+        lower = line.lower()
+        if 16 <= len(line) <= 220 and not re.match(r"^(abstract|keywords|doi|arxiv|journal|submitted)\b", lower) and not re.match(r"^\d+$", line):
+            return line
+    return ""
+
+
+def fetch_pdf_bib(path: Path, meta: dict[str, Any]) -> dict[str, Any] | None:
+    probe = pdf_probe_text(path)
+    doi = extract_doi(probe)
+    if doi:
+        result = fetch_bib_by_doi(doi)
+        if result:
+            return result
+    arxiv_id = extract_arxiv_id(probe)
+    if arxiv_id:
+        result = fetch_bib_by_arxiv(arxiv_id)
+        if result:
+            return result
+    title = clean_metadata_value(meta.get("title")) or infer_pdf_title(probe)
+    if title:
+        return fetch_bib_by_title(title)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Note rendering
+
+
+def toml_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(toml_value(v) for v in value) + "]"
+    text = str(value or "").replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    return f'"{text}"'
+
+
+def render_metadata(metadata: dict[str, Any]) -> str:
+    root_order = ["schema-version", "aliases", "abstract", "keywords", "generated", "checklist-status", "relation", "relation-target"]
+    lines = ["#let zk-metadata = toml(bytes(", "  ```toml"]
+    for key in root_order:
+        lines.append(f"  {key} = {toml_value(metadata.get(key))}")
+    user = metadata.get("user") or {}
+    lines.append("")
+    lines.append("  [user]")
+    for key in ["ai-generated", "capture-type", "captured", "public", "source", "frs", "project"]:
+        lines.append(f"  {key} = {toml_value(user.get(key))}")
+    lines.extend(["  ```.text,", "))"])
+    return "\n".join(lines)
+
+
+def note_id_from_path(path: Path) -> str:
+    return path.stem
+
+
+def create_note_path(title: str) -> Path:
+    root = wiki_root()
+    note_dir().mkdir(parents=True, exist_ok=True)
+    cmd = ["zk-lsp", "new", "--wiki-root", str(root)]
+    stdin = None
+    if title:
+        cmd.append("--json")
+        stdin = json.dumps({"title": title})
+    if command_exists("zk-lsp"):
+        out, err, code = run_text(cmd, input_text=stdin, timeout=15)
+        if code == 0 and trim(out):
+            path = Path(trim(out))
+            if not path.is_absolute():
+                path = root / path
+            return path
+    # Fallback if zk-lsp is not available in Chrome's environment.
+    stamp = _dt.datetime.now().strftime("%y%m%d%H%M")
+    path = note_dir() / f"{stamp}.typ"
+    suffix = 1
+    while path.exists():
+        path = note_dir() / f"{stamp}{suffix}.typ"
+        suffix += 1
+    return path
+
+
+def write_note(path: Path, title: str, metadata: dict[str, Any], body: str) -> None:
+    note_id = note_id_from_path(path)
+    title = clean_metadata_value(title) or "Untitled"
+    content = "\n".join(
+        [
+            '#import "../include.typ": *',
+            render_metadata(metadata),
+            "#show: zettel.with(metadata: zk-metadata)",
+            "",
+            f"= {title} <{note_id}>",
+            "#tag.capture",
+            "#status_tag(zk-metadata.checklist-status)",
+            "",
+            trim(body),
+            "",
+        ]
+    )
+    path.write_text(content, encoding="utf-8")
+
+
+def base_metadata(capture_type: str, source: str, *, abstract: str = "", keywords: list[str] | None = None) -> dict[str, Any]:
+    return {
+        "schema-version": 1,
+        "aliases": [],
+        "abstract": abstract or "",
+        "keywords": keywords or [],
+        "generated": True,
+        "checklist-status": "none",
+        "relation": "active",
+        "relation-target": [],
+        "user": {
+            "ai-generated": False,
+            "capture-type": capture_type,
+            "captured": True,
+            "public": True,
+            "source": [source] if source else [],
+            "frs": False,
+            "project": "",
+        },
+    }
+
+
+def slugify_filename(filename: str) -> str:
+    stem = slug(Path(filename).stem, separator="-", max_words=12) or "paper"
+    ext = Path(filename).suffix.lower() or ".pdf"
+    return stem + ext
+
+
+def unique_child(dir_path: Path, filename: str) -> Path:
+    candidate = dir_path / filename
+    idx = 2
+    while candidate.exists():
+        candidate = dir_path / f"{Path(filename).stem}-{idx}{Path(filename).suffix}"
+        idx += 1
+    return candidate
+
+
+def rel_to_wiki(path: Path) -> str:
+    return path.resolve().relative_to(wiki_root()).as_posix()
+
+
+def maybe_open_result(result: dict[str, Any], do_open: bool) -> None:
+    if not do_open:
+        return
+    target = result.get("note_path") or result.get("ref_path")
+    if target:
+        notify_open(target)
+
+
+# ---------------------------------------------------------------------------
+# Capture commands
+
+
+def capture_web(url: str, *, title: str = "", selection: str = "", do_open: bool = False) -> dict[str, Any]:
+    meta = fetch_web_metadata(url)
+    final_title = clean_metadata_value(title) or clean_metadata_value(meta.get("title")) or infer_title_from_url(url)
+    abstract = clean_metadata_value(meta.get("abstract"))
+    keywords = meta.get("keywords") or []
+    body_parts = [f"Source: {url}"]
+    if selection:
+        body_parts.extend(["", selection])
+    elif abstract:
+        body_parts.extend(["", abstract])
+    path = create_note_path(final_title)
+    write_note(path, final_title, base_metadata("web", url, abstract=abstract, keywords=keywords), "\n".join(body_parts))
+    result = {"ok": True, "status": "created", "kind": "web", "note_path": str(path), "title": final_title}
+    maybe_open_result(result, do_open)
+    return result
+
+
+def capture_pdf_file(path: Path, *, title: str = "", source_url: str = "", move: bool = False, do_open: bool = False) -> dict[str, Any]:
+    path = path.expanduser().resolve()
+    if not path.exists():
+        raise FileNotFoundError(str(path))
+    meta = pdf_metadata(path)
+    online = fetch_pdf_bib(path, meta)
+    bibtex = trim((online or {}).get("bibtex", ""))
+    entry = parse_bib_entry(bibtex) if bibtex else None
+    fields = (entry or {}).get("fields") or {}
+    key = (entry or {}).get("key") or ""
+    final_title = clean_metadata_value(title) or clean_metadata_value((online or {}).get("title")) or clean_metadata_value(meta.get("title")) or Path(path).stem
+    if not key:
+        key = derive_key(final_title, file_path=str(path), url=source_url)
+
+    dup, reason = find_duplicate(key=key, fields=fields or {"url": source_url}, bibtex=bibtex, file_path=str(path))
+    if dup:
+        matches = source_notes_for_key(dup.get("key", ""))
+        result = {
+            "ok": True,
+            "status": "exists",
+            "kind": "paper",
+            "key": dup.get("key"),
+            "matched_by": reason,
+            "note_path": str(matches[0]) if matches else "",
+            "ref_path": str(ref_bib_path()),
+        }
+        maybe_open_result(result, do_open)
+        return result
+
+    note_path = create_note_path(final_title)
+    note_id = note_id_from_path(note_path)
+    asset_dir = wiki_root() / "assets" / f"{note_id}-pdf"
+    asset_dir.mkdir(parents=True, exist_ok=True)
+    target = unique_child(asset_dir, slugify_filename(path.name))
+    if move:
+        shutil.move(str(path), str(target))
+    else:
+        shutil.copy2(path, target)
+    target_rel = rel_to_wiki(target)
+
+    abstract = clean_metadata_value((online or {}).get("abstract")) or clean_metadata_value(meta.get("abstract"))
+    keywords = (online or {}).get("keywords") or meta.get("keywords") or []
+    write_note(
+        note_path,
+        final_title,
+        base_metadata("paper", target_rel, abstract=abstract, keywords=keywords),
+        f"Source: @{key}",
+    )
+
+    if bibtex:
+        append_bib_entry(bibtex)
+        set_bib_field(key, "file", target_rel)
+    else:
+        bibtex = render_bib_entry("misc", key, {"title": final_title, "url": source_url, "file": target_rel})
+        append_bib_entry(bibtex)
+
+    result = {
+        "ok": True,
+        "status": "created",
+        "kind": "paper",
+        "key": key,
+        "note_path": str(note_path),
+        "asset_path": str(target),
+        "asset_rel": target_rel,
+        "title": final_title,
+        "bib_method": (online or {}).get("method", "fallback misc"),
+    }
+    maybe_open_result(result, do_open)
+    return result
+
+
+def filename_from_download(url: str, headers: dict[str, str]) -> str:
+    cd = headers.get("content-disposition", "")
+    m = re.search(r"filename\*=UTF-8''([^;]+)", cd, re.I) or re.search(r'filename="?([^";]+)', cd, re.I)
+    if m:
+        return Path(urllib.parse.unquote(m.group(1))).name
+    parsed = urllib.parse.urlparse(url)
+    name = Path(urllib.parse.unquote(parsed.path)).name
+    if not name or "." not in name:
+        name = "paper.pdf"
+    if not name.lower().endswith(".pdf"):
+        name += ".pdf"
+    return name
+
+
+def file_url_to_path(url: str) -> Path:
+    parsed = urllib.parse.urlparse(url)
+    return Path(urllib.request.url2pathname(parsed.path))
+
+
+def capture_pdf_url(url: str, *, title: str = "", do_open: bool = False) -> dict[str, Any]:
+    if urllib.parse.urlparse(url).scheme == "file":
+        return capture_pdf_file(file_url_to_path(url), title=title, source_url=url, do_open=do_open)
+    data, headers, final_url = fetch_bytes(url, timeout=30)
+    filename = filename_from_download(final_url, headers)
+    with tempfile.TemporaryDirectory(prefix="zk-capture-pdf-") as td:
+        tmp = Path(td) / filename
+        tmp.write_bytes(data)
+        return capture_pdf_file(tmp, title=title, source_url=final_url, do_open=do_open)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+
+
+def print_result(result: dict[str, Any], as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(result, ensure_ascii=False))
+    else:
+        status = result.get("status")
+        if status == "created":
+            print(f"created {result.get('kind')} note: {result.get('note_path')}")
+            if result.get("key"):
+                print(f"bib: @{result['key']} ({result.get('bib_method')})")
+        elif status == "exists":
+            print(f"already exists: @{result.get('key')} ({result.get('matched_by')})")
+            if result.get("note_path"):
+                print(f"note: {result['note_path']}")
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Capture web pages and PDFs into ~/wiki.")
+    parser.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    parser.add_argument("--open", action="store_true", help="open created/existing note in the default app")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    web = sub.add_parser("web", help="capture a web page URL")
+    web.add_argument("--url", required=True)
+    web.add_argument("--title", default="")
+    web.add_argument("--selection", default="")
+
+    pdf_url = sub.add_parser("pdf-url", help="download/capture a PDF URL")
+    pdf_url.add_argument("--url", required=True)
+    pdf_url.add_argument("--title", default="")
+
+    pdf_file = sub.add_parser("pdf-file", help="capture a local PDF file")
+    pdf_file.add_argument("--path", required=True)
+    pdf_file.add_argument("--title", default="")
+    pdf_file.add_argument("--move", action="store_true", help="move instead of copying the PDF")
+
+    args = parser.parse_args(argv)
+    try:
+        if args.cmd == "web":
+            result = capture_web(args.url, title=args.title, selection=args.selection, do_open=args.open)
+        elif args.cmd == "pdf-url":
+            result = capture_pdf_url(args.url, title=args.title, do_open=args.open)
+        elif args.cmd == "pdf-file":
+            result = capture_pdf_file(Path(args.path), title=args.title, move=args.move, do_open=args.open)
+        else:
+            parser.error("unknown command")
+            return 2
+        print_result(result, args.json)
+        return 0
+    except Exception as exc:  # noqa: BLE001 - surfaced to browser/native host.
+        payload = {"ok": False, "error": str(exc), "type": exc.__class__.__name__}
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(f"zk-capture error: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

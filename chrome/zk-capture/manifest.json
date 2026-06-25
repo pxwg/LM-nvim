@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "ZK Capture",
+  "description": "Capture web pages and PDFs into the local ZK wiki.",
+  "version": "0.1.0",
+  "permissions": ["activeTab", "contextMenus", "nativeMessaging", "notifications", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "ZK Capture",
+    "default_popup": "popup.html"
+  }
+}
