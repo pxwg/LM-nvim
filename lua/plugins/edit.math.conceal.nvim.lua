@@ -50,6 +50,7 @@ local typst_code_render_allowlist = {
   "proposition",
   "remark",
   "theorem",
+  "footnote",
   "status_tag",
   "tag.idea",
   "tag.archived",
