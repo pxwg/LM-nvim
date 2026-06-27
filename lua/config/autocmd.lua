@@ -452,11 +452,7 @@ vim.api.nvim_create_user_command("ConcealFold", function()
   vim.wo.concealcursor = "nv"
 end, {})
 
-require("zk_scripts")
--- require("zk_lsp").setup({
---   filetypes = { "typst" },
---   root_dir = vim.fn.expand("~/wiki"),
--- })
+-- ZK workflows are provided by the zk-lsp.nvim plugin spec.
 
 autocmd("FileType", {
   pattern = "codecompanion",

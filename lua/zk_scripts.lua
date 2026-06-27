@@ -1,7 +1,8 @@
 local M = {}
 local zk_cli = require("zk_cli")
-local zk_capture = require("util.zk_capture")
-local zk_bib = require("util.zk_bib")
+
+-- Capture, bibliography, search, and extmark side effects moved to zk-lsp.nvim.
+local zk_capture, zk_bib = nil, nil
 
 -- Execute a workspace/executeCommand on zk-lsp, returns true if dispatched
 local function execute_command_zk_lsp(cmd, args, callback)
@@ -660,11 +661,9 @@ function M.search_by_tag(tag)
   })
 end
 
--- Enhanced search with multi-mode support using zk_telescope module
--- Supports title, alias, keyword, abstract, and tag search modes
+-- Search through zk-lsp.nvim.
 function M.search_title()
-  local zk_telescope = require("zk_telescope")
-  zk_telescope.search_with_filters()
+  vim.cmd("Zk search")
 end
 
 -- Search for TODO notes
@@ -934,174 +933,5 @@ function M.show_startup_summary()
   vim.keymap.set("n", "<Tab>", jump_to_next_note, { buffer = buf, nowait = true })
   vim.keymap.set("n", "<S-Tab>", jump_to_prev_note, { buffer = buf, nowait = true })
 end
-
-vim.api.nvim_create_user_command("Zk", function(opts)
-  local args = vim.split(opts.args, "%s+", { trimempty = true })
-  local arg = args[1] or ""
-  if arg == "new" then
-    M.new_note_interactive()
-  elseif arg == "newm" or arg == "new-metadata" then
-    M.new_note_with_metadata()
-  elseif arg == "export" then
-    M.export_for_ai()
-  elseif arg == "search" then
-    M.search_title()
-  elseif arg == "alias" then
-    local zk_telescope = require("zk_telescope")
-    zk_telescope.search_alias()
-  elseif arg == "keyword" then
-    local zk_telescope = require("zk_telescope")
-    zk_telescope.search_keyword()
-  elseif arg == "abstract" then
-    local zk_telescope = require("zk_telescope")
-    zk_telescope.search_abstract()
-  elseif arg == "todo" then
-    M.search_todo()
-  elseif arg == "done" then
-    M.search_done()
-  elseif arg == "orphans" then
-    M.search_orphans()
-  elseif arg == "tag" then
-    M.search_tag_prompt()
-  elseif arg == "summary" then
-    M.show_startup_summary()
-  elseif arg == "random" then
-    M.random_note()
-  elseif arg == "paper-note" then
-    zk_capture.paper_note_from_ref(args[2], function()
-      refresh_tinymist()
-    end)
-  else
-    vim.notify("Unknown Zk command: " .. arg, vim.log.levels.ERROR)
-  end
-end, {
-  desc = "ZK note actions",
-  nargs = "+",
-  complete = function(arg_lead, _, _)
-    local opts = {
-      "new",
-      "newm",
-      "new-metadata",
-      "export",
-      "search",
-      "alias",
-      "keyword",
-      "abstract",
-      "todo",
-      "done",
-      "orphans",
-      "tag",
-      "summary",
-      "random",
-      "paper-note",
-    }
-    return vim.tbl_filter(function(opt)
-      return vim.startswith(opt, arg_lead)
-    end, opts)
-  end,
-})
-
--- Auto-update tag on buffer write (save)
--- vim.api.nvim_create_autocmd("BufWritePre", {
---   pattern = "*/note/*.typ",
---   callback = function()
---     M.auto_update_tag()
---   end,
---   desc = "Auto-update ZK note tags based on todo completion status",
--- })
-
-vim.keymap.set("n", "<C-t>", M.toggle_todo, { noremap = true, silent = true })
-vim.keymap.set("n", "zn", M.new_note_interactive, { noremap = true, silent = false, desc = "[Z]ettel [N]ew" })
-vim.keymap.set("n", "zs", M.search_title, { noremap = true, silent = false, desc = "[Z]ettel [S]earch" })
-vim.keymap.set("n", "<leader>fz", M.search_title, { noremap = true, silent = false, desc = "[F]ind [Z]ettel" })
-vim.keymap.set("n", "ze", M.export_for_ai, { noremap = true, silent = false, desc = "[Z]ettel [E]xport for AI" })
-vim.keymap.set(
-  "n",
-  "zS",
-  M.show_startup_summary,
-  { noremap = true, silent = false, desc = "[Z]ettel [S]tartup Summary" }
-)
-vim.keymap.set("n", "zt", M.search_todo, { noremap = true, silent = false, desc = "[Z]ettel [T]ODO Search" })
-vim.keymap.set(
-  "n",
-  "<leader>zo",
-  M.open_pdf_at_cursor,
-  { noremap = true, silent = false, desc = "[Z]ettel [O]pen PDF at page" }
-)
-vim.keymap.set(
-  "n",
-  "<leader>fo",
-  M.search_orphans,
-  { noremap = true, silent = false, desc = "[F]ind [O]rphan Zettels" }
-)
-vim.keymap.set("n", "zr", function()
-  local note_id = vim.fn.expand("<cword>")
-  if note_id and note_id:match("^%d+$") then
-    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
-      if choice == "Yes" then
-        local bufnr = vim.api.nvim_get_current_buf()
-        local removed_path = vim.api.nvim_buf_get_name(bufnr)
-
-        M.remove_note(note_id)
-        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
-
-        if vim.api.nvim_buf_is_valid(bufnr) then
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
-
-        local jumped = open_recent_note_after_remove(removed_path)
-        if not jumped then
-          local root = vim.fn.expand("~/wiki")
-          local index_path = root .. "/index.typ"
-          vim.cmd("edit " .. vim.fn.fnameescape(index_path))
-        end
-
-        -- vim.schedule(function()
-        --   M.show_startup_summary()
-        -- end)
-      else
-        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
-      end
-    end)
-  else
-    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
-  end
-end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove" })
-
-vim.keymap.set("n", "zR", function()
-  local note_id = vim.api.nvim_buf_get_name(0):match("note/(%d+)%.typ$")
-  if note_id and note_id:match("^%d+$") then
-    vim.ui.select({ "Yes", "No" }, { prompt = "Remove note " .. note_id .. "?" }, function(choice)
-      if choice == "Yes" then
-        local bufnr = vim.api.nvim_get_current_buf()
-        local removed_path = vim.api.nvim_buf_get_name(bufnr)
-
-        M.remove_note(note_id)
-        vim.notify("Note " .. note_id .. " removed.", vim.log.levels.INFO)
-
-        if vim.api.nvim_buf_is_valid(bufnr) then
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
-
-        local jumped = open_recent_note_after_remove(removed_path)
-        if not jumped then
-          local root = vim.fn.expand("~/wiki")
-          local index_path = root .. "/index.typ"
-          vim.cmd("edit " .. vim.fn.fnameescape(index_path))
-        end
-
-        -- vim.schedule(function()
-        --   M.show_startup_summary()
-        -- end)
-      else
-        vim.notify("Aborted removing note " .. note_id .. ".", vim.log.levels.INFO)
-      end
-    end)
-  else
-    vim.notify("No valid note id under cursor.", vim.log.levels.WARN)
-  end
-end, { noremap = true, silent = false, desc = "[Z]ettel [R]emove (Buffer)" })
-
-require("zk_extmark").setup()
 
 return M
