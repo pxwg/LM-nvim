@@ -10,7 +10,7 @@ return {
       -- vim.g.vimtex_compiler_silent = 1
       -- vim.g.vimtex_syntax_enabled = 1
       vim.g.vimtex_syntax_conceal_disable = 1
-      vim.g.vimtex_view_method = "skim"
+      vim.g.vimtex_view_method = "pdfview"
       vim.cmd([[
       let g:vimtex_view_sioyek_exe='sioyek'
       let g:vimtex_callback_progpath = '/opt/homebrew/opt/neovim/bin/nvim'
