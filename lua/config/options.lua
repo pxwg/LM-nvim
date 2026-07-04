@@ -56,6 +56,7 @@ vim.diagnostic.config({
 })
 vim.opt.foldmethod = "marker"
 vim.opt.relativenumber = false
+require("config.quick_access").apply()
 -- set WinSeparator to " "
 vim.cmd([[highlight WinSeparator guifg=#181825]])
 -- vim.g.codecompanion_enabled = true

@@ -94,6 +94,12 @@ vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
 
 autocmd("UIEnter", {
   callback = function()
+    local quick_access = require("config.quick_access")
+    if quick_access.enabled then
+      quick_access.apply_to_current_window()
+      return
+    end
+
     vim.cmd("setlocal relativenumber")
     vim.cmd("setlocal number")
   end,
