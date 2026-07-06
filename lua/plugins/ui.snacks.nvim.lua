@@ -218,7 +218,7 @@ return {
     },
     ---@class snacks.image.Config
     image = {
-      enabled = false,
+      -- enabled = false,
       math = {
         enabled = false,
         -- enabled = false,
