@@ -243,6 +243,7 @@ return {
       buffer = {
         mode = "edit",
       },
+      opt = { concealcursor = "nci" },
       image = {
         enabled = true,
         -- enabled = false,

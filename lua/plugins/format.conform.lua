@@ -80,7 +80,17 @@ return {
         }
       end,
       yml = { "yq" },
-      typst = { "typstyle", "autocorrect", "trimlines", "injected", "zk-lsp" },
+      typst = function(bufnr)
+        local formatters = { "typstyle", "autocorrect", "trimlines", "injected" }
+        local file_path = vim.fs.normalize(vim.api.nvim_buf_get_name(bufnr))
+        local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
+
+        if vim.startswith(file_path, wiki_root .. "/") then
+          table.insert(formatters, "zk-lsp")
+        end
+
+        return formatters
+      end,
       arduino = { "clang_format" },
       typescript = { "prettier" },
       astro = { "prettier" },
