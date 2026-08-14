@@ -34,7 +34,7 @@ local math_conceal_service_binary =
   "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service"
 
 local typst_math_header = [[
-      // #show math.equation: set text(font: "Fira Math")
+      #show math.equation: set text(font: "Pennstander Math", weight: "extralight")
       #show math.equation.where(block: false): it => {
         set text(size: 0.85em)
         it
