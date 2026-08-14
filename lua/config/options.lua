@@ -41,19 +41,6 @@ vim.opt.laststatus = 3
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.g.tex_conceal = "abdmg"
-vim.diagnostic.config({
-  virtual_text = true,
-  virtual_lines = { current_line = true },
-  underline = true,
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = "",
-      [vim.diagnostic.severity.WARN] = "",
-      [vim.diagnostic.severity.INFO] = "",
-      [vim.diagnostic.severity.HINT] = "",
-    },
-  },
-})
 vim.opt.foldmethod = "marker"
 vim.opt.relativenumber = false
 require("config.quick_access").apply()
@@ -94,7 +81,73 @@ local servers = {
   "ts_query_ls",
 }
 
-vim.lsp.enable(servers)
+local function configure_diagnostics()
+  vim.diagnostic.config({
+    virtual_text = true,
+    virtual_lines = { current_line = true },
+    underline = true,
+    signs = {
+      text = {
+        [vim.diagnostic.severity.ERROR] = "",
+        [vim.diagnostic.severity.WARN] = "",
+        [vim.diagnostic.severity.INFO] = "",
+        [vim.diagnostic.severity.HINT] = "",
+      },
+    },
+  })
+end
+
+local lsp_enabled = false
+local lsp_scheduled = false
+local lsp_group = vim.api.nvim_create_augroup("DeferredLspEnable", { clear = true })
+
+local function enable_lsp()
+  lsp_scheduled = false
+  if lsp_enabled then
+    return
+  end
+
+  configure_diagnostics()
+  vim.lsp.enable(servers)
+  lsp_enabled = true
+  pcall(vim.api.nvim_del_augroup_by_id, lsp_group)
+end
+
+local function is_real_file_buffer(bufnr)
+  return vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buftype == "" and vim.api.nvim_buf_get_name(bufnr) ~= ""
+end
+
+local function request_lsp_enable(event)
+  if lsp_enabled or lsp_scheduled or not is_real_file_buffer(event.buf) then
+    return
+  end
+
+  lsp_scheduled = true
+  if vim.v.vim_did_enter == 1 then
+    vim.schedule(enable_lsp)
+    return
+  end
+
+  if #vim.api.nvim_list_uis() == 0 then
+    vim.schedule(enable_lsp)
+    return
+  end
+
+  autocmd("UIEnter", {
+    group = lsp_group,
+    once = true,
+    callback = function()
+      vim.schedule(enable_lsp)
+    end,
+    desc = "Enable LSP after the first UI frame",
+  })
+end
+
+autocmd({ "BufReadPost", "BufNewFile", "BufWritePost" }, {
+  group = lsp_group,
+  callback = request_lsp_enable,
+  desc = "Defer LSP until a real file is opened",
+})
 
 autocmd("FileType", {
   pattern = { "markdown" },
