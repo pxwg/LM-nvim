@@ -113,6 +113,6 @@ return {
   s({ trig = "xx", snippetType = "autosnippet", wordTrig = false }, t("times"), { condition = in_math }),
 
   -- Intersection and union
-  s({ trig = "cup", snippetType = "autosnippet", wordTrig = false }, t("inter"), { condition = in_math }),
-  s({ trig = "cap", snippetType = "autosnippet", wordTrig = false }, t("union"), { condition = in_math }),
+  s({ trig = "cap", snippetType = "autosnippet", wordTrig = false }, t("inter"), { condition = in_math }),
+  s({ trig = "cup", snippetType = "autosnippet", wordTrig = false }, t("union"), { condition = in_math }),
 }
