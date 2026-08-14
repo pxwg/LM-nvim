@@ -37,17 +37,16 @@ local function set_keymaps(picker)
   local mappings = {
     c = picker == "fzf" and ':lua require("fzf-lua").files({ cwd = "~/.config/nvim" })<cr>'
       or ':lua Snacks.picker.files({ cwd = "~/.config/nvim" })<cr>',
-    f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>'
-      or ':lua Snacks.picker.files()<cr>',
-    g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ':lua Snacks.picker.grep()<cr>',
-    w = ":edit ~/personal-wiki/index.md<cr>",
+    f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>' or ":lua Snacks.picker.files()<cr>",
+    g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ":lua Snacks.picker.grep()<cr>",
+    w = [[:lua vim.loop.chdir(vim.fn.expand("~/wiki/"))<cr>]],
     s = ':lua require("persistence").load({ last = true })<cr>',
     l = ":Lazy<cr>",
     r = picker == "fzf"
         and ':lua require("fzf-lua").oldfiles({ filter = function(file) return not file:match("-wiki") end })<cr>'
-      or ':lua Snacks.picker.recent()<cr>',
+      or ":lua Snacks.picker.recent()<cr>",
     q = ":q<cr>",
-    p = [[:lua vim.loop.chdir(vim.fn.expand("~/Desktop/physics/notes"))<cr>]],
+    -- p = [[:lua vim.loop.chdir(vim.fn.expand("~/Desktop/physics/notes"))<cr>]],
   }
   for key, cmd in pairs(mappings) do
     vim.api.nvim_buf_set_keymap(0, "n", key, cmd, opts)
@@ -144,10 +143,8 @@ local lines = {
   "",
   "[F]ind Files       ",
   "[R]ecent Files     ",
-  "[P]hysics Notes    ",
   "[W]iki Personal    ",
   "[G]rep Words       ",
-  "[C]onfig Files     ",
   "[S]ync Session     ",
   "[L]azy             ",
   "[Q]uit             ",
