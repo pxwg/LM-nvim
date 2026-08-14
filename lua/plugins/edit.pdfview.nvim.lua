@@ -3,6 +3,7 @@ return {
     dir = vim.fn.expand("~/pdf.nvim"),
     name = "pdfview.nvim",
     lazy = false,
+    enabled = false,
     build = "scripts/build-pdfviewd.sh",
     opts = {
       backend = "auto",
