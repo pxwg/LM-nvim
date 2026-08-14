@@ -37,6 +37,9 @@ return {
         {
           "<S-Tab>",
           function()
+            if require("util.cursortab").partial_accept() then
+              return
+            end
             require("luasnip").jump(-1)
           end,
           mode = { "i", "s" },

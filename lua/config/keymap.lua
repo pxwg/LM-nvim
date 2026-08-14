@@ -4,6 +4,7 @@ local fit = require("util.fit")
 local hs = require("util.hammerspoon")
 local nt_file = require("util.note_file_index")
 local selection_capture = require("util.selection_capture")
+local cursortab = require("util.cursortab")
 
 require("util.fast_keymap")
 
@@ -557,6 +558,10 @@ map("v", "<CR>", function()
 end)
 
 map("n", "<Tab>", function()
+  if cursortab.accept() then
+    return
+  end
+
   -- NES: sidekick next-edit suggestion (loaded via VeryLazy, safe to pcall)
   local ok, sk = pcall(require, "sidekick")
   if ok and sk.nes_jump_or_apply() then
@@ -574,6 +579,10 @@ map("n", "<Tab>", function()
 end, { noremap = true, silent = true })
 
 map("n", "<S-Tab>", function()
+  if cursortab.partial_accept() then
+    return
+  end
+
   if vim.bo.filetype == "markdown" then
     local success = require("util.markdown_link").goto_prev_link()
     if not success then
@@ -625,10 +634,13 @@ end, { desc = "Open markdown links (file or URL)" })
 --   require("util.note_todo").toggle()
 -- end)
 
--- smart tab for copilot, inserting and completion via luasnip
+-- smart tab for edit suggestions, completion, and LuaSnip
 map("i", "<Tab>", function()
   if vim.bo.filetype == "make" then
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("\t", true, false, true), "n", true)
+  end
+  if cursortab.accept() then
+    return
   end
   if vim.fn.pumvisible() == 1 then
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, false, true), "n", true)
@@ -642,7 +654,7 @@ map("i", "<Tab>", function()
   else
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("    ", true, false, true), "n", true)
   end
-end, { noremap = true, silent = true, desc = "Accept Copilot suggestion or insert Tab" })
+end, { noremap = true, silent = true, desc = "Accept edit suggestion or insert Tab" })
 
 map("i", "<CR>", function()
   if vim.bo.filetype == "markdown" then

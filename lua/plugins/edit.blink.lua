@@ -176,7 +176,13 @@ return {
         preset = "none",
         ["<cr>"] = { "accept", "fallback" },
         ["<C-y>"] = { "select_and_accept" },
-        ["<s-tab>"] = { "snippet_backward", "fallback" },
+        ["<s-tab>"] = {
+          function()
+            return require("util.cursortab").partial_accept()
+          end,
+          "snippet_backward",
+          "fallback",
+        },
         ["<c-j>"] = { "scroll_documentation_up", "fallback" },
         ["<c-k>"] = { "scroll_documentation_down", "fallback" },
         ["<c-n>"] = { "select_next", "fallback" },
