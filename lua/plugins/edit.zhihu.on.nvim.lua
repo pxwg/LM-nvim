@@ -318,25 +318,23 @@ end
 return {
   "pxwg/zhihu.nvim",
   main = "zhihu",
-  dev = true,
   event = "VeryLazy",
 
   config = function()
+    -- Neovim does not infer filetypes from URI-style buffer names by default.
+    vim.filetype.add({
+      pattern = {
+        ["zhihu://.*%.md"] = "markdown",
+        ["zhihu://.*%.markdown"] = "markdown",
+        ["zhihu://.*%.html"] = "html",
+        ["zhihu://.*%.typst"] = "typst",
+      },
+    })
+
     require("zhihu").setup({
-      -- Define custom file type handlers
-      filetypes = {
-        typst = {
-          type = "markdown",
-          converter = {
-            ["in"] = typst_converter,
-            ["out"] = markdown_to_typst,
-          },
-          -- title = get_typst_title,
-        },
-        -- tex = {
-        --   type = "markdown",
-        --   converter = tex_converter,
-        -- },
+      article = {
+        -- Keep :write draft-only; publishing should be an explicit action.
+        disclaimer_status = false,
       },
     })
 
