@@ -89,7 +89,7 @@ require("lazy").setup({
 
 local autocmd = vim.api.nvim_create_autocmd
 
--- set relativenumber when entering hello file type and unset when leaving
+-- Keep the first-frame palette synchronous; other Mini features initialize after UIEnter.
 require("mini.hues").setup({ background = "#11262d", foreground = "#c0c8cc", saturation = "lowmedium" })
 vim.api.nvim_set_hl(0, "@typ_inline_dollar.typst", { link = "Comment" })
 vim.api.nvim_set_hl(0, "@conceal_dollar", { link = "Comment" })
