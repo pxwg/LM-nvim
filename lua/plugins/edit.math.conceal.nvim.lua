@@ -41,6 +41,10 @@ local typst_math_header = [[
       }
     ]]
 
+local markdown_mitex_preamble = [[
+\newcommand{\slashed}[1]{\not{#1}}
+]]
+
 local typst_code_render_allowlist = {
   "definition",
   "example",
@@ -277,6 +281,7 @@ return {
             inputs = math_renderer_inputs,
             preamble_file = math_renderer_preamble_file,
             mitex_package = "@preview/mitex:0.2.7",
+            mitex_preamble = markdown_mitex_preamble,
             render_paths = {
               exclude = {
                 math_renderer_path_excluded,
