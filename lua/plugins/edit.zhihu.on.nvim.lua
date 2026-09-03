@@ -318,6 +318,7 @@ end
 return {
   "pxwg/zhihu.nvim",
   main = "zhihu",
+  enabled = false,
   event = "VeryLazy",
 
   config = function()
