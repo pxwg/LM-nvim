@@ -13,12 +13,6 @@ local function create_empty_buffer()
     buffer = 0,
     callback = function() end,
   })
-  vim.api.nvim_create_autocmd("BufModifiedSet", {
-    buffer = 0,
-    callback = function()
-      vim.o.modified = false
-    end,
-  })
 end
 
 local function greet_based_on_time()
@@ -57,6 +51,7 @@ local function set_buffer_lines(lines)
   vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
   vim.bo.modifiable = false
   vim.bo.readonly = true
+  vim.bo.modified = false
 
   -- -- 将 buffer 内容写入文件
   -- local dashboard_file = "/tmp/nvim/dashboard/buffer_content.txt"
