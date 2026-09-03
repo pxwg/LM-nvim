@@ -1,8 +1,8 @@
 return {
   "kkew3/jieba.vim",
-  tag = "v1.0.5",
+  tag = "v2.1.0",
   event = "VeryLazy",
-  build = "./build.sh",
+  build = ":call jieba_vim#install()",
   init = function()
     if vim.fn.has("linux") == 1 then
       vim.g.python3_host_prog = "/home/pxwg-dogggie/pyenv-nvim/bin/python3"

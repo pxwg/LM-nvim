@@ -26,7 +26,7 @@
   "guh.nvim": { "branch": "main", "commit": "137bbb58b965bdf417d79408050fec2b2107ad93" },
   "image.nvim": { "branch": "master", "commit": "446a8a5cc7a3eae3185ee0c697732c32a5547a0b" },
   "img-clip.nvim": { "branch": "main", "commit": "b6ddfb97b5600d99afe3452d707444afda658aca" },
-  "jieba.vim": { "branch": "rust", "commit": "0d2bf1916ddcef9d15a2843e01d85e40f7adef04" },
+  "jieba.vim": { "branch": "main", "commit": "0d2bf1916ddcef9d15a2843e01d85e40f7adef04" },
   "kiwi.nvim": { "branch": "master", "commit": "40f32ad364b5c432b1b6102bf771051b2cb2ffcc" },
   "latex.nvim": { "branch": "main", "commit": "39ecaf94827daa88cfdb09298103ccd9568b7414" },
   "latex_concealer.nvim": { "branch": "main", "commit": "7a62c24e1dfe445c0ee2803df131030a790c17df" },
