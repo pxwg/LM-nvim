@@ -5,6 +5,7 @@ local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
 local note_root = vim.fs.joinpath(wiki_root, "note")
 local focus_main = vim.fs.joinpath(wiki_root, "focus.typ")
 local manifest_path = vim.fs.joinpath(wiki_root, ".zk-lsp", "focus-v1.json")
+local projects_manifest_path = vim.fs.joinpath(wiki_root, ".zk-lsp", "projects-v1.json")
 
 local state = {
   active_buf = nil,
@@ -12,8 +13,12 @@ local state = {
   generation = 0,
   last_error = nil,
   last_notified_error = nil,
+  last_member_ids = {},
   last_payload = nil,
+  last_project = "",
+  last_projects_payload = nil,
   last_reference_ids = {},
+  projects_dirty = true,
   loading_notes = false,
   notes = nil,
   notes_waiters = {},
@@ -79,8 +84,7 @@ local function visible_typst_source(line, comment_state)
   return table.concat(chunks)
 end
 
-local function reference_ids(bufnr)
-  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+local function reference_ids_from_lines(lines)
   local comment_state = { block = false, fence = false }
   local found = {}
 
@@ -110,10 +114,77 @@ local function reference_ids(bufnr)
   return ids
 end
 
+local function reference_ids(bufnr)
+  return reference_ids_from_lines(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
+end
+
+local function note_project(note)
+  local metadata = type(note) == "table" and note.metadata or nil
+  local user = type(metadata) == "table" and metadata.user or nil
+  local project = type(user) == "table" and user.project or nil
+  return type(project) == "string" and project or ""
+end
+
+local function project_members(current)
+  local project = note_project(current)
+  if project == "" then
+    return { current }, project
+  end
+
+  local members = {}
+  for _, note in pairs(state.notes or {}) do
+    if note_project(note) == project then
+      members[#members + 1] = note
+    end
+  end
+  table.sort(members, function(a, b)
+    return a.id < b.id
+  end)
+  return members, project
+end
+
+local function note_path(note)
+  local path = normalize(note.path)
+  if path == "" then
+    return vim.fs.joinpath(note_root, note.id .. ".typ")
+  end
+  if path:sub(1, 1) ~= "/" then
+    return vim.fs.joinpath(wiki_root, path)
+  end
+  return path
+end
+
+local function note_lines(note, active_bufnr, active_id)
+  if note.id == active_id then
+    return vim.api.nvim_buf_get_lines(active_bufnr, 0, -1, false)
+  end
+
+  local path = note_path(note)
+  local bufnr = vim.fn.bufnr(path, false)
+  if bufnr > 0 and vim.api.nvim_buf_is_loaded(bufnr) then
+    return vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  end
+
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok then
+    return nil, string.format("failed to read project member %s: %s", note.id, lines)
+  end
+  return lines
+end
+
+local function note_reference_ids(note, active_bufnr, active_id)
+  local lines, err = note_lines(note, active_bufnr, active_id)
+  if not lines then
+    return nil, err
+  end
+  return reference_ids_from_lines(lines)
+end
+
 local function finish_notes_load(notes, err)
   state.loading_notes = false
   if notes then
     state.notes = notes
+    state.projects_dirty = true
     state.last_error = nil
   else
     state.last_error = err
@@ -216,6 +287,129 @@ local function atomic_write(path, content)
   return true
 end
 
+local function build_projects_manifest()
+  local notes = state.notes or {}
+  local ids = vim.tbl_keys(notes)
+  table.sort(ids)
+
+  local manifest_notes = {}
+  local grouped = {}
+  local references_by_id = {}
+  for _, id in ipairs(ids) do
+    local note = notes[id]
+    local project = note_project(note)
+    local note_refs, read_err = note_reference_ids(note, nil, nil)
+    if not note_refs then
+      return nil, read_err
+    end
+    references_by_id[id] = note_refs
+
+    local references = {}
+    for _, target_id in ipairs(note_refs) do
+      local target = notes[target_id]
+      if target and target_id ~= id then
+        references[#references + 1] = {
+          id = target_id,
+          title = target.title or target_id,
+        }
+      end
+    end
+    manifest_notes[#manifest_notes + 1] = {
+      id = id,
+      path = "note/" .. id .. ".typ",
+      project = project,
+      references = references,
+    }
+    if project ~= "" then
+      grouped[project] = grouped[project] or {}
+      grouped[project][#grouped[project] + 1] = note
+    end
+  end
+
+  local project_keys = vim.tbl_keys(grouped)
+  table.sort(project_keys)
+  local projects = {}
+  for _, project in ipairs(project_keys) do
+    local members = grouped[project]
+    table.sort(members, function(a, b)
+      return a.id < b.id
+    end)
+
+    local member_ids = {}
+    local manifest_members = {}
+    for _, member in ipairs(members) do
+      member_ids[member.id] = true
+      manifest_members[#manifest_members + 1] = {
+        id = member.id,
+        path = "note/" .. member.id .. ".typ",
+      }
+    end
+
+    local referenced = {}
+    for _, member in ipairs(members) do
+      for _, target_id in ipairs(references_by_id[member.id] or {}) do
+        if not member_ids[target_id] then
+          referenced[target_id] = true
+        end
+      end
+    end
+
+    local reference_ids = vim.tbl_keys(referenced)
+    table.sort(reference_ids)
+    local references = {}
+    for _, target_id in ipairs(reference_ids) do
+      local target = notes[target_id]
+      if target then
+        references[#references + 1] = {
+          id = target_id,
+          title = target.title or target_id,
+        }
+      end
+    end
+
+    projects[#projects + 1] = {
+      key = project,
+      members = manifest_members,
+      references = references,
+    }
+  end
+
+  return vim.json.encode({
+    version = 1,
+    notes = manifest_notes,
+    projects = projects,
+  }) .. "\n"
+end
+
+local function update_projects_manifest()
+  if not state.projects_dirty and state.last_projects_payload ~= nil then
+    return true
+  end
+
+  local payload, build_err = build_projects_manifest()
+  if not payload then
+    return false, build_err
+  end
+
+  if state.last_projects_payload == nil then
+    local existing = io.open(projects_manifest_path, "rb")
+    if existing then
+      state.last_projects_payload = existing:read("*a")
+      existing:close()
+    end
+  end
+
+  if payload ~= state.last_projects_payload then
+    local ok, write_err = atomic_write(projects_manifest_path, payload)
+    if not ok then
+      return false, write_err
+    end
+    state.last_projects_payload = payload
+  end
+  state.projects_dirty = false
+  return true
+end
+
 local function notify_manifest_changed()
   local params = {
     changes = {
@@ -249,32 +443,66 @@ local function build_manifest(bufnr, id)
     return nil, string.format("zk-lsp returned no metadata for note %s", id)
   end
 
-  local references = {}
-  local ids = reference_ids(bufnr)
-  for _, target_id in ipairs(ids) do
-    if target_id ~= id then
-      local target = state.notes[target_id]
-      if target then
-        references[#references + 1] = {
-          id = target_id,
-          title = target.title or target_id,
-        }
+  local members, project = project_members(current)
+  local member_ids = {}
+  local manifest_members = {}
+  for _, member in ipairs(members) do
+    if type(member.metadata) ~= "table" then
+      return nil, string.format("zk-lsp returned no metadata for project member %s", member.id)
+    end
+    member_ids[member.id] = true
+    manifest_members[#manifest_members + 1] = {
+      id = member.id,
+      path = "note/" .. member.id .. ".typ",
+      title = member.title or member.id,
+      metadata = member.metadata,
+    }
+  end
+
+  local referenced = {}
+  for _, member in ipairs(members) do
+    local ids, read_err = note_reference_ids(member, bufnr, id)
+    if not ids then
+      return nil, read_err
+    end
+    for _, target_id in ipairs(ids) do
+      if not member_ids[target_id] then
+        referenced[target_id] = true
       end
+    end
+  end
+
+  local ids = vim.tbl_keys(referenced)
+  table.sort(ids)
+  local references = {}
+  for _, target_id in ipairs(ids) do
+    local target = state.notes and state.notes[target_id]
+    if target then
+      references[#references + 1] = {
+        id = target_id,
+        title = target.title or target_id,
+      }
     end
   end
 
   local manifest = {
     version = 1,
+    project = project,
     focus = {
       id = id,
       path = "note/" .. id .. ".typ",
       title = current.title or id,
       metadata = current.metadata,
     },
+    members = manifest_members,
     references = references,
   }
 
-  return vim.json.encode(manifest) .. "\n", nil, ids
+  local ordered_member_ids = {}
+  for _, member in ipairs(members) do
+    ordered_member_ids[#ordered_member_ids + 1] = member.id
+  end
+  return vim.json.encode(manifest) .. "\n", nil, ids, ordered_member_ids, project
 end
 
 local function update_manifest(bufnr, id)
@@ -282,7 +510,12 @@ local function update_manifest(bufnr, id)
     return false, "focus buffer is no longer valid"
   end
 
-  local payload, err, ids = build_manifest(bufnr, id)
+  local projects_ok, projects_err = update_projects_manifest()
+  if not projects_ok then
+    return false, projects_err
+  end
+
+  local payload, err, ids, member_ids, project = build_manifest(bufnr, id)
   if not payload then
     return false, err
   end
@@ -304,6 +537,8 @@ local function update_manifest(bufnr, id)
     notify_manifest_changed()
   end
 
+  state.last_member_ids = member_ids
+  state.last_project = project
   state.last_reference_ids = ids
   state.last_error = nil
   state.last_notified_error = nil
@@ -426,12 +661,12 @@ function M.setup()
         state.notes = nil
       end
       if state.active_buf and vim.api.nvim_buf_is_valid(state.active_buf) then
-        if path == vim.fs.joinpath(wiki_root, "metadata.toml") or event.buf == state.active_buf then
+        if path == vim.fs.joinpath(wiki_root, "metadata.toml") or id then
           M.update(state.active_buf, { activate = false, force_notes = true })
         end
       end
     end,
-    desc = "Refresh focused ZK metadata and title stubs after writes",
+    desc = "Refresh focused ZK project metadata and external title stubs after writes",
   })
 
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
@@ -441,7 +676,7 @@ function M.setup()
         schedule_active_update()
       end
     end,
-    desc = "Refresh direct-reference stubs after ZK link edits",
+    desc = "Refresh external-reference stubs after ZK link edits",
   })
 
   vim.api.nvim_create_autocmd("VimLeavePre", {
@@ -465,7 +700,19 @@ function M.setup()
         report_error(err)
       end
     end)
-  end, { desc = "Regenerate the current Tinymist ZK focus manifest" })
+  end, { desc = "Regenerate the current Tinymist ZK project manifest" })
+end
+
+function M.ensure_projects(callback)
+  callback = callback or function() end
+  load_notes(false, function(ok, err)
+    if not ok then
+      callback(false, err)
+      return
+    end
+    local updated, update_err = update_projects_manifest()
+    callback(updated, update_err, projects_manifest_path)
+  end)
 end
 
 function M.is_wiki_note_path(path)
@@ -495,7 +742,10 @@ function M.status()
     focus_main = focus_main,
     last_error = state.last_error,
     manifest_path = manifest_path,
+    member_ids = vim.deepcopy(state.last_member_ids),
     note_count = state.notes and vim.tbl_count(state.notes) or 0,
+    project = state.last_project,
+    projects_manifest_path = projects_manifest_path,
     reference_ids = vim.deepcopy(state.last_reference_ids),
   }
 end

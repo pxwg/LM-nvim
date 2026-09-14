@@ -49,8 +49,8 @@ return {
     end
   end,
   on_attach = function(client, bufnr)
-    -- The wiki keeps one stable main file. Its generated manifest selects only
-    -- the active note and title-only stubs for that note's direct @ID links.
+    -- The wiki keeps one stable semantic main file. Its generated manifest
+    -- selects the active project plus title-only stubs for external @ID links.
     if focus.note_id(bufnr) then
       focus.update(bufnr, nil, function(ok)
         if not vim.lsp.get_client_by_id(client.id) or not focus.is_active(bufnr) then

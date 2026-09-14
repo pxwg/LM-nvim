@@ -15,6 +15,7 @@ local function find_git_root(filepath)
   return nil
 end
 
+local zk_focus = require("util.zk_tinymist_focus")
 local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
 local wiki_concealer_context = vim.fs.normalize(vim.fn.expand("~/wiki/concealer-context.typ"))
 local excluded_render_paths = {
@@ -46,6 +47,7 @@ local markdown_mitex_preamble = [[
 ]]
 
 local typst_code_render_allowlist = {
+  "zk_output_focused",
   "definition",
   "example",
   "fact",
@@ -93,12 +95,16 @@ end
 
 local function math_renderer_inputs(ctx)
   local id = vim.fn.fnamemodify(ctx.path, ":t:r")
-  return {
+  local inputs = {
     "focus=" .. id,
     "concealed=true",
     "preview=true",
     "preview-concealer=true",
   }
+  if id:match("^%d%d%d%d%d%d%d%d%d%d$") then
+    inputs[#inputs + 1] = "zk-focus-id=" .. id
+  end
+  return inputs
 end
 
 local function math_renderer_preamble_file(ctx)
@@ -208,6 +214,23 @@ local function apply_math_conceal_buffer_mode(bufnr)
     mode = desired_mode,
   })
   vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
+end
+
+local function schedule_math_conceal_buffer_mode(bufnr)
+  local path = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr) or ""
+  if zk_focus.is_wiki_note_path(path) then
+    zk_focus.ensure_projects(function(ok, err)
+      if ok then
+        apply_math_conceal_buffer_mode(bufnr)
+      else
+        vim.notify("Math conceal ZK project context: " .. tostring(err), vim.log.levels.WARN)
+      end
+    end)
+    return
+  end
+  vim.schedule(function()
+    apply_math_conceal_buffer_mode(bufnr)
+  end)
 end
 
 return {
@@ -327,12 +350,14 @@ return {
           "copilot-chat",
         },
         callback = function(event)
-          apply_math_conceal_buffer_mode(event.buf)
+          schedule_math_conceal_buffer_mode(event.buf)
         end,
       })
 
       for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        apply_math_conceal_buffer_mode(bufnr)
+        if is_math_conceal_buffer(bufnr) then
+          schedule_math_conceal_buffer_mode(bufnr)
+        end
       end
     end,
   },

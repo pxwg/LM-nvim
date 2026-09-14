@@ -8,7 +8,7 @@ return {
     focus.setup()
 
     return {
-      -- `zk-focus` makes include.typ read only the current note metadata.
+      -- `zk-focus` makes include.typ read only the active project metadata.
       extra_args = { "--input=preview=true", "--input=zk-focus=true" },
       get_main_file = function(path)
         if focus.is_wiki_note_path(path) then
