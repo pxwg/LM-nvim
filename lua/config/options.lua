@@ -200,3 +200,4 @@ autocmd("FileType", {
 })
 
 -- vim.o.cursorline = true
+vim.o.exrc = true
