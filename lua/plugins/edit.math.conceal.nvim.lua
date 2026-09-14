@@ -181,10 +181,12 @@ local function apply_math_conceal_buffer_mode(bufnr)
     return
   end
 
-  local ok, math_conceal = pcall(require, "math-conceal")
+  local ok, math_conceal = pcall(require, "math-conceal.nvim")
   if not ok or math_conceal.setup_buffer == nil then
     return
   end
+
+  math_conceal.set(vim.bo[bufnr].filetype, bufnr)
 
   local desired_mode = "edit"
   -- if is_copilot_chat_buffer(bufnr) then

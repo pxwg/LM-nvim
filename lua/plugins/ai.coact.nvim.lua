@@ -32,10 +32,12 @@ local function attach_coact_math_conceal(bufnr)
     require("lazy").load({ plugins = { "math-conceal.nvim" } })
   end)
 
-  local ok, math_conceal = pcall(require, "math-conceal")
+  local ok, math_conceal = pcall(require, "math-conceal.nvim")
   if not ok or math_conceal.setup_buffer == nil then
     return
   end
+
+  math_conceal.set(vim.bo[bufnr].filetype, bufnr)
 
   local desired_mode = coact_math_conceal_mode(bufnr)
   if
