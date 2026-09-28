@@ -34,7 +34,8 @@ local math_conceal_service_binary =
   "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service"
 
 local typst_math_header = [[
-      #show math.equation: set text(font: "Pennstander Math", weight: "extralight")
+      #show math.equation: set text(font: "Pennstander Math", weight: 300)
+      #show math.equation.where(block: false): set text(weight: 400)
       #show math.equation.where(block: false): it => {
         set text(size: 0.85em)
         it
@@ -46,6 +47,7 @@ local markdown_mitex_preamble = [[
 ]]
 
 local typst_code_render_allowlist = {
+  "show-tags",
   "zk_output_focused",
   "definition",
   "example",
@@ -83,6 +85,7 @@ local typst_code_render_allowlist = {
   "tag.capture",
   "tag.yau-contest",
   "tag.animate",
+  "retraction",
 }
 
 local function math_renderer_root(ctx)
@@ -99,6 +102,7 @@ local function math_renderer_inputs(ctx)
     "concealed=true",
     "preview=true",
     "preview-concealer=true",
+    "colored=false",
   }
   return inputs
 end
@@ -259,6 +263,11 @@ return {
       },
       opt = { concealcursor = "nci" },
       image = {
+        workspace_dir = function(bufnr)
+          if is_wiki_path(vim.api.nvim_buf_get_name(bufnr)) then
+            return wiki_root .. "/.math-conceal.image"
+          end
+        end,
         enabled = true,
         -- enabled = false,
         tracker = {
