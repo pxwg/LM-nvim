@@ -76,7 +76,7 @@ local servers = {
   "sourcekit-lsp",
   "texlab",
   "tinymist",
-  "zk-lsp",
+  "zettyp-lsp",
   "wolfram_lsp",
   "ts_query_ls",
 }

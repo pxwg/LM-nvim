@@ -43,6 +43,7 @@ end
 return {
   dir = vim.fn.expand("~/zk-lsp.nvim"),
   name = "zk-lsp.nvim",
+  enabled = false, -- Retired: its CLI/metadata protocol is not ZetTypst-compatible.
   event = "VeryLazy",
   dependencies = {
     "folke/snacks.nvim",

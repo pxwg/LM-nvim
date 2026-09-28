@@ -47,7 +47,6 @@ return {
         args = { "--input", "-" },
         stdin = true,
       }, -- HACK: a hacky way to avoid trailing blank lines
-      ["zk-lsp"] = { command = "zk-lsp", args = { "format" }, stdin = true },
       ["tex-fmt"] = {
         command = "tex-fmt",
         args = { "--nowrap", "--stdin" },
@@ -82,13 +81,6 @@ return {
       yml = { "yq" },
       typst = function(bufnr)
         local formatters = { "typstyle", "autocorrect", "trimlines", "injected" }
-        local file_path = vim.fs.normalize(vim.api.nvim_buf_get_name(bufnr))
-        local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
-
-        if vim.startswith(file_path, wiki_root .. "/") then
-          table.insert(formatters, "zk-lsp")
-        end
-
         return formatters
       end,
       arduino = { "clang_format" },

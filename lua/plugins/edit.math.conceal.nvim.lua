@@ -15,7 +15,6 @@ local function find_git_root(filepath)
   return nil
 end
 
-local zk_focus = require("util.zk_tinymist_focus")
 local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
 local wiki_concealer_context = vim.fs.normalize(vim.fn.expand("~/wiki/concealer-context.typ"))
 local excluded_render_paths = {
@@ -101,9 +100,6 @@ local function math_renderer_inputs(ctx)
     "preview=true",
     "preview-concealer=true",
   }
-  if id:match("^%d%d%d%d%d%d%d%d%d%d$") then
-    inputs[#inputs + 1] = "zk-focus-id=" .. id
-  end
   return inputs
 end
 
@@ -217,17 +213,6 @@ local function apply_math_conceal_buffer_mode(bufnr)
 end
 
 local function schedule_math_conceal_buffer_mode(bufnr)
-  local path = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr) or ""
-  if zk_focus.is_wiki_note_path(path) then
-    zk_focus.ensure_projects(function(ok, err)
-      if ok then
-        apply_math_conceal_buffer_mode(bufnr)
-      else
-        vim.notify("Math conceal ZK project context: " .. tostring(err), vim.log.levels.WARN)
-      end
-    end)
-    return
-  end
   vim.schedule(function()
     apply_math_conceal_buffer_mode(bufnr)
   end)
