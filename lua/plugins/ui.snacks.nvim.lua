@@ -127,6 +127,18 @@ local function hl_fg(groups)
   end
 end
 
+local function sync_snacks_picker_hl()
+  -- The default theme's Visual background matches NonText's foreground,
+  -- hiding directory prefixes on the current row. Keep both picker-local.
+  local light = vim.o.background == "light"
+  vim.api.nvim_set_hl(0, "SnacksPickerListCursorLine", {
+    bg = light and "#dce6f1" or "#293b50",
+  })
+  vim.api.nvim_set_hl(0, "SnacksPickerDir", {
+    fg = light and "#586579" or "#a6b4c6",
+  })
+end
+
 local function sync_snacks_math_image_hl()
   local fg = hl_fg({ "Normal", "NormalFloat" })
   if fg then
@@ -265,7 +277,12 @@ return {
   config = function(_, opts)
     require("snacks").setup(opts)
     sync_snacks_math_image_hl()
+    sync_snacks_picker_hl()
 
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = vim.api.nvim_create_augroup("SnacksPickerColors", { clear = true }),
+      callback = sync_snacks_picker_hl,
+    })
     vim.api.nvim_create_autocmd("ColorScheme", {
       group = vim.api.nvim_create_augroup("SnacksImageMathColor", { clear = true }),
       callback = sync_snacks_math_image_hl,
