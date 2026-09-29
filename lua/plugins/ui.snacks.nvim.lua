@@ -276,6 +276,7 @@ return {
   },
   config = function(_, opts)
     require("snacks").setup(opts)
+    require('util.lsp_definition_priority').setup_snacks()
     sync_snacks_math_image_hl()
     sync_snacks_picker_hl()
 

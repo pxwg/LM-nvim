@@ -108,6 +108,7 @@ local function enable_lsp()
   end
 
   configure_diagnostics()
+  require('util.lsp_definition_priority').setup()
   vim.lsp.enable(servers)
   lsp_enabled = true
   pcall(vim.api.nvim_del_augroup_by_id, lsp_group)
