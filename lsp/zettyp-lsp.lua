@@ -6,5 +6,5 @@ return {
     local root = vim.fs.root(bufnr, ".zettypst")
     if root then on_dir(root) end
   end,
-  init_options = { entry = "lsp.typ" },
+  init_options = { entry = "lsp.typ", hostWriteRoot = ".zettypst/cache" },
 }
