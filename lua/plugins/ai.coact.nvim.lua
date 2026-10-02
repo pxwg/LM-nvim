@@ -144,67 +144,33 @@ local function run_coact_command(command)
   schedule_all_coact_input_helpers()
 end
 
-local coact_ctrl_c_primed = false
+local last_coact_threads = setmetatable({}, { __mode = "k" })
 
-local function coact_window_is_open()
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    local bufnr = vim.api.nvim_win_get_buf(win)
-    if is_coact_buffer(bufnr) then
-      return true
-    end
-  end
-
-  return false
+local function with_selected_coact_adapter(callback)
+  local config = require("coact.config")
+  config.with_context(config.selected_adapter(), callback)
+  schedule_all_coact_input_helpers()
 end
 
-local function has_coact_buffer()
-  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    if is_coact_buffer(bufnr) then
-      return true
+local function open_selected_coact_thread()
+  with_selected_coact_adapter(function()
+    local coact = require("coact")
+    local config = require("coact.config")
+    local state = require("coact.state")
+    local adapter = config.selected_adapter()
+    local thread = state.get_thread(last_coact_threads[adapter])
+    if not thread then
+      local current = state.thread_for_buf(0) or state.get_thread(state.active_thread_id)
+      if current and current.adapter_context == adapter then
+        thread = current
+      end
     end
-  end
-
-  return false
-end
-
-local function run_coact_thread_command(command)
-  coact_ctrl_c_primed = true
-  run_coact_command(command)
-end
-
-local function choose_initial_coact_thread()
-  local choices = {
-    { label = "New Coact thread", command = "Coact new" },
-    { label = "Pick existing Coact thread", command = "Coact pick" },
-  }
-
-  vim.ui.select(choices, {
-    prompt = "Coact: choose a thread",
-    format_item = function(item)
-      return item.label
-    end,
-  }, function(choice)
-    if choice == nil then
-      return
+    if thread and thread.adapter_context == adapter then
+      coact.open(thread.id)
+    else
+      coact.new_thread({ adapter = adapter.name })
     end
-
-    run_coact_thread_command(choice.command)
   end)
-end
-
-local function open_or_choose_coact_thread()
-  if coact_window_is_open() then
-    coact_ctrl_c_primed = true
-    return
-  end
-
-  if coact_ctrl_c_primed or has_coact_buffer() then
-    coact_ctrl_c_primed = true
-    run_coact_command("Coact open")
-    return
-  end
-
-  choose_initial_coact_thread()
 end
 
 return {
@@ -217,22 +183,33 @@ return {
   keys = {
     {
       "<C-c>",
-      open_or_choose_coact_thread,
-      desc = "Coact Open/Choose Thread",
+      open_selected_coact_thread,
+      desc = "Coact Open Selected Adapter",
     },
     {
       "<leader>ac",
       function()
-        run_coact_thread_command("Coact pick")
+        with_selected_coact_adapter(function()
+          require("coact").pick_thread()
+        end)
       end,
       desc = "Coact Threads",
     },
     {
       "<leader>aC",
       function()
-        run_coact_thread_command("Coact new")
+        with_selected_coact_adapter(function()
+          require("coact").new_thread({ adapter = require("coact.config").selected_adapter().name })
+        end)
       end,
       desc = "Coact New Thread",
+    },
+    {
+      "<leader>aA",
+      function()
+        run_coact_command("Coact adapters")
+      end,
+      desc = "Coact Adapters",
     },
     {
       "<leader>ai",
@@ -279,7 +256,24 @@ return {
   },
   config = function()
     require("coact").setup({
-      provider = "pi",
+      default_adapter = "pi",
+      adapters = {
+        pi = {
+          provider = "pi",
+          command = { "pi", "--mode", "rpc" },
+          extra_args = {},
+        },
+        claude = {
+          provider = "claude",
+          command = { "claude" },
+          extra_args = {},
+        },
+        codex = {
+          provider = "codex",
+          command = { "codex", "app-server", "--listen", "stdio://" },
+          extra_args = {},
+        },
+      },
       thread = {
         approval_policy = "on-request",
         approvals_reviewer = "user",
@@ -332,6 +326,10 @@ return {
       group = vim.api.nvim_create_augroup("CoactNvimBufferOpened", { clear = true }),
       callback = function(event)
         local data = event.data or {}
+        local thread = require("coact.state").get_thread(data.thread_id or (data.thread and data.thread.id))
+        if thread and thread.adapter_context then
+          last_coact_threads[thread.adapter_context] = thread.id
+        end
         schedule_coact_input_helpers(data.bufnr or event.buf)
       end,
     })
