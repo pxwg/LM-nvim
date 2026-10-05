@@ -3,20 +3,22 @@ local function enrich_zk_note_item(item)
     return nil
   end
 
-  local note = require("zk_cli").note_info_by_file(item.file, {
-    cwd = item.cwd,
-    async = true,
-    silent = true,
-  })
+  local note = item.node and { title = item.node.title, path = item.file }
+    or require("zk_cli").note_info_by_file(item.file, {
+      cwd = item.cwd,
+      async = true,
+      silent = true,
+    })
   if not note then
     return nil
   end
 
   item.title = item.title or note.title
+  item.preview_title = item.preview_title or note.title
   item._zk_note_title = note.title
   item._zk_note_path = note.path
 
-  if type(item.text) == "string" and item.text ~= "" and not item._zk_note_text_augmented then
+  if not item.node and type(item.text) == "string" and item.text ~= "" and not item._zk_note_text_augmented then
     item.text = note.title .. " " .. item.text
     item._zk_note_text_augmented = true
   end
@@ -191,6 +193,13 @@ return {
         history_bonus = true,
       },
       sources = {
+        zettypst = {
+          -- Apply after Zet merges its picker options; keep relevance, reverse ties.
+          config = function(opts)
+            opts.sort = { fields = { "score:desc", "idx:desc" } }
+            opts.matcher.sort_empty = true
+          end,
+        },
         files = {
           matcher = {
             frecency = true,

@@ -86,7 +86,7 @@ end
 
 local function title_line_from_lines(lines)
   for i, line in ipairs(lines) do
-    if line:match("^=%s+.+%s+<%d+>%s*$") then
+    if line:match("^=%s+.+%s+<[%dT]+>%s*$") then
       return i
     end
   end
@@ -116,7 +116,7 @@ local function local_note_info(id, path, opts)
   local title_line = title_line_from_lines(lines)
   local title = "Untitled"
   local heading = lines[title_line] or ""
-  local heading_match = heading:match("^=%s*(.-)%s*<%d+>%s*$")
+  local heading_match = heading:match("^=%s*(.-)%s*<[%dT]+>%s*$")
   if heading_match and heading_match ~= "" then
     title = heading_match
   end
@@ -477,6 +477,23 @@ function M.note_info_by_file(path, opts)
   local resolved = resolve_file_path(path, opts.cwd)
   if not resolved then
     return nil
+  end
+
+  -- ZetTypst timestamp IDs use local extraction, not the legacy zk-lsp CLI.
+  local timestamp = resolved:match("/note/(%d%d%d%d%d%d%d%dT%d%d%d%d%d%d)%.typ$")
+  if timestamp then
+    -- Picker finders run in uv callbacks. Persistent cache IO uses Vimscript;
+    -- keep fast events on the uv-only local reader, including on a cold cache.
+    local fast = vim.in_fast_event()
+    local cached = not fast and not opts.refresh and get_cached_note(timestamp, resolved, opts)
+    if cached then
+      return cached
+    end
+    local note = local_note_info(timestamp, resolved, opts)
+    if note and not fast then
+      cache_note(note)
+    end
+    return note
   end
 
   local id = resolved:match("/note/(%d+)%.typ$")
