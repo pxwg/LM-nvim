@@ -47,7 +47,7 @@ function M.setup()
   end })
   -- Remove the retired command when this module is explicitly reloaded.
   pcall(vim.api.nvim_del_user_command, 'ZetFocusIndex')
-  require('util.zettypst_titles').setup()
+  -- Reference titles are provided by zettypst.nvim.
 end
 
 return M
