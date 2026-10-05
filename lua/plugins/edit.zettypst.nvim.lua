@@ -8,7 +8,11 @@ return {
   cmd = "Zet",
   dependencies = { "folke/snacks.nvim" },
   opts = function()
-    return vim.deepcopy(require("zettypst.presets.kickstart"))
+    local opts = vim.deepcopy(require("zettypst.presets.kickstart"))
+    opts.root_dir = function(path)
+      return vim.fs.root(path, ".zettypst") or vim.fn.expand("~/wiki")
+    end
+    return opts
   end,
   keys = {
     { "zn", "<cmd>Zet new<cr>", desc = "[Z]ettel [N]ew" },
