@@ -207,6 +207,21 @@ local function config_names_for_filetype(filetype, wanted_client)
   return names
 end
 
+-- vim.lsp.start needs a concrete root; resolve Neovim 0.11 root_dir(bufnr, on_dir) configs.
+local function resolve_root(config, bufnr)
+  if type(config.root_dir) ~= "function" then
+    return config
+  end
+  local resolved
+  config.root_dir(bufnr, function(dir)
+    resolved = dir
+  end)
+  if not resolved then
+    return nil
+  end
+  return vim.tbl_extend("force", config, { root_dir = resolved })
+end
+
 local function start_configs_for_buffer(bufnr, wanted_client)
   local filetype = vim.bo[bufnr].filetype
   if not filetype or filetype == "" then
@@ -218,7 +233,8 @@ local function start_configs_for_buffer(bufnr, wanted_client)
     local ok, config = pcall(function()
       return vim.lsp.config[name]
     end)
-    if ok and config then
+    config = ok and config and resolve_root(config, bufnr) or nil
+    if config then
       vim.lsp.start(config, { bufnr = bufnr })
     end
   end
