@@ -28,10 +28,8 @@ lua/
 │   ├── keymap.lua     # Global keybindings (~500 lines)
 │   └── autocmd.lua    # Auto-commands
 ├── plugins/           # Plugin specs (lazy.nvim format)
-├── util/              # Custom utility modules
-├── lsp/               # LSP client configuration
-├── conceal/           # Math symbol concealing for LaTeX/Typst
-└── zk_scripts.lua     # Zettelkasten note system (~37KB)
+├── util/              # Custom utility modules (note_info.lua: local note metadata)
+└── conceal/           # Math symbol concealing for LaTeX/Typst
 ```
 
 ## Core Systems
@@ -40,18 +38,18 @@ lua/
 `lua/plugins/edit.blink.lua` — blink.cmp completion framework integrating rime-ls (Rime IME) for Chinese input. Key behaviors: `<space>` accepts rime suggestions; automatic punctuation switching between Chinese/English modes; math environment detection disables Chinese input.
 
 ### LSP
-`lua/lsp/` — nvim-lspconfig setup. Enabled server list is in `lua/config/options.lua`. Custom LSP: `zk-lsp` for the note system.
+`lsp/` — LSP configurations. Enabled server list is in `lua/config/options.lua`. Custom LSP: `zettyp-lsp` for the note system.
 
 ### Formatting
 `lua/plugins/edit.conform.lua` — conform.nvim with per-filetype formatters. Custom Rust binary at `trim_blank_fmt/target/release/trim_blank_fmt` for trailing whitespace. `autocorrect` handles Chinese/English mixed-text formatting.
 
 ### Zettelkasten Notes
-The note system spans multiple files:
-- `zk_scripts.lua` — core note graph logic (ID-based references `<1234567890>`, bidirectional links, tag system)
-- `lua/util/note_node.lua` — graph data structures
-- `lua/util/note_telescope.lua` — Telescope picker integration
-- `lua/lsp/zk_lsp.lua` — custom LSP for note navigation
-- `lua/plugins/edit.zk_telescope.lua` — search commands (`:Zk search`, `:Zk alias`, etc.)
+The note system uses ZetTypst:
+- `lua/plugins/edit.zettypst.nvim.lua` — note workflows and plugin setup
+- `lsp/zettyp-lsp.lua` — note navigation LSP
+- `lua/util/note_info.lua` — pure local title/metadata extraction for Snacks and completion, supporting numeric and timestamp note IDs
+
+Do not reintroduce the retired external note CLI or its workspace/blackboard integration.
 
 Notes use Typst format with metadata headers.
 

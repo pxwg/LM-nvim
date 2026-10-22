@@ -500,25 +500,30 @@ return {
                 if is_typst then
                   -- Check if this is a reference
                   if item.kind == require("blink.cmp.types").CompletionItemKind.Reference then
-                    -- 1. Title Replacement Logic (From Note 2602082130)
+                    -- Accept both legacy IDs and ZetTypst timestamps, without prefix matches.
+                    local label = item.label
+                    local id = label:match("^@?(%d%d%d%d%d%d%d%dT%d%d%d%d%d%d)$")
+                      or label:match("^@?(%d%d%d%d%d%d%d%d%d%d)$")
                     local title = (item.labelDetails and item.labelDetails.description) or item.detail
+                    if id and (not title or title == "" or title == id) then
+                      local note = require("util.note_info").note_info_by_file("note/" .. id .. ".typ", {
+                        cwd = vim.fn.expand("~/wiki"),
+                      })
+                      title = note and note.title
+                    end
 
-                    -- Detect ZK ID Pattern (yyMMddHHmm)
-                    -- Using the capture group to extract ID for file lookup
-                    local id = item.label:match("^(%d%d%d%d%d%d%d%d%d%d)")
-
-                    if id and title then
-                      -- Apply the filter text fix you already have
-                      item.filterText = title
-
-                      -- Show title in the completion list while preserving the id label
+                    if id and title and title ~= "" then
+                      -- A display label must never become the inserted reference.
+                      if not item.textEdit and not item.insertText then
+                        item.insertText = label
+                      end
+                      item.filterText = title .. " " .. id
                       item.label = title
                       item.labelDetails = vim.tbl_extend("force", item.labelDetails or {}, {
                         description = id,
                       })
 
-                      -- 2. NEW: Documentation Injection Logic (From Note 2602112232)
-                      -- Only load if documentation is missing to avoid overwriting LSP info if it exists later
+                      -- Keep server documentation; otherwise reuse the local note preview.
                       if not item.documentation then
                         local preview_content = get_zk_preview(id)
                         if preview_content then

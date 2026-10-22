@@ -4,10 +4,8 @@ local function enrich_zk_note_item(item)
   end
 
   local note = item.node and { title = item.node.title, path = item.file }
-    or require("zk_cli").note_info_by_file(item.file, {
+    or require("util.note_info").note_info_by_file(item.file, {
       cwd = item.cwd,
-      async = true,
-      silent = true,
     })
   if not note then
     return nil

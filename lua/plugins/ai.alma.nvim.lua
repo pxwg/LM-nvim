@@ -98,21 +98,6 @@ return {
     "AlmaBlockQuickfix",
     "AlmaDiff",
     "AlmaAttachFormulaImages",
-    "ZkAlmaWorkspaceRegister",
-    "ZkAlmaBlackboardBind",
-    "ZkAlmaBlackboardUnbind",
-    "ZkAlmaBlackboardStatus",
-    "ZkAlmaReviewApprove",
-    "ZkAlmaReviewReject",
-    "ZkAlmaReviewComment",
-    "ZkAlmaReviewApplyApproved",
-    "ZkAlmaReviewGate",
-    "ZkAlmaReviewPicker",
-    "ZkAlmaReviewList",
-    "ZkAlmaReviewGoto",
-    "ZkAlmaReviewNext",
-    "ZkAlmaReviewPrev",
-    "ZkAlmaReviewClear",
   },
   keys = {
     {
@@ -143,7 +128,6 @@ return {
       reasoning_effort = "xhigh",
       window_layout = "sidebar",
     })
-    require("util.alma_zk_blackboard").setup()
 
     -- vim.api.nvim_create_user_command("AlmaAttachFormulaImages", function(opts)
     --   local bufnr = tonumber(opts.args) or vim.api.nvim_get_current_buf()
