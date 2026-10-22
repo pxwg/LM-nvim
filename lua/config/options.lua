@@ -77,6 +77,7 @@ local servers = {
   "emmylua_ls",
   "harper_ls",
   "ltex",
+  "ocamllsp",
   "pyright",
   "rust_analyzer",
   "sourcekit-lsp",
