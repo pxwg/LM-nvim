@@ -41,7 +41,13 @@ vim.opt.laststatus = 3
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.g.tex_conceal = "abdmg"
-vim.opt.foldmethod = "marker"
+-- Native query-based folding. Queries define ranges; zc/zo/za control closure.
+-- Start buffers expanded; do not automatically close folds when leaving them.
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
+vim.opt.foldclose = ""
 vim.opt.relativenumber = false
 require("config.quick_access").apply()
 -- set WinSeparator to " "

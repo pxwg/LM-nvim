@@ -37,7 +37,6 @@ return {
 
       highlight = { enable = true },
       indent = { enable = true },
-      folds = { enable = true },
     },
     config = function(_, opts)
       local TS = require("nvim-treesitter")
@@ -65,12 +64,6 @@ return {
           -- indent
           if opts.indent and opts.indent.enable and has_query("indents") then
             vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-          end
-
-          -- folds
-          if opts.folds and opts.folds.enable and has_query("folds") then
-            vim.wo[0][0].foldmethod = "expr"
-            vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
           end
         end,
       })
