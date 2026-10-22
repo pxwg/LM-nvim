@@ -6,7 +6,7 @@ return {
       cli = {
         tools = {
           ["claude-wiki"] = {
-            cmd = { "claude", "--add-dir", vim.fn.expand("~/wiki") },
+            cmd = { "claude", "--add-dir", require("util.wiki").root() },
           },
           ["claude-ds"] = {
             cmd = { "claude-ds" },

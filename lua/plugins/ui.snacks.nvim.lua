@@ -191,13 +191,6 @@ return {
         history_bonus = true,
       },
       sources = {
-        zettypst = {
-          -- Apply after Zet merges its picker options; keep relevance, reverse ties.
-          config = function(opts)
-            opts.sort = { fields = { "score:desc", "idx:desc" } }
-            opts.matcher.sort_empty = true
-          end,
-        },
         files = {
           matcher = {
             frecency = true,

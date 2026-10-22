@@ -1,18 +1,13 @@
--- Uses Lazy's dev.path ("~") to load ~/zettypst.nvim directly.
+-- Reuse the default wiki's pinned plugin and project composition.
 return {
-  "Project-ZetTypst/zettypst.nvim",
-  name = "zettypst.nvim",
-  dev = true,
-  main = "zettypst",
+  name = "wiki-ocaml",
+  dir = require("util.wiki").root() .. "/.zettypst/nvim/plugin",
+  lazy = true,
   event = "VeryLazy",
-  cmd = "Zet",
+  cmd = { "Zet", "WikiZet" },
   dependencies = { "folke/snacks.nvim" },
-  opts = function()
-    local opts = vim.deepcopy(require("zettypst.presets.kickstart"))
-    opts.root_dir = function(path)
-      return vim.fs.root(path, ".zettypst") or vim.fn.expand("~/wiki")
-    end
-    return opts
+  config = function()
+    require("util.wiki").setup()
   end,
   keys = {
     { "zn", "<cmd>Zet new<cr>", desc = "[Z]ettel [N]ew" },

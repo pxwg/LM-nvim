@@ -3,7 +3,7 @@ local rime_ls = require("util.rime_ls")
 vim.g.rime_enabled = true
 
 local function get_zk_preview(id)
-  local note_path = vim.fn.expand("~/wiki/note/" .. id .. ".typ")
+  local note_path = vim.fs.joinpath(require("util.wiki").project(), "note", id .. ".typ")
 
   -- Check if file exists to avoid errors
   if vim.fn.filereadable(note_path) == 0 then
@@ -507,7 +507,7 @@ return {
                     local title = (item.labelDetails and item.labelDetails.description) or item.detail
                     if id and (not title or title == "" or title == id) then
                       local note = require("util.note_info").note_info_by_file("note/" .. id .. ".typ", {
-                        cwd = vim.fn.expand("~/wiki"),
+                        cwd = require("util.wiki").project(),
                       })
                       title = note and note.title
                     end

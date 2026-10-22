@@ -33,7 +33,7 @@ local function set_keymaps(picker)
       or ':lua Snacks.picker.files({ cwd = "~/.config/nvim" })<cr>',
     f = picker == "fzf" and ':lua require("fzf-lua").files()<cr>' or ":lua Snacks.picker.files()<cr>",
     g = picker == "fzf" and ':lua require("fzf-lua").grep()<cr>' or ":lua Snacks.picker.grep()<cr>",
-    w = [[:lua vim.loop.chdir(vim.fn.expand("~/wiki/"))<cr>]],
+    w = [[:lua require("util.wiki").open()<cr>]],
     s = ':lua require("persistence").load({ last = true })<cr>',
     l = ":Lazy<cr>",
     r = picker == "fzf"

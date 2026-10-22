@@ -1,6 +1,8 @@
 local autocmd = vim.api.nvim_create_autocmd
 -- @type "telescope" | "fzf" | "snacks"
 vim.g.picker = "snacks"
+-- Set before project-local configuration and Lazy plugin specs are evaluated.
+vim.g.wiki_root = vim.g.wiki_root or vim.fs.normalize(vim.fn.expand("~/wiki-ocaml"))
 vim.g.mini_file_opened = false
 vim.g.hammerspoon = true
 vim.o.splitkeep = "screen"

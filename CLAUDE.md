@@ -38,15 +38,18 @@ lua/
 `lua/plugins/edit.blink.lua` — blink.cmp completion framework integrating rime-ls (Rime IME) for Chinese input. Key behaviors: `<space>` accepts rime suggestions; automatic punctuation switching between Chinese/English modes; math environment detection disables Chinese input.
 
 ### LSP
-`lsp/` — LSP configurations. Enabled server list is in `lua/config/options.lua`. Custom LSP: `zettyp-lsp` for the note system.
+`lsp/` — LSP configurations. Enabled server list is in `lua/config/options.lua`. The default wiki uses the project-owned `wiki-ocaml` LSP and Tinymist setup. `zettyp-lsp` remains available for legacy projects.
 
 ### Formatting
 `lua/plugins/edit.conform.lua` — conform.nvim with per-filetype formatters. Custom Rust binary at `trim_blank_fmt/target/release/trim_blank_fmt` for trailing whitespace. `autocorrect` handles Chinese/English mixed-text formatting.
 
 ### Zettelkasten Notes
-The note system uses ZetTypst:
-- `lua/plugins/edit.zettypst.nvim.lua` — note workflows and plugin setup
-- `lsp/zettyp-lsp.lua` — note navigation LSP
+The default wiki is `~/wiki-ocaml`, configured once through `vim.g.wiki_root` in `lua/config/options.lua`:
+- `lua/util/wiki.lua` — default root, project-aware preview paths, Dashboard entry and global `:Zet`
+- `lua/plugins/edit.zettypst.nvim.lua` — Lazy local-directory spec for the pinned OCaml plugin; inherits `.zettypst/nvim/init.lua` from the default wiki
+- Project-owned setup scopes LSP/rendering to wiki files; global search can use the default wiki without changing cwd. Other explicit knowledge projects are not redirected.
+- Old `~/wiki` rendering paths are legacy compatibility rules, not the default wiki resolver.
+- `lsp/zettyp-lsp.lua` — legacy note navigation LSP
 - `lua/util/note_info.lua` — pure local title/metadata extraction for Snacks and completion, supporting numeric and timestamp note IDs
 
 Do not reintroduce the retired external note CLI or its workspace/blackboard integration.
@@ -76,6 +79,6 @@ CopilotChat tools that run commands, scan files, call MCP tools, or otherwise bl
 The `sidekick.nvim` plugin is configured with two Claude Code integrations:
 
 - `<leader>ac` - Opens Claude Code normally
-- `<leader>aw` - Opens Claude Code with `~/wiki/` directory added via `--add-dir` flag
+- `<leader>aw` - Opens Claude Code with the default wiki directory (`~/wiki-ocaml`) added via `--add-dir` flag
 
 This enables Claude Code to access the Zettelkasten note system when working on tasks related to the wiki.
