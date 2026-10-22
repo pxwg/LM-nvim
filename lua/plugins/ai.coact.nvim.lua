@@ -176,7 +176,7 @@ end
 return {
   "pxwg/coact.nvim",
   dir = "/Users/pxwg-dogggie/codex.nvim",
-  enabled = vim.g.coact_nvim_enabled ~= false,
+  -- enabled = false, -- Use ai.coact-pi.nvim.lua; retain this configuration for rollback.
   cmd = {
     "Coact",
   },
