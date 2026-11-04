@@ -8,13 +8,6 @@ autocmd("FileType", {
   end,
 })
 
--- color preview
-autocmd("BufRead", {
-  callback = function()
-    vim.cmd("ColorizerAttachToBuffer")
-  end,
-})
-
 -- -- fzf with frequency
 -- local function log_file_access()
 --   local file_path = vim.fn.expand("%:p")
