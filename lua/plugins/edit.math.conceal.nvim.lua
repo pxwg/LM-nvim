@@ -86,22 +86,26 @@ local typst_code_render_allowlist = {
   "tag.yau-contest",
   "tag.animate",
   "retraction",
+  "include-note",
 }
 
 -- Opt in only projects providing the same native-focus rendering contract.
 local function zettypst_render_root(path)
   -- Virtual buffer URIs may be normalized from :// to :/; neither is a project file.
-  if not path or path == "" or path:match("^%a[%w+.-]*:/") then return end
+  if not path or path == "" or path:match("^%a[%w+.-]*:/") then
+    return
+  end
   local root = vim.fs.root(path, ".zettypst")
-  if root and vim.uv.fs_stat(root .. "/concealer-context.typ")
-    and vim.uv.fs_stat(root .. "/.zettypst/focus.typ") then
+  if root and vim.uv.fs_stat(root .. "/concealer-context.typ") and vim.uv.fs_stat(root .. "/.zettypst/focus.typ") then
     return root
   end
 end
 
 local function math_renderer_root(ctx)
   local root = zettypst_render_root(ctx.path)
-  if root then return root end
+  if root then
+    return root
+  end
   if is_wiki_path(ctx.path) then
     return wiki_root
   end
@@ -122,7 +126,9 @@ end
 
 local function math_renderer_preamble_file(ctx)
   local root = zettypst_render_root(ctx.path)
-  if root then return root .. "/concealer-context.typ" end
+  if root then
+    return root .. "/concealer-context.typ"
+  end
   if is_wiki_path(ctx.path) then
     return wiki_concealer_context
   end
@@ -132,7 +138,7 @@ local function math_renderer_path_excluded(ctx)
   local root = zettypst_render_root(ctx.path)
   if root then
     -- Focus rendering requires a note filename, not an aggregate/helper entry.
-    return require('util.zettypst_focus').note(ctx.path) == nil
+    return require("util.zettypst_focus").note(ctx.path) == nil
   end
   return excluded_render_paths[vim.fs.normalize(ctx.path)] == true
 end
@@ -285,7 +291,9 @@ return {
       image = {
         workspace_dir = function(bufnr)
           local root = zettypst_render_root(vim.api.nvim_buf_get_name(bufnr))
-          if root then return root .. "/.math-conceal.image" end
+          if root then
+            return root .. "/.math-conceal.image"
+          end
           if is_wiki_path(vim.api.nvim_buf_get_name(bufnr)) then
             return wiki_root .. "/.math-conceal.image"
           end
