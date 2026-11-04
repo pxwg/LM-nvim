@@ -24,9 +24,8 @@ local function in_math()
 end
 
 local function switch_rime_math()
-  -- if vim.bo.filetype == "tex" or vim.bo.filetype == "typst" then
-  -- in the mathzone or table or tikz and rime is active, disable rime
-  if (in_math() == true or tex.in_tikz() == true) and rime_ls_active == true then
+  -- Math, TikZ and wiki DSL share the same automatic English-input policy.
+  if (typst.in_dsl() or in_math() or tex.in_tikz()) and rime_ls_active == true then
     if _G.rime_toggled == true then
       require("lsp.rime_ls").toggle_rime()
       _G.rime_toggled = false
@@ -97,9 +96,30 @@ end
 --   callback = toggle_rime_if_in_brackets,
 -- })
 
-vim.api.nvim_create_autocmd({ "CursorMovedI" }, {
+local update_input_region = debounce(function()
+  if vim.api.nvim_get_mode().mode:sub(1, 1) == "i" then
+    switch_rime_math()
+  end
+end, 200)
+
+vim.api.nvim_create_autocmd({ "InsertEnter", "CursorMovedI" }, {
   pattern = { "*.tex", "*.typ" },
-  callback = debounce(switch_rime_math, 200),
+  callback = update_input_region,
+})
+
+-- Semantic tokens arrive asynchronously, including for newly typed /// lines.
+vim.api.nvim_create_autocmd("LspTokenUpdate", {
+  pattern = "*.typ",
+  callback = function(event)
+    local token = event.data.token
+    if
+      event.buf == vim.api.nvim_get_current_buf()
+      and token.type == "zkDslMarker"
+      and token.line == vim.api.nvim_win_get_cursor(0)[1] - 1
+    then
+      update_input_region()
+    end
+  end,
 })
 
 local function switch_rime_math_md()
