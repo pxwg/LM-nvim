@@ -2,25 +2,6 @@ require("util.rime_blinks")
 local rime_ls = require("util.rime_ls")
 vim.g.rime_enabled = true
 
-local function get_zk_preview(id)
-  local note_path = vim.fs.joinpath(require("util.wiki").project(), "note", id .. ".typ")
-
-  -- Check if file exists to avoid errors
-  if vim.fn.filereadable(note_path) == 0 then
-    return nil
-  end
-
-  -- Read only the first 15 lines to allow for fast preview without lagging
-  local lines = vim.fn.readfile(note_path, "", 15)
-  if not lines or #lines == 0 then
-    return nil
-  end
-
-  -- Join lines and optionally format them
-  -- We wrap it in a typst code block for syntax highlighting in the float
-  return "```typst\n" .. table.concat(lines, "\n") .. "\n...\n```"
-end
-
 function _G.rime_ls_disabled(context)
   if not vim.g.rime_enabled then
     return true
@@ -491,54 +472,6 @@ return {
           lsp = {
             min_keyword_length = 0,
             fallbacks = { "ripgrep", "buffer" },
-            --- @param ctx blink.cmp.Context
-            --- @param items blink.cmp.CompletionItem[]
-            transform_items = function(ctx, items)
-              local is_typst = vim.bo.filetype == "typst"
-
-              for _, item in ipairs(items) do
-                if is_typst then
-                  -- Check if this is a reference
-                  if item.kind == require("blink.cmp.types").CompletionItemKind.Reference then
-                    -- Accept both legacy IDs and ZetTypst timestamps, without prefix matches.
-                    local label = item.label
-                    local id = label:match("^@?(%d%d%d%d%d%d%d%dT%d%d%d%d%d%d)$")
-                      or label:match("^@?(%d%d%d%d%d%d%d%d%d%d)$")
-                    local title = (item.labelDetails and item.labelDetails.description) or item.detail
-                    if id and (not title or title == "" or title == id) then
-                      local note = require("util.note_info").note_info_by_file("note/" .. id .. ".typ", {
-                        cwd = require("util.wiki").project(),
-                      })
-                      title = note and note.title
-                    end
-
-                    if id and title and title ~= "" then
-                      -- A display label must never become the inserted reference.
-                      if not item.textEdit and not item.insertText then
-                        item.insertText = label
-                      end
-                      item.filterText = title .. " " .. id
-                      item.label = title
-                      item.labelDetails = vim.tbl_extend("force", item.labelDetails or {}, {
-                        description = id,
-                      })
-
-                      -- Keep server documentation; otherwise reuse the local note preview.
-                      if not item.documentation then
-                        local preview_content = get_zk_preview(id)
-                        if preview_content then
-                          item.documentation = {
-                            kind = "markdown",
-                            value = preview_content,
-                          }
-                        end
-                      end
-                    end
-                  end
-                end
-              end
-              return items
-            end,
           },
           lazydev = {
             name = "LazyDev",
