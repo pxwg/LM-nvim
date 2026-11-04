@@ -51,11 +51,15 @@ autocmd("VimLeavePre", {
       if vim.bo[buf].filetype == "neo-tree" or vim.bo[buf].filetype == "copilot-chat" then
         vim.api.nvim_buf_delete(buf, { force = true })
       end
-      vim.cmd("TransparentDisable")
       if vim.fn.has("mac") == 1 then
         -- vim.fn.system("kitty @ set-window-title")
         -- vim.fn.system("hs -c UnTopSidenote()")
       end
+    end
+    -- Toggling writes the shared cache and reloads the colorscheme.
+    -- Reset transparency once, only when its state needs to change.
+    if vim.g.transparent_enabled then
+      vim.cmd("TransparentDisable")
     end
   end,
 })
