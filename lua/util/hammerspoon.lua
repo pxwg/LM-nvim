@@ -1,7 +1,8 @@
 local M = {}
 
 function M.hammerspoon_enabled()
-  return vim.fn.has("mac") == 1 and vim.env.TERMINFO:find("sidenote") == nil
+  local terminfo = vim.env.TERMINFO
+  return vim.fn.has("mac") == 1 and (terminfo == nil or terminfo:find("sidenote", 1, true) == nil)
 end
 
 function M.hammerspoon_load()
