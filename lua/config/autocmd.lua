@@ -30,10 +30,104 @@ autocmd("BufWinLeave", {
   end,
 })
 
-autocmd("BufReadPost", {
+-- Restore saved views first; only fresh Typst views get default heading folds.
+local function fold_typst_headings(buf, win)
+  if not vim.api.nvim_win_is_valid(win) or vim.api.nvim_win_get_buf(win) ~= buf then
+    return
+  end
+  vim.api.nvim_win_call(win, function()
+    if
+      vim.bo[buf].filetype ~= "typst"
+      or vim.w.typst_heading_folds_buf == buf
+      or not vim.wo.foldenable
+      or vim.wo.foldmethod ~= "expr"
+      or vim.wo.foldexpr ~= "v:lua.vim.treesitter.foldexpr()"
+    then
+      return
+    end
+    local ok, parser = pcall(vim.treesitter.get_parser, buf, "typst")
+    if not ok or not parser then
+      return
+    end
+    local trees = parser:parse()
+    if not trees or not trees[1] then
+      return
+    end
+    local query = vim.treesitter.query.parse("typst", "(section) @section")
+    local lines = {}
+    for _, node in query:iter_captures(trees[1]:root(), buf) do
+      lines[#lines + 1] = node:start() + 1
+    end
+    -- Close children before parents, preserving their state when parents reopen.
+    table.sort(lines, function(a, b)
+      return a > b
+    end)
+    local view = vim.fn.winsaveview()
+    vim.wo.foldexpr = vim.wo.foldexpr
+    for _, line in ipairs(lines) do
+      if vim.fn.foldlevel(line) > 0 then
+        vim.cmd("silent! " .. line .. "foldclose")
+      end
+    end
+    vim.fn.winrestview(view)
+    vim.w.typst_heading_folds_buf = buf
+  end)
+end
+
+autocmd("BufWinEnter", {
   pattern = "*",
-  callback = function()
-    vim.cmd("silent! loadview")
+  callback = function(event)
+    if vim.bo[event.buf].buftype ~= "" or vim.api.nvim_buf_get_name(event.buf) == "" then
+      return
+    end
+    local win = vim.api.nvim_get_current_win()
+    local function in_window(callback)
+      if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == event.buf then
+        vim.api.nvim_win_call(win, callback)
+      end
+    end
+    local function restore_view()
+      in_window(function()
+        -- Re-evaluate the now-populated cache before replaying saved zo/zc.
+        if vim.wo.foldmethod == "expr" then
+          vim.wo.foldexpr = vim.wo.foldexpr
+        end
+        if pcall(function()
+          vim.cmd("silent loadview")
+        end) then
+          vim.w.typst_heading_folds_buf = event.buf
+        else
+          fold_typst_headings(event.buf, win)
+        end
+      end)
+    end
+    local function prepare_folds()
+      in_window(function()
+        if vim.bo[event.buf].filetype == "typst"
+          and vim.wo.foldmethod == "expr"
+          and vim.wo.foldexpr == "v:lua.vim.treesitter.foldexpr()"
+        then
+          local ok, parser = pcall(vim.treesitter.get_parser, event.buf, "typst")
+          if ok and parser then
+            parser:parse()
+            -- Initial foldexpr computation fills its cache asynchronously.
+            vim.treesitter.foldexpr(1)
+          end
+        end
+        vim.schedule(restore_view)
+      end)
+    end
+    -- VimEnter clears Tree-sitter's startup fold cache; initialize after it.
+    if vim.v.vim_did_enter == 0 then
+      autocmd("VimEnter", {
+        once = true,
+        callback = function()
+          vim.schedule(prepare_folds)
+        end,
+      })
+    else
+      vim.schedule(prepare_folds)
+    end
   end,
 })
 

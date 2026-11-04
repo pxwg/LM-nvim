@@ -50,6 +50,9 @@ vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
 vim.opt.foldclose = ""
+-- Quiet native fold summaries: plain text, a small marker, no dotted fill.
+vim.opt.foldtext = "'› ' . getline(v:foldstart)"
+vim.opt.fillchars:append({ fold = " " })
 vim.opt.relativenumber = false
 require("config.quick_access").apply()
 -- set WinSeparator to " "
@@ -117,7 +120,7 @@ local function enable_lsp()
   end
 
   configure_diagnostics()
-  require('util.lsp_definition_priority').setup()
+  require("util.lsp_definition_priority").setup()
   vim.lsp.enable(servers)
   lsp_enabled = true
   pcall(vim.api.nvim_del_augroup_by_id, lsp_group)
