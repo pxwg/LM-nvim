@@ -170,6 +170,9 @@ end
 return {
   "folke/snacks.nvim",
   event = "VeryLazy",
+  init = function()
+    require("util.recent_files").setup({ days = 30 })
+  end,
   opts = {
     profiler = { enabled = true },
     bigfiles = {
@@ -208,6 +211,9 @@ return {
           sort = { fields = { "score:desc", "idx" } },
         },
         recent = {
+          finder = function(opts, ctx)
+            return require("util.recent_files").finder(opts, ctx)
+          end,
           matcher = {
             frecency = false,
             history_bonus = false,
