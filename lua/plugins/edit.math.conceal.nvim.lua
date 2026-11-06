@@ -1,11 +1,5 @@
 -- math-conceal.nvim: Unicode conceal plus rendered Typst, Markdown and Org math.
 
--- Checkout of the unmerged pluggable-scanner branch that adds Org support.
--- Drop `dir` once the branch is merged.
-local scanner_worktree = vim.fn.expand("~/math-conceal.nvim-scanner")
--- The worktree has no service build; reuse the main checkout's binary.
-local service_binary = vim.fn.expand("~/math-conceal.nvim/service/target/release/typst-concealer-service")
-
 local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
 local wiki_unrendered = {
   [wiki_root .. "/link.typ"] = true,
@@ -123,7 +117,6 @@ end
 -- Every renderer compiles in the same project context.
 local function project_renderer(spec)
   return vim.tbl_extend("force", {
-    service_binary = service_binary,
     header = typst_header,
     root = render_root,
     inputs = render_inputs,
@@ -134,7 +127,6 @@ end
 
 return {
   "pxwg/math-conceal.nvim",
-  dir = vim.uv.fs_stat(scanner_worktree) and scanner_worktree or nil,
   dev = vim.fn.has("mac") == 1,
   event = "VeryLazy",
   main = "math-conceal",
@@ -182,14 +174,4 @@ return {
       },
     },
   },
-  config = function(_, opts)
-    -- Checkouts without injected-Typst scanning would parse Org as Typst.
-    if vim.api.nvim_get_runtime_file("lua/math-conceal/image/scanner.lua", false)[1] == nil then
-      opts.image.renderers.org_typst = nil
-      opts.ft = vim.tbl_filter(function(ft)
-        return ft ~= "org"
-      end, opts.ft)
-    end
-    require("math-conceal").setup(opts)
-  end,
 }
