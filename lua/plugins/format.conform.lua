@@ -42,6 +42,12 @@ return {
       end,
     },
     formatters = {
+      injected = {
+        options = {
+          lang_to_formatters = { typst = { "typstyle" } },
+          lang_to_ext = { typst = "typ" },
+        },
+      },
       trimlines = {
         command = vim.fn.stdpath("config") .. "/trim_blank_fmt/target/release/trim_blank_fmt",
         args = { "--input", "-" },
@@ -55,6 +61,7 @@ return {
       },
     },
     formatters_by_ft = {
+      org = { "injected" },
       lua = { "stylua", "injected" },
       html = { "htmlbeautifier" },
       swift = { "swiftformat" },

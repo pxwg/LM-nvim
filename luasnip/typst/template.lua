@@ -5,6 +5,9 @@ local i = ls.insert_node
 local fmta = require("luasnip.extras.fmt").fmta
 local rep = require("luasnip.extras").rep
 local line_begin = require("luasnip.extras.expand_conditions").line_begin
+local function document_line(line_to_cursor, matched_trigger, captures)
+  return vim.bo.filetype == "typst" and line_begin(line_to_cursor, matched_trigger, captures)
+end
 
 return {
   s(
@@ -23,7 +26,7 @@ Keyword: {}
         i(3),
       }
     ),
-    { condition = line_begin }
+    { condition = document_line }
   ),
   s(
     { trig = "newfile", snippetType = "autosnippet" },
@@ -68,6 +71,6 @@ Keyword: {}
         i(4),
       }
     ),
-    { condition = line_begin }
+    { condition = document_line }
   ),
 }

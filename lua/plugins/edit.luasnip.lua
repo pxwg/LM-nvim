@@ -3,7 +3,15 @@ return {
     "L3MON4D3/LuaSnip",
     event = "InsertEnter",
     config = function()
+      local filetypes = require("luasnip.extras.filetype_functions")
       require("luasnip").config.set_config({
+        load_ft_func = filetypes.extend_load_ft({ org = { "typst" } }),
+        ft_func = function()
+          if vim.bo.filetype == "org" and require("util.typst").in_typst() then
+            return { "typst", "org" }
+          end
+          return filetypes.from_filetype()
+        end,
         enable_autosnippets = true,
         store_selection_keys = "`",
         delete_check_events = "TextChanged",

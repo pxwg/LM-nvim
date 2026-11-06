@@ -1,7 +1,25 @@
 local M = {}
 
+-- Org keeps its host filetype; only the injected region enables Typst snippets.
+M.in_typst = function()
+  if vim.bo.filetype == "typst" then
+    return true
+  end
+  if vim.bo.filetype ~= "org" then
+    return false
+  end
+  local ok, parser = pcall(vim.treesitter.get_parser, 0)
+  if not ok or not parser then
+    return false
+  end
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local row, col = cursor[1] - 1, cursor[2]
+  parser:parse({ row, row + 1 })
+  return parser:language_for_range({ row, col, row, col }):lang() == "typst"
+end
+
 M.in_math = function()
-  local node = vim.treesitter.get_node()
+  local node = vim.treesitter.get_node({ ignore_injections = false })
 
   while node do
     if node:type() == "math" then

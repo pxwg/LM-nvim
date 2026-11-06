@@ -12,9 +12,12 @@ local line_begin = require("luasnip.extras.expand_conditions").line_begin
 local cn = require("util.math_autochange")
 local typst = require("util.typst")
 
--- Helper function to check if we're in a Typst file
 local function in_typst()
-  return vim.bo.filetype == "typst"
+  return typst.in_typst() and not typst.in_math()
+end
+
+local function at_formula_line(line_to_cursor, matched_trigger, captures)
+  return in_typst() and line_begin(line_to_cursor, matched_trigger, captures)
 end
 
 local function in_math()
@@ -45,7 +48,7 @@ return {
       ]],
       { i(1), i(0) }
     ),
-    { condition = line_begin }
+    { condition = at_formula_line }
   ),
 
   -- Display math (numbered)
@@ -57,7 +60,7 @@ return {
       ]],
       { i(1), i(2, "eq:"), i(0) }
     ),
-    { condition = line_begin }
+    { condition = at_formula_line }
   ),
 
   -- Subscripts

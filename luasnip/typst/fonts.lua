@@ -12,7 +12,7 @@ local typst = require("util.typst")
 
 -- Helper function to check if we're in a Typst file
 local function in_typst()
-  return vim.bo.filetype == "typst"
+  return typst.in_typst()
 end
 
 local function in_math()
