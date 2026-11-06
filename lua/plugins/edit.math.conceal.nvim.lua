@@ -1,52 +1,27 @@
-local function find_git_root(filepath)
-  local uv = vim.uv or vim.loop
-  local dir = filepath ~= nil and filepath ~= "" and vim.fn.fnamemodify(filepath, ":p:h") or vim.fn.getcwd()
-  while dir and dir ~= "/" do
-    local stat = uv.fs_stat(dir .. "/.git")
-    if stat and stat.type == "directory" then
-      return dir
-    end
-    local parent = vim.fn.fnamemodify(dir, ":h")
-    if parent == dir then
-      break
-    end
-    dir = parent
-  end
-  return nil
-end
+-- math-conceal.nvim: Unicode conceal plus rendered Typst and Markdown math.
+
+local service_binary = vim.fn.expand("~/math-conceal.nvim/service/target/release/typst-concealer-service")
 
 local wiki_root = vim.fs.normalize(vim.fn.expand("~/wiki"))
-local wiki_concealer_context = vim.fs.normalize(vim.fn.expand("~/wiki/concealer-context.typ"))
-local excluded_render_paths = {
-  [vim.fs.normalize(vim.fn.expand("~/wiki/link.typ"))] = true,
-  [vim.fs.normalize(vim.fn.expand("~/wiki/index.typ"))] = true,
+local wiki_unrendered = {
+  [wiki_root .. "/link.typ"] = true,
+  [wiki_root .. "/index.typ"] = true,
 }
 
-local function is_wiki_path(path)
-  if path == nil or path == "" then
-    return false
-  end
-  path = vim.fs.normalize(path)
-  return path == wiki_root or path:sub(1, #wiki_root + 1) == wiki_root .. "/"
-end
+local typst_header = [[
+  #show math.equation: set text(font: "Pennstander Math", weight: 300)
+  #show math.equation.where(block: false): set text(weight: 400)
+  #show math.equation.where(block: false): it => {
+    set text(size: 0.85em)
+    it
+  }
+]]
 
-local math_conceal_service_binary =
-  "/Users/pxwg-dogggie/math-conceal.nvim/service/target/release/typst-concealer-service"
-
-local typst_math_header = [[
-      #show math.equation: set text(font: "Pennstander Math", weight: 300)
-      #show math.equation.where(block: false): set text(weight: 400)
-      #show math.equation.where(block: false): it => {
-        set text(size: 0.85em)
-        it
-      }
-    ]]
-
-local markdown_mitex_preamble = [[
+local mitex_preamble = [[
 \newcommand{\slashed}[1]{\not{#1}}
 ]]
 
-local typst_code_render_allowlist = {
+local code_render_allow = {
   "show-tags",
   "zk_output_focused",
   "definition",
@@ -89,10 +64,15 @@ local typst_code_render_allowlist = {
   "include-note",
 }
 
+local function in_wiki(path)
+  path = vim.fs.normalize(path)
+  return path == wiki_root or vim.startswith(path, wiki_root .. "/")
+end
+
 -- Opt in only projects providing the same native-focus rendering contract.
-local function zettypst_render_root(path)
+local function zettypst_root(path)
   -- Virtual buffer URIs may be normalized from :// to :/; neither is a project file.
-  if not path or path == "" or path:match("^%a[%w+.-]*:/") then
+  if path == "" or path:match("^%a[%w+.-]*:/") then
     return
   end
   local root = vim.fs.root(path, ".zettypst")
@@ -101,288 +81,92 @@ local function zettypst_render_root(path)
   end
 end
 
-local function math_renderer_root(ctx)
-  local root = zettypst_render_root(ctx.path)
-  if root then
-    return root
-  end
-  if is_wiki_path(ctx.path) then
-    return wiki_root
-  end
-  return find_git_root(ctx.path) or ctx.cwd
+local function render_root(ctx)
+  return zettypst_root(ctx.path)
+    or (in_wiki(ctx.path) and wiki_root)
+    or vim.fs.root(ctx.path ~= "" and ctx.path or ctx.cwd, ".git")
+    or ctx.cwd
 end
 
-local function math_renderer_inputs(ctx)
-  local id = vim.fn.fnamemodify(ctx.path, ":t:r")
-  local inputs = {
-    "focus=" .. id,
+local function render_inputs(ctx)
+  return {
+    "focus=" .. vim.fn.fnamemodify(ctx.path, ":t:r"),
     "concealed=true",
     "preview=true",
     "preview-concealer=true",
     "colored=false",
   }
-  return inputs
 end
 
-local function math_renderer_preamble_file(ctx)
-  local root = zettypst_render_root(ctx.path)
+local function render_preamble(ctx)
+  local root = zettypst_root(ctx.path)
   if root then
     return root .. "/concealer-context.typ"
   end
-  if is_wiki_path(ctx.path) then
-    return wiki_concealer_context
+  if in_wiki(ctx.path) then
+    return wiki_root .. "/concealer-context.typ"
   end
 end
 
-local function math_renderer_path_excluded(ctx)
-  local root = zettypst_render_root(ctx.path)
-  if root then
+local function render_excluded(ctx)
+  if zettypst_root(ctx.path) then
     -- Focus rendering requires a note filename, not an aggregate/helper entry.
     return require("util.zettypst_focus").note(ctx.path) == nil
   end
-  return excluded_render_paths[vim.fs.normalize(ctx.path)] == true
+  return wiki_unrendered[vim.fs.normalize(ctx.path)] == true
 end
 
-local function is_copilot_chat_buffer(bufnr)
-  if not vim.api.nvim_buf_is_valid(bufnr) then
-    return false
-  end
-
-  local name = vim.api.nvim_buf_get_name(bufnr)
-  return vim.bo[bufnr].filetype == "copilot-chat" or name:match("copilot%-chat") ~= nil
-end
-
-local function coact_buffer_role(bufnr)
-  if not vim.api.nvim_buf_is_valid(bufnr) then
-    return nil
-  end
-
-  local filetype = vim.bo[bufnr].filetype
-  if filetype == "coact-input" or vim.b[bufnr].coact_role == "composer" or vim.b[bufnr].coact_composer == true then
-    return "input"
-  end
-  if filetype == "coact-history" or vim.b[bufnr].coact_role == "history" then
-    return "history"
-  end
-
-  local name = vim.api.nvim_buf_get_name(bufnr)
-  if filetype == "coact" or name:match("^coact://") ~= nil then
-    return "history"
-  end
-
-  return nil
-end
-
-local function is_coact_buffer(bufnr)
-  return coact_buffer_role(bufnr) ~= nil
-end
-
-local function coact_math_conceal_mode(bufnr)
-  return coact_buffer_role(bufnr) == "input" and "edit" or "presentation"
-end
-
-local function is_ai_chat_buffer(bufnr)
-  return is_copilot_chat_buffer(bufnr) or is_coact_buffer(bufnr)
-end
-
-local math_conceal_filetypes = {
-  plaintex = true,
-  tex = true,
-  context = true,
-  bibtex = true,
-  typst = true,
-  markdown = true,
-  coact = true,
-  ["coact-history"] = true,
-  ["coact-input"] = true,
-}
-
-local function is_math_conceal_buffer(bufnr)
-  if not vim.api.nvim_buf_is_valid(bufnr) then
-    return false
-  end
-  return is_ai_chat_buffer(bufnr) or math_conceal_filetypes[vim.bo[bufnr].filetype] == true
-end
-
-local function apply_math_conceal_buffer_mode(bufnr)
-  if not vim.api.nvim_buf_is_valid(bufnr) then
-    return
-  end
-
-  if not is_math_conceal_buffer(bufnr) then
-    return
-  end
-
-  local ok, math_conceal = pcall(require, "math-conceal.nvim")
-  if not ok or math_conceal.setup_buffer == nil then
-    return
-  end
-
-  math_conceal.set(vim.bo[bufnr].filetype, bufnr)
-
-  local desired_mode = "edit"
-  -- if is_copilot_chat_buffer(bufnr) then
-  --   desired_mode = "presentation"
-  -- elseif is_coact_buffer(bufnr) then
-  --   desired_mode = coact_math_conceal_mode(bufnr)
-  -- end
-  if
-    vim.b[bufnr].math_conceal_applied_buffer_mode == desired_mode
-    and type(math_conceal.get_buffer_config) == "function"
-  then
-    local ok_config, config = pcall(math_conceal.get_buffer_config, bufnr)
-    if ok_config and config and config.mode == desired_mode then
-      return
-    end
-  end
-
-  math_conceal.setup_buffer(bufnr, {
-    mode = desired_mode,
-  })
-  vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
-end
-
-local function schedule_math_conceal_buffer_mode(bufnr)
-  vim.schedule(function()
-    apply_math_conceal_buffer_mode(bufnr)
-  end)
+-- Every renderer compiles in the same project context.
+local function project_renderer(spec)
+  return vim.tbl_extend("force", {
+    service_binary = service_binary,
+    header = typst_header,
+    root = render_root,
+    inputs = render_inputs,
+    preamble_file = render_preamble,
+    render_paths = { exclude = { render_excluded } },
+  }, spec)
 end
 
 return {
-  {
-    "dirichy/latex_concealer.nvim",
-    enabled = false,
-    dev = true,
-    ft = { "tex", "latex" },
-    opts = {},
-  },
-  {
-    "ryleelyman/latex.nvim",
-    ft = { "tex", "latex" },
-    enabled = false,
-    config = function()
-      require("latex").setup({})
-    end,
-  },
-  {
-    "pxwg/math-conceal.nvim",
-    event = "VeryLazy",
-    build = "cargo build --release --manifest-path service/Cargo.toml",
-    dev = vim.fn.has("mac") == 1,
-    -- enabled = false,
-    -- build = "make lua51",
-    main = "math-conceal",
-    opts = {
-      ft = {
-        "plaintex",
-        "tex",
-        "context",
-        "bibtex",
-        "typst",
-        "markdown",
-        "coact",
-        "coact-history",
-        "coact-input",
-      },
-      buffer = {
-        mode = "edit",
-      },
-      opt = { concealcursor = "nci" },
-      image = {
-        workspace_dir = function(bufnr)
-          local root = zettypst_render_root(vim.api.nvim_buf_get_name(bufnr))
-          if root then
-            return root .. "/.math-conceal.image"
-          end
-          if is_wiki_path(vim.api.nvim_buf_get_name(bufnr)) then
-            return wiki_root .. "/.math-conceal.image"
-          end
-        end,
-        enabled = true,
-        -- enabled = false,
-        tracker = {
-          debug = false,
-        },
-        renderers = {
-          typst = {
-            filetypes = { "typst" },
-            service_binary = math_conceal_service_binary,
-            live_debounce = 0,
-            header = typst_math_header,
-            code_render = {
-              allow = typst_code_render_allowlist,
-            },
-            root = math_renderer_root,
-            inputs = math_renderer_inputs,
-            preamble_file = math_renderer_preamble_file,
-            render_paths = {
-              exclude = {
-                math_renderer_path_excluded,
-              },
-            },
-          },
-          markdown = {
-            filetypes = { "markdown", "copilot-chat", "coact", "coact-history" },
-            service_binary = math_conceal_service_binary,
-            live_debounce = 0,
-            header = typst_math_header,
-            root = math_renderer_root,
-            inputs = math_renderer_inputs,
-            preamble_file = math_renderer_preamble_file,
-            mitex_package = "@preview/mitex:0.2.7",
-            mitex_preamble = markdown_mitex_preamble,
-            render_paths = {
-              exclude = {
-                math_renderer_path_excluded,
-              },
-            },
-          },
-        },
-        ppi = 300,
-        math_baseline_pt = 11,
-        styling_type = "colorscheme",
-        color = nil,
-        cursor_hover_throttle_ms = 0,
-      },
+  "pxwg/math-conceal.nvim",
+  dev = vim.fn.has("mac") == 1,
+  event = "VeryLazy",
+  main = "math-conceal",
+  build = "cargo build --release --manifest-path service/Cargo.toml",
+  opts = {
+    -- `ft` is not appended to the plugin default: keep the full list.
+    ft = {
+      "plaintex",
+      "tex",
+      "context",
+      "bibtex",
+      "typst",
+      "markdown",
+      "coact",
+      "coact-history",
+      "coact-input",
+    },
+    opt = { concealcursor = "nci" },
+    highlights = { ["@sup_symbol"] = { link = "@boolean" } },
+    image = {
       enabled = true,
-      highlights = { ["@sup_symbol"] = { link = "@boolean" } },
-      conceal = {
-        "greek",
-        "script",
-        "math",
-        "font",
-        "delim",
-        "phy",
+      workspace_dir = function(bufnr)
+        local path = vim.api.nvim_buf_get_name(bufnr)
+        local root = zettypst_root(path) or (in_wiki(path) and wiki_root)
+        if root then
+          return root .. "/.math-conceal.image"
+        end
+      end,
+      renderers = {
+        typst = project_renderer({
+          code_render = { allow = code_render_allow },
+        }),
+        markdown = project_renderer({
+          filetypes = { "markdown", "copilot-chat", "coact", "coact-history" },
+          mitex_preamble = mitex_preamble,
+        }),
       },
     },
-    config = function(_, opts)
-      require("math-conceal").setup(opts)
-
-      local group = vim.api.nvim_create_augroup("MathConcealBufferMode", { clear = true })
-      vim.api.nvim_create_autocmd("FileType", {
-        group = group,
-        pattern = {
-          "plaintex",
-          "tex",
-          "context",
-          "bibtex",
-          "typst",
-          "markdown",
-          "coact",
-          "coact-history",
-          "coact-input",
-          "copilot-chat",
-        },
-        callback = function(event)
-          schedule_math_conceal_buffer_mode(event.buf)
-        end,
-      })
-
-      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if is_math_conceal_buffer(bufnr) then
-          schedule_math_conceal_buffer_mode(bufnr)
-        end
-      end
-    end,
   },
 }

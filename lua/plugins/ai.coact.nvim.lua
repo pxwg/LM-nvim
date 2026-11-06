@@ -54,11 +54,6 @@ local function attach_coact_math_conceal(bufnr)
     mode = desired_mode,
   })
   vim.b[bufnr].math_conceal_applied_buffer_mode = desired_mode
-
-  local ok_manager, manager = pcall(require, "math-conceal.image.formula.manager")
-  if ok_manager then
-    pcall(manager.sync_cursor_conceal, bufnr, { force = true })
-  end
 end
 
 local function attached_lsp_clients(bufnr)
