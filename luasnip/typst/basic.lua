@@ -11,6 +11,7 @@ local rep = require("luasnip.extras").rep
 local line_begin = require("luasnip.extras.expand_conditions").line_begin
 local cn = require("util.math_autochange")
 local typst = require("util.typst")
+local rime_region = require("util.rime_region")
 
 local function in_typst()
   return typst.in_typst() and not typst.in_math()
@@ -28,13 +29,13 @@ return {
   -- Inline math
   s(
     { trig = "km", wordTrig = true, snippetType = "autosnippet" },
-    { t("$ "), i(1), t("$"), i(0) },
-    { condition = in_typst }
+    { t("$"), i(1), t("$"), i(0) },
+    { condition = in_typst, callbacks = rime_region.callbacks() }
   ),
   s(
     { trig = "mk", wordTrig = true, snippetType = "autosnippet" },
-    { t("$ "), i(1), t("$"), i(0) },
-    { condition = in_typst }
+    { t("$"), i(1), t("$"), i(0) },
+    { condition = in_typst, callbacks = rime_region.callbacks() }
   ),
 
   -- Display math (unnumbered)
@@ -48,7 +49,7 @@ return {
       ]],
       { i(1), i(0) }
     ),
-    { condition = at_formula_line }
+    { condition = at_formula_line, callbacks = rime_region.callbacks() }
   ),
 
   -- Display math (numbered)
@@ -60,7 +61,7 @@ return {
       ]],
       { i(1), i(2, "eq:"), i(0) }
     ),
-    { condition = at_formula_line }
+    { condition = at_formula_line, callbacks = rime_region.callbacks({ enter = { 1, 2 } }) }
   ),
 
   -- Subscripts

@@ -40,12 +40,13 @@ return {
   s(
     { trig = "km", wordTrig = true, snippetType = "autosnippet" },
     { t("$"), i(1), t("$"), i(0) },
-    { condition = in_prose }
+    { condition = in_prose, callbacks = require("util.rime_region").callbacks() }
   ),
   s(
     { trig = "eqs", wordTrig = true, snippetType = "autosnippet" },
     { t({ "#+begin_src typst", "$", "  " }), i(1), t({ "", "$", "#+end_src", "" }), i(0) },
     {
+      callbacks = require("util.rime_region").callbacks(),
       condition = function(line_to_cursor, matched_trigger, captures)
         return line_begin(line_to_cursor, matched_trigger, captures) and in_prose(line_to_cursor, matched_trigger)
       end,

@@ -96,31 +96,8 @@ end
 --   callback = toggle_rime_if_in_brackets,
 -- })
 
-local update_input_region = debounce(function()
-  if vim.api.nvim_get_mode().mode:sub(1, 1) == "i" then
-    switch_rime_math()
-  end
-end, 200)
-
-vim.api.nvim_create_autocmd({ "InsertEnter", "CursorMovedI" }, {
-  pattern = { "*.tex", "*.typ" },
-  callback = update_input_region,
-})
-
--- Semantic tokens arrive asynchronously, including for newly typed /// lines.
-vim.api.nvim_create_autocmd("LspTokenUpdate", {
-  pattern = "*.typ",
-  callback = function(event)
-    local token = event.data.token
-    if
-      event.buf == vim.api.nvim_get_current_buf()
-      and token.type == "zkDslMarker"
-      and token.line == vim.api.nvim_win_get_cursor(0)[1] - 1
-    then
-      update_input_region()
-    end
-  end,
-})
+-- Formula snippets and cursor movement share immediate input-region transitions.
+require("util.rime_region").setup()
 
 local function switch_rime_math_md()
   if vim.bo.filetype == "markdown" then

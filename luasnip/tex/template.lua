@@ -397,7 +397,7 @@ return {
         i(0),
       }
     ),
-    { condition = line_begin }
+    { condition = line_begin, callbacks = require("util.rime_region").callbacks() }
   ),
 
   s(
@@ -412,7 +412,7 @@ return {
         i(0),
       }
     ),
-    { condition = line_begin }
+    { condition = line_begin, callbacks = require("util.rime_region").callbacks() }
   ),
   s(
     { trig = "defs", snippetType = "autosnippet" },

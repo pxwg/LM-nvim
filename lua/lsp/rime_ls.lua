@@ -68,12 +68,9 @@ A language server for librime
   -- end)
 
   local rime_on_attach = function(client, _)
+    client:notify("workspace/didChangeConfiguration", { settings = { enabled = vim.g.rime_enabled ~= false } })
     local toggle_rime = function()
-      client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
-        if ctx.client_id == client.id then
-          vim.g.rime_enabled = result
-        end
-      end)
+      M.toggle_rime()
     end
     -- keymaps for executing command
     vim.keymap.set("n", "<leader>rr", toggle_rime, { desc = "Toggle [R]ime" })
@@ -118,41 +115,30 @@ A language server for librime
 end
 
 function M.toggle_rime()
-  local rime_client = vim.lsp.get_clients({ name = "rime_ls" })[1]
-  local dict_client = vim.lsp.get_clients({ name = "dictionary" })[1]
+  M.set_enabled(not vim.g.rime_enabled)
+end
 
-  if vim.g.rime_enabled then
-    -- 当前中文模式 → 切换到英文：rime 关，dict 开
-    if rime_client then
-      rime_client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
-        if ctx.client_id == rime_client.id then
-          vim.g.rime_enabled = result
-        end
-      end)
+-- Update the local acceptance gate before the asynchronous server notification.
+function M.set_enabled(enabled)
+  local changed = vim.g.rime_enabled ~= enabled
+  vim.g.rime_enabled = enabled
+  for _, client in ipairs(vim.lsp.get_clients({ name = "rime_ls" })) do
+    client:notify("workspace/didChangeConfiguration", { settings = { enabled = enabled } })
+  end
+  if not enabled then
+    local cmp = package.loaded["blink.cmp"]
+    if cmp then
+      cmp.hide()
     end
-    if dict_client and not vim.g.dict_enabled then
-      dict_client:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
-        if ctx.client_id == dict_client.id then
-          vim.g.dict_enabled = result
-        end
-      end)
-    end
-  else
-    -- 当前英文模式 → 切换到中文：rime 开，dict 关
-    if rime_client then
-      rime_client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
-        if ctx.client_id == rime_client.id then
-          vim.g.rime_enabled = result
-        end
-      end)
-    end
-    if dict_client and vim.g.dict_enabled then
-      dict_client:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(_, result, ctx, _)
-        if ctx.client_id == dict_client.id then
-          vim.g.dict_enabled = result
-        end
-      end)
-    end
+  end
+  -- Preserve the existing Chinese/English dictionary pairing.
+  local dict = vim.lsp.get_clients({ name = "dictionary" })[1]
+  if changed and dict and vim.g.dict_enabled == enabled then
+    dict:request("workspace/executeCommand", { command = "dictionary.toggle-cmp" }, function(err, result)
+      if not err then
+        vim.g.dict_enabled = result
+      end
+    end)
   end
 end
 

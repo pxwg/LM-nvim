@@ -1,17 +1,25 @@
-local rime_ls_filetypes =
-  { "vimwiki", "tex", "markdown", "copilot-chat", "AvanteInput", "codecompanion", "typst", "alma", "codex", "hello" }
+local rime_ls_filetypes = {
+  "vimwiki",
+  "tex",
+  "markdown",
+  "copilot-chat",
+  "AvanteInput",
+  "codecompanion",
+  "typst",
+  "alma",
+  "codex",
+  "hello",
+  "org",
+}
 local rime_library_path = table.concat(
   { "/Library/Input Methods/Squirrel.app/Contents/Frameworks", "/opt/homebrew/lib", "/usr/local/lib" },
   ":"
 )
 
 local rime_on_attach = function(client, _)
+  client:notify("workspace/didChangeConfiguration", { settings = { enabled = vim.g.rime_enabled ~= false } })
   local toggle_rime = function()
-    client:request("workspace/executeCommand", { command = "rime-ls.toggle-rime" }, function(_, result, ctx, _)
-      if ctx.client_id == client.id then
-        vim.g.rime_enabled = result
-      end
-    end)
+    require("lsp.rime_ls").toggle_rime()
   end
   -- keymaps for executing command
   vim.keymap.set("n", "<leader>rr", toggle_rime, { desc = "Toggle [R]ime" })

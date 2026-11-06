@@ -1,6 +1,8 @@
 require("util.rime_blinks")
 local rime_ls = require("util.rime_ls")
-vim.g.rime_enabled = true
+if vim.g.rime_enabled == nil then
+  vim.g.rime_enabled = true
+end
 
 function _G.rime_ls_disabled(context)
   if not vim.g.rime_enabled then
@@ -113,7 +115,7 @@ return {
     -- if last char is number, and the only completion item is provided by rime-ls, accept it
     local types = require("blink.cmp.types")
     require("blink.cmp.completion.list").show_emitter:on(function(event)
-      if #event.items ~= 1 then
+      if not vim.g.rime_enabled or #event.items ~= 1 then
         return
       end
       local col = vim.fn.col(".") - 1
@@ -470,6 +472,14 @@ return {
             end,
           },
           lsp = {
+            transform_items = function(_, items)
+              if vim.g.rime_enabled then
+                return items
+              end
+              return vim.tbl_filter(function(item)
+                return not is_rime_item(item)
+              end, items)
+            end,
             min_keyword_length = 0,
             fallbacks = { "ripgrep", "buffer" },
           },
