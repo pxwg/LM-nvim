@@ -32,9 +32,14 @@ function M.setup()
     end
   end
   vim.api.nvim_create_user_command("Zet", function(args)
-    vim.api.nvim_cmd({ cmd = "WikiZet", args = args.fargs }, {})
+    vim.api.nvim_cmd({
+      cmd = "WikiZet",
+      args = args.fargs,
+      range = args.range > 0 and { args.line1, args.line2 } or nil,
+    }, {})
   end, {
     nargs = "+",
+    range = true,
     force = true,
     complete = require("zettypst_ocaml.commands").complete,
     desc = "Default wiki operations",
